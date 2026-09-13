@@ -60,7 +60,7 @@
 // appends the standard EPN affiliate parameters to the /itm/<id> URL.
 // A raw item URL is never assigned to an href directly.
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useUserPlan } from '@/lib/account/useUserPlan'
@@ -72,6 +72,7 @@ import {
   type PotentialDeal,
 } from '@/lib/dashboard/potentialDeals'
 import { buildDealDeepLink } from '@/lib/dashboard/affiliateDealLink'
+import { trackEvent } from '@/lib/analytics'
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -298,6 +299,8 @@ function DealRow({ deal }: { deal: PotentialDeal }) {
   // affiliate parameters directly to the /itm/<id> URL rather than
   // collapsing to a search result. Never assign deal.item_web_url
   // to an href directly.
+  const affiliateCustomId =
+    `pp:dashboard-deals:${marketplaceMode(deal.marketplace) ?? 'uk'}:${deal.card_slug ?? '_'}`
   const affiliateUrl = useMemo(() => buildDealDeepLink({
     itemWebUrl:      deal.item_web_url,
     ebayItemId:      deal.ebay_item_id,
@@ -305,8 +308,56 @@ function DealRow({ deal }: { deal: PotentialDeal }) {
     // listing URL never gets wrapped with a US campaign or vice
     // versa. The loader also drops mismatched rows before render.
     marketplaceHint: deal.marketplace,
-    customId:        `pp:dashboard-deals:${marketplaceMode(deal.marketplace) ?? 'uk'}:${deal.card_slug ?? '_'}`,
-  }), [deal.item_web_url, deal.ebay_item_id, deal.marketplace, deal.card_slug])
+    customId:        affiliateCustomId,
+  }), [deal.item_web_url, deal.ebay_item_id, deal.marketplace, deal.card_slug, affiliateCustomId])
+
+  // Block 5A-W-58G — analytics parity with every other affiliate
+  // placement. Fires ONE affiliate_link_view when the row scrolls
+  // into view + one affiliate_click on the CTA. Deep-link behaviour
+  // is unchanged.
+  const analyticsMarketplace: 'UK' | 'US' | undefined =
+    marketplaceMode(deal.marketplace) === 'uk' ? 'UK'
+    : marketplaceMode(deal.marketplace) === 'us' ? 'US'
+    : undefined
+  const rowRef = useRef<HTMLLIElement | null>(null)
+  const firedRef = useRef(false)
+  useEffect(() => {
+    if (firedRef.current) return
+    if (!affiliateUrl) return
+    if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') return
+    const el = rowRef.current
+    if (!el) return
+    const io = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting && !firedRef.current) {
+          firedRef.current = true
+          trackEvent('affiliate_link_view', {
+            placement:          'dashboard_deals_row',
+            intent:             'exact_listing',
+            marketplace:        analyticsMarketplace,
+            card_slug:          deal.card_slug ?? undefined,
+            custom_tracking_id: affiliateCustomId,
+            source_component:   'potential_deals_section',
+          })
+          io.disconnect()
+          break
+        }
+      }
+    }, { threshold: 0.5 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [affiliateUrl, analyticsMarketplace, affiliateCustomId, deal.card_slug])
+
+  function onCtaClick() {
+    trackEvent('affiliate_click', {
+      placement:          'dashboard_deals_row',
+      intent:             'exact_listing',
+      marketplace:        analyticsMarketplace,
+      card_slug:          deal.card_slug ?? undefined,
+      custom_tracking_id: affiliateCustomId,
+      source_component:   'potential_deals_section',
+    })
+  }
 
   const cardName = (deal.card_name || 'Card').replace(/\s*#\d+.*$/, '').trim() || 'Card'
   const setName  = deal.set_name || ''
@@ -326,7 +377,7 @@ function DealRow({ deal }: { deal: PotentialDeal }) {
     deal.currency === 'GBP' ? toUsdCents(deal.total_cost_cents, 'GBP') : null
 
   return (
-    <li style={rowStyle}>
+    <li ref={rowRef} style={rowStyle}>
       {deal.item_image_url ? (
         <img src={deal.item_image_url} alt="" style={thumbStyle} loading="lazy" />
       ) : (
@@ -366,6 +417,7 @@ function DealRow({ deal }: { deal: PotentialDeal }) {
         <a
           href={affiliateUrl}
           target="_blank" rel="noopener sponsored nofollow"
+          onClick={onCtaClick}
           style={ctaStyle}
           aria-label={`Check listing on ${marketplace}`}
         >

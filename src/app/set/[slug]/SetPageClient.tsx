@@ -146,7 +146,15 @@ function MoverRow({ card, setName, positive }: { card: TrendCard; setName: strin
         )}
       </Link>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 2 }}>
-        <EbayInlineLink searchQuery={ebayQuery} customId={ebayCustomId} />
+        <EbayInlineLink
+          searchQuery={ebayQuery}
+          customId={ebayCustomId}
+          placement="set_mover_row"
+          intent="raw"
+          cardSlug={(card.card_slug || '').toString().replace(/^pc-/, '')}
+          setSlug={setName}
+          sourceComponent="set_page_mover_row"
+        />
       </div>
     </div>
   )
@@ -802,32 +810,11 @@ export default function SetPageClient({ slug }: { slug: string }) {
       )}
 
       {/* ── Section jump links + eBay listing chips ── */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-        <a href="#cards" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: '5px 14px', textDecoration: 'none', color: 'var(--text)', fontSize: 12, fontFamily: "'Figtree', sans-serif", fontWeight: 600, transition: 'border-color 0.15s' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--primary)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)' }}>
-          🃏 Cards {!loading && regularCards.length > 0 && <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({regularCards.length})</span>}
-        </a>
-        {!loading && sealedCards.length > 0 && (
-          <a href="#sealed" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: '5px 14px', textDecoration: 'none', color: 'var(--text)', fontSize: 12, fontFamily: "'Figtree', sans-serif", fontWeight: 600, transition: 'border-color 0.15s' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--primary)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)' }}>
-            📦 Sealed Product <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({sealedCards.length})</span>
-          </a>
-        )}
-        <a href={getEbayUkUrl(setName, `set-${setName}`)} target="_blank" rel="sponsored noopener noreferrer"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: '5px 14px', textDecoration: 'none', color: 'var(--text-muted)', fontSize: 12, fontFamily: "'Figtree', sans-serif", fontWeight: 600, transition: 'border-color 0.15s, color 0.15s' }}
-          onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'var(--primary)'; el.style.color = 'var(--text)' }}
-          onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'var(--border)'; el.style.color = 'var(--text-muted)' }}>
-          🇬🇧 UK Listings
-        </a>
-        <a href={getEbayUsUrl(setName, `set-${setName}`)} target="_blank" rel="sponsored noopener noreferrer"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: '5px 14px', textDecoration: 'none', color: 'var(--text-muted)', fontSize: 12, fontFamily: "'Figtree', sans-serif", fontWeight: 600, transition: 'border-color 0.15s, color 0.15s' }}
-          onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'var(--primary)'; el.style.color = 'var(--text)' }}
-          onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'var(--border)'; el.style.color = 'var(--text-muted)' }}>
-          🇺🇸 US Listings
-        </a>
-      </div>
+      <SetHeroLinks
+        setName={setName}
+        cardsCount={loading ? null : regularCards.length}
+        sealedCount={loading ? 0 : sealedCards.length}
+      />
 
       {/* ── Chat ── */}
       <div style={{ marginBottom: 20 }}>
@@ -1009,6 +996,92 @@ export default function SetPageClient({ slug }: { slug: string }) {
           }}
         />
       )}
+    </div>
+  )
+}
+
+// Block 5A-W-58G — set-page hero eBay chips wrapper.
+// Extracted so a single IntersectionObserver can fire ONE
+// affiliate_link_view for the whole block, and each anchor can fire
+// its own affiliate_click carrying the correct marketplace. Visible
+// UI is byte-identical to the pre-58G inline anchors.
+function SetHeroLinks({
+  setName,
+  cardsCount,
+  sealedCount,
+}: {
+  setName:     string
+  cardsCount:  number | null
+  sealedCount: number
+}) {
+  const boxRef = useRef<HTMLDivElement | null>(null)
+  const firedRef = useRef(false)
+  useEffect(() => {
+    if (firedRef.current) return
+    if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') return
+    const el = boxRef.current
+    if (!el) return
+    const io = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting && !firedRef.current) {
+          firedRef.current = true
+          trackEvent('affiliate_link_view', {
+            placement:          'set_page_hero',
+            intent:             'set_search',
+            set_slug:           setName,
+            custom_tracking_id: `set-${setName}`,
+            source_component:   'set_page_hero_block',
+          })
+          io.disconnect()
+          break
+        }
+      }
+    }, { threshold: 0.5 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [setName])
+
+  function onEbayClick(marketplace: 'UK' | 'US') {
+    trackEvent('affiliate_click', {
+      placement:          'set_page_hero',
+      intent:             'set_search',
+      marketplace,
+      set_slug:           setName,
+      custom_tracking_id: `set-${setName}`,
+      source_component:   'set_page_hero_block',
+    })
+  }
+
+  const chip: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: '5px 14px', textDecoration: 'none', fontSize: 12, fontFamily: "'Figtree', sans-serif", fontWeight: 600, transition: 'border-color 0.15s, color 0.15s' }
+
+  return (
+    <div ref={boxRef} style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+      <a href="#cards" style={{ ...chip, color: 'var(--text)' }}
+        onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--primary)' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)' }}>
+        🃏 Cards {cardsCount != null && cardsCount > 0 && <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({cardsCount})</span>}
+      </a>
+      {sealedCount > 0 && (
+        <a href="#sealed" style={{ ...chip, color: 'var(--text)' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--primary)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)' }}>
+          📦 Sealed Product <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({sealedCount})</span>
+        </a>
+      )}
+      <a href={getEbayUkUrl(setName, `set-${setName}`)} target="_blank" rel="sponsored noopener noreferrer"
+        onClick={() => onEbayClick('UK')}
+        style={{ ...chip, color: 'var(--text-muted)' }}
+        onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'var(--primary)'; el.style.color = 'var(--text)' }}
+        onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'var(--border)'; el.style.color = 'var(--text-muted)' }}>
+        🇬🇧 UK Listings
+      </a>
+      <a href={getEbayUsUrl(setName, `set-${setName}`)} target="_blank" rel="sponsored noopener noreferrer"
+        onClick={() => onEbayClick('US')}
+        style={{ ...chip, color: 'var(--text-muted)' }}
+        onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'var(--primary)'; el.style.color = 'var(--text)' }}
+        onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'var(--border)'; el.style.color = 'var(--text-muted)' }}>
+        🇺🇸 US Listings
+      </a>
     </div>
   )
 }

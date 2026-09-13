@@ -5,9 +5,10 @@
 // <a> so search engines follow the internal links.
 
 import Link from 'next/link'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { usdCentsToPounds, type DeepCardSearchFilters } from '@/lib/deepSearch/filters'
-import { buildCardEbayQuery, getEbayUkUrl } from '@/lib/ebayAffiliate'
+import { buildAffiliateLink } from '@/lib/ebayAffiliate'
+import { useMarketplace } from '@/lib/marketplaceClient'
 import { trackEvent } from '@/lib/analytics'
 
 /**
@@ -50,6 +51,11 @@ interface Props {
 
 export default function SearchResults({ rows, loading, filters, onClearFilters }: Props) {
   const hasAnyFilter = useMemo(() => Object.keys(filters).length > 0, [filters])
+  // Block 5A-W-58G — Deep Search routes eBay clicks through the
+  // resolved marketplace (was UK-hardcoded pre-58G). Fallback to UK
+  // when the hook has not resolved yet keeps SSR / cold-render safe.
+  const mp = useMarketplace()
+  const marketplace: 'UK' | 'US' = mp.marketplace === 'US' ? 'US' : 'UK'
 
   if (loading && rows.length === 0) {
     return <SkeletonBlock />
@@ -110,14 +116,14 @@ export default function SearchResults({ rows, loading, filters, onClearFilters }
             </tr>
           </thead>
           <tbody>
-            {rows.map(row => <ResultRow key={row.card_slug} row={row} />)}
+            {rows.map(row => <ResultRow key={row.card_slug} row={row} marketplace={marketplace} />)}
           </tbody>
         </table>
       </div>
 
       {/* Mobile cards */}
       <div className="deep-search-mobile" style={{ display: 'none', flexDirection: 'column', gap: 10, opacity: loading ? 0.6 : 1 }}>
-        {rows.map(row => <MobileCard key={row.card_slug} row={row} />)}
+        {rows.map(row => <MobileCard key={row.card_slug} row={row} marketplace={marketplace} />)}
       </div>
 
       <style jsx>{`
@@ -132,10 +138,10 @@ export default function SearchResults({ rows, loading, filters, onClearFilters }
 
 // ─── Desktop row ─────────────────────────────────────
 
-function ResultRow({ row }: { row: SearchResultRow }) {
+function ResultRow({ row, marketplace }: { row: SearchResultRow; marketplace: 'UK' | 'US' }) {
   const href = `/set/${encodeURIComponent(row.set_name)}/card/${row.card_url_slug}`
   const cardNumberLabel = row.card_number_display || (row.card_number != null ? `#${row.card_number}` : '')
-  const ebay = ebayLink(row)
+  const ebay = ebayLink(row, marketplace)
   return (
     <tr style={{ borderTop: '1px solid var(--border)' }}>
       <Td>
@@ -171,15 +177,13 @@ function ResultRow({ row }: { row: SearchResultRow }) {
       <Td align="right"><PctCell val={row.raw_pct_90d} /></Td>
       <Td align="center">
         {ebay && (
-          <a
+          <DeepSearchEbayLink
             href={ebay}
-            target="_blank"
-            rel="sponsored noopener noreferrer"
-            onClick={() => trackEvent('deep_search_ebay_click', { card_slug: row.card_slug, set_slug: row.set_name })}
+            row={row}
+            marketplace={marketplace}
+            label="eBay ↗"
             style={{ fontSize: 11, color: 'var(--primary)', textDecoration: 'none', fontWeight: 700 }}
-          >
-            eBay ↗
-          </a>
+          />
         )}
       </Td>
     </tr>
@@ -210,9 +214,9 @@ function Td({ children, align = 'left' }: { children: React.ReactNode; align?: '
 
 // ─── Mobile card ─────────────────────────────────────
 
-function MobileCard({ row }: { row: SearchResultRow }) {
+function MobileCard({ row, marketplace }: { row: SearchResultRow; marketplace: 'UK' | 'US' }) {
   const href = `/set/${encodeURIComponent(row.set_name)}/card/${row.card_url_slug}`
-  const ebay = ebayLink(row)
+  const ebay = ebayLink(row, marketplace)
   const showPsa10 = row.psa10_usd != null
   const showPsa9  = !showPsa10 && row.psa9_usd != null
   return (
@@ -256,15 +260,13 @@ function MobileCard({ row }: { row: SearchResultRow }) {
         <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
           <Link href={href} style={mobilePrimaryLink}>View card</Link>
           {ebay && (
-            <a
+            <DeepSearchEbayLink
               href={ebay}
-              target="_blank"
-              rel="sponsored noopener noreferrer"
-              onClick={() => trackEvent('deep_search_ebay_click', { card_slug: row.card_slug, set_slug: row.set_name })}
+              row={row}
+              marketplace={marketplace}
+              label="Find on eBay ↗"
               style={mobileOutlineLink}
-            >
-              Find on eBay ↗
-            </a>
+            />
           )}
         </div>
       </div>
@@ -306,16 +308,106 @@ function formatPrice(cents: number | null): string {
   return `£${gbp}`
 }
 
-// Reuse the existing affiliate helper — no new URL system.
-function ebayLink(row: SearchResultRow): string | null {
+// Block 5A-W-58G — Deep Search now routes through the resolved
+// marketplace via the v2 engine. Custom tracking ID keeps the same
+// bare-slug shape the legacy helper emitted so existing EPN reports
+// stay comparable.
+//
+// Exported for unit tests — the function is pure so it can be
+// tested without rendering the component tree.
+export function ebayLink(row: SearchResultRow, marketplace: 'UK' | 'US'): string | null {
   if (!row.card_name || !row.set_name) return null
-  const q = buildCardEbayQuery(
-    row.card_name,
-    row.set_name,
-    row.card_number != null ? String(row.card_number) : null,
+  const built = buildAffiliateLink({
+    marketplace:      marketplace === 'US' ? 'us' : 'uk',
+    intent:           'raw',
+    cardName:         row.card_name,
+    setName:          row.set_name,
+    cardNumber:       row.card_number != null ? String(row.card_number) : null,
+    cardSlug:         row.card_slug,
+    setSlug:          row.set_name,
+    placement:        'deep_search_row',
+    pageType:         'deep_search',
+    sourceComponent:  'deep_search_results',
+    legacyCustomId:   row.card_slug ? row.card_slug.replace(/^pc-/, '') : undefined,
+  })
+  return built.url
+}
+
+// Shared eBay CTA used by both desktop rows and mobile cards. Owns
+// impression IO (fires once per mounted anchor when visible) and
+// dual click analytics: keeps the historical `deep_search_ebay_click`
+// event AND also emits the standard `affiliate_click` so this
+// placement rolls up alongside every other affiliate CTA.
+function DeepSearchEbayLink({
+  href, row, marketplace, label, style,
+}: {
+  href:        string
+  row:         SearchResultRow
+  marketplace: 'UK' | 'US'
+  label:       string
+  style?:      React.CSSProperties
+}) {
+  const anchorRef = useRef<HTMLAnchorElement | null>(null)
+  const firedRef = useRef(false)
+  const customTrackingId = row.card_slug ? row.card_slug.replace(/^pc-/, '') : ''
+  useEffect(() => {
+    if (firedRef.current) return
+    if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') return
+    const el = anchorRef.current
+    if (!el) return
+    const io = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting && !firedRef.current) {
+          firedRef.current = true
+          trackEvent('affiliate_link_view', {
+            placement:          'deep_search_row',
+            intent:             'raw',
+            marketplace,
+            card_slug:          row.card_slug,
+            set_slug:           row.set_name,
+            custom_tracking_id: customTrackingId,
+            source_component:   'deep_search_results',
+          })
+          io.disconnect()
+          break
+        }
+      }
+    }, { threshold: 0.5 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [marketplace, row.card_slug, row.set_name, customTrackingId])
+
+  function onClick() {
+    // Preserve the historical event for existing dashboards.
+    trackEvent('deep_search_ebay_click', {
+      card_slug: row.card_slug,
+      set_slug:  row.set_name,
+    })
+    // 58G — also fire the standard affiliate_click so Deep Search
+    // rolls up alongside every other placement in the affiliate funnel.
+    trackEvent('affiliate_click', {
+      placement:          'deep_search_row',
+      intent:             'raw',
+      marketplace,
+      card_slug:          row.card_slug,
+      set_slug:           row.set_name,
+      custom_tracking_id: customTrackingId,
+      source_component:   'deep_search_results',
+    })
+  }
+
+  return (
+    <a
+      ref={anchorRef}
+      href={href}
+      target="_blank"
+      rel="sponsored noopener noreferrer"
+      onClick={onClick}
+      style={style}
+    >
+      {label}
+    </a>
   )
-  if (!q) return null
-  return getEbayUkUrl(q, row.card_slug ? row.card_slug.replace(/^pc-/, '') : undefined)
 }
 
 // ─── Loading skeleton ────────────────────────────────

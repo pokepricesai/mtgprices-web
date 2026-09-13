@@ -166,7 +166,12 @@ describe('PotentialDealsSection — deep-link affiliate CTA', () => {
     // W43C — marketplaceHint enforces UK URL ↔ UK campaign / US URL ↔
     // US campaign at the CTA layer. Loader also drops mismatches.
     expect(SRC).toContain('marketplaceHint: deal.marketplace')
-    expect(SRC).toMatch(/customId:\s+`pp:dashboard-deals:/)
+    // W58G — the customId is now extracted into a shared const so
+    // analytics events + the deep-link URL carry the SAME token.
+    // Assert both the const value and that the deep-link builder
+    // still receives it.
+    expect(SRC).toMatch(/`pp:dashboard-deals:\$\{marketplaceMode\(deal\.marketplace\) \?\? 'uk'\}:\$\{deal\.card_slug \?\? '_'\}`/)
+    expect(SRC).toContain('customId:        affiliateCustomId')
   })
 
   it('never assigns deal.item_web_url directly to an href', () => {
@@ -258,7 +263,9 @@ describe('PotentialDealsSection — tabs + pagination', () => {
   })
 
   it('threads the watchlist card_slugs filter into loadPotentialDeals for the Watchlist tab', () => {
-    expect(SRC).toContain("import {\n  loadPotentialDeals,\n  loadWatchlistSlugs,")
+    // Line-ending agnostic (Windows checkouts land as CRLF): regex
+    // that tolerates \r?\n rather than a literal \n multi-line string.
+    expect(SRC).toMatch(/import\s*\{\s*\r?\n\s*loadPotentialDeals,\s*\r?\n\s*loadWatchlistSlugs,/)
     expect(SRC).toContain("tab === 'watchlist' ? watchlistSlugs : null")
     expect(SRC).toContain('cardSlugFilter: filter')
   })
@@ -299,6 +306,51 @@ describe('PotentialDealsSection — empty-state cross-tab affordance', () => {
   it('offers a link to Watchlist deals when the validated tab is empty AND the user has a watchlist', () => {
     expect(SRC).toContain('View Watchlist deals →')
     expect(SRC).toContain('hasWatchlist')
+  })
+})
+
+// ── Block 5A-W-58G — affiliate analytics parity ───────────────────
+
+describe('PotentialDealsSection — W58G affiliate analytics', () => {
+  it('imports the standard trackEvent helper', () => {
+    expect(SRC).toContain("import { trackEvent } from '@/lib/analytics'")
+  })
+
+  it('fires affiliate_link_view when a row scrolls into view (per-row IO)', () => {
+    expect(SRC).toContain("trackEvent('affiliate_link_view'")
+    expect(SRC).toContain('IntersectionObserver')
+    // The IO is attached to the <li> row so it only fires when the
+    // deal is actually visible — not on load for every row.
+    expect(SRC).toContain('<li ref={rowRef}')
+  })
+
+  it('fires affiliate_click on the CTA anchor', () => {
+    expect(SRC).toContain("trackEvent('affiliate_click'")
+    expect(SRC).toContain('onClick={onCtaClick}')
+  })
+
+  it('carries placement="dashboard_deals_row" and intent="exact_listing" on both events', () => {
+    expect(SRC).toContain("placement:          'dashboard_deals_row'")
+    expect(SRC).toContain("intent:             'exact_listing'")
+  })
+
+  it('derives marketplace from deal.marketplace (EBAY_GB → UK, EBAY_US → US)', () => {
+    // Both events pass the derived marketplace so the funnel can
+    // segment UK vs US clicks.
+    expect(SRC).toContain('analyticsMarketplace')
+    expect(SRC).toContain("marketplaceMode(deal.marketplace) === 'uk' ? 'UK'")
+    expect(SRC).toContain("marketplaceMode(deal.marketplace) === 'us' ? 'US'")
+  })
+
+  it('uses the same custom tracking id on the events as on the deep-link', () => {
+    // Regression guard — the events and the URL must carry the SAME
+    // pp:dashboard-deals:… string, otherwise EPN reports and
+    // affiliate_click cannot be joined.
+    expect(SRC).toContain('const affiliateCustomId')
+    // Deep-link builder receives the same const.
+    expect(SRC).toContain('customId:        affiliateCustomId')
+    // Analytics events reference the same const.
+    expect(SRC).toContain('custom_tracking_id: affiliateCustomId')
   })
 })
 

@@ -93,6 +93,12 @@ const ALLOW = new Set([
   // URLs into affiliate search results.
   'src/lib/dashboard/affiliateDealLink.ts',
   'src/lib/dashboard/__tests__/affiliateDealLink.test.ts',
+
+  // Block 5A-W-58G — Deep Search + mover marketplace-routing tests.
+  // Reference eBay hostnames only in URL-parse assertions on the
+  // engine's output. No new URL construction outside the engine.
+  'src/app/cards/search/__tests__/SearchResults.ebay.test.tsx',
+  'src/components/__tests__/EbayInlineLink.marketplace.test.tsx',
 ])
 
 function relative(p) {

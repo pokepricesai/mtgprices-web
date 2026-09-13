@@ -687,6 +687,9 @@ export default async function PokemonSpeciesPage({
           <EbayLiveListings
             searchQuery={displayName}
             customId={`pokemon-${slug}`}
+            placement="pokemon_hero"
+            intent="pokemon_search"
+            sourceComponent="pokemon_hero_block"
           />
         </div>
       )}
@@ -1026,7 +1029,15 @@ function MoverPanel({ title, cards, positive }: { title: string; cards: CardRow[
                 </div>
               </Link>
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 2 }}>
-                <EbayInlineLink searchQuery={ebayQuery} customId={ebayCustomId} />
+                <EbayInlineLink
+                  searchQuery={ebayQuery}
+                  customId={ebayCustomId}
+                  placement="pokemon_mover_row"
+                  intent="raw"
+                  cardSlug={(c.card_slug || '').toString().replace(/^pc-/, '')}
+                  setSlug={c.set_name}
+                  sourceComponent="pokemon_page_mover_row"
+                />
               </div>
             </div>
           )

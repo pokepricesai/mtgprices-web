@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useRef } from 'react'
 import { getEbayUkUrl, getEbayUsUrl } from '@/lib/ebayAffiliate'
+import { useMarketplace } from '@/lib/marketplaceClient'
 import { trackEvent } from '@/lib/analytics'
 import type { AffiliateIntent, Marketplace } from '@/lib/analytics'
 
@@ -107,7 +108,10 @@ export default function EbayLiveListings({
 }
 
 // Compact, single-link variant for inline use inside dense rows (top movers,
-// risers, fallers). Defaults to UK since the site is UK-focused.
+// risers, fallers). Block 5A-W-58G — reads the resolved marketplace
+// via useMarketplace() so US visitors land on ebay.com instead of the
+// old UK hardcode. Falls back to UK when the hook has not resolved
+// (SSR / no cookies yet).
 export function EbayInlineLink({
   searchQuery,
   customId,
@@ -127,7 +131,11 @@ export function EbayInlineLink({
   setSlug?: string
   sourceComponent?: string
 }) {
-  const url = getEbayUkUrl(searchQuery, customId)
+  const mp = useMarketplace()
+  const marketplace: Marketplace = mp.marketplace === 'US' ? 'US' : 'UK'
+  const url = marketplace === 'US'
+    ? getEbayUsUrl(searchQuery, customId)
+    : getEbayUkUrl(searchQuery, customId)
   const containerRef = useRef<HTMLAnchorElement>(null)
   const firedViewRef = useRef(false)
 
@@ -143,6 +151,7 @@ export function EbayInlineLink({
           trackEvent('affiliate_link_view', {
             placement:          placement ?? 'inline',
             intent:             intent    ?? 'other',
+            marketplace,
             card_slug:          cardSlug,
             set_slug:           setSlug,
             custom_tracking_id: customId,
@@ -155,12 +164,12 @@ export function EbayInlineLink({
     }, { threshold: 0.5 })
     io.observe(el)
     return () => io.disconnect()
-  }, [placement, intent, cardSlug, setSlug, customId, sourceComponent])
+  }, [placement, intent, marketplace, cardSlug, setSlug, customId, sourceComponent])
 
   function handleClick() {
     trackEvent('affiliate_click', {
       placement:          placement ?? 'inline',
-      marketplace:        'UK',
+      marketplace,
       intent:             intent    ?? 'other',
       card_slug:          cardSlug,
       set_slug:           setSlug,
