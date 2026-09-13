@@ -9,6 +9,8 @@
 // shows up here before it ships.
 
 import { describe, it, expect, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 // These metadata tests dynamically import page modules whose default
 // exports transitively pull in the supabase browser client and
@@ -240,5 +242,25 @@ describe('root layout — locale / hreflang policy', () => {
     const alts = mod.metadata.alternates as { canonical?: string; languages?: Record<string, string> }
     expect(alts.canonical).toBe('https://www.pokeprices.io')
     expect(alts.languages).toBeUndefined()
+  })
+})
+
+describe('root layout — affiliate network ownership verification', () => {
+  // Impact requires the ownership meta tag with value="…" instead of
+  // the standard content="…" attribute. The tag is rendered as raw JSX
+  // inside <head> rather than via Next's Metadata API (which emits
+  // content=). Source-read so a refactor cannot silently drop the tag
+  // or convert value= → content=.
+  const SRC = readFileSync(join(__dirname, '..', 'layout.tsx'), 'utf8')
+
+  it('carries the Impact site-verification meta tag with the exact value', () => {
+    expect(SRC).toContain("name:  'impact-site-verification'")
+    expect(SRC).toContain("value: 'c311cc8d-61a2-4ec7-97ac-fa7394d477bb'")
+  })
+
+  it('renders the Impact verification tag inside the <head>, not the body', () => {
+    const head = SRC.match(/<head>[\s\S]*?<\/head>/)
+    expect(head).not.toBeNull()
+    expect(head![0]).toContain('impact-site-verification')
   })
 })

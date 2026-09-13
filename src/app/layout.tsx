@@ -65,6 +65,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        {/* Impact site-ownership verification. Impact's crawler expects the
+            value= attribute literally (not the standard content=), so this
+            is rendered as raw JSX rather than through Next's Metadata API,
+            which would emit content=. Ownership verification only — no
+            Impact tracking scripts are loaded from this tag. */}
+        <meta
+          {...({
+            name:  'impact-site-verification',
+            value: 'c311cc8d-61a2-4ec7-97ac-fa7394d477bb',
+          } as Record<string, string>)}
+        />
       </head>
       <body className="min-h-screen flex flex-col" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
         <Script
