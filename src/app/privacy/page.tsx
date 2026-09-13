@@ -72,7 +72,7 @@ export default function PrivacyPage() {
       </div>
 
       <Section title="1. Who runs this site">
-        <P>PokePrices.io is operated by Luke Pierce, an independent UK-based developer. Contact: <a href="mailto:contact@pokeprices.io" style={{ color: 'var(--primary)' }}>contact@pokeprices.io</a>.</P>
+        <P>PokePrices.io is operated by Luke, an independent UK-based developer. Contact: <a href="mailto:contact@pokeprices.io" style={{ color: 'var(--primary)' }}>contact@pokeprices.io</a>.</P>
       </Section>
 
       <Section title="2. What we collect when you just visit">
