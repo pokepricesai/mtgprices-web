@@ -326,16 +326,22 @@ export function CardHeroImage({ src, alt }: { src?: string | null; alt: string }
 //     client SKIPS the duplicate get_card_trends_detail call.
 //   * quickFactsSlot: a server-rendered ReactNode dropped in AFTER
 //     the H1 hero section and BEFORE the price-history chart.
+//   * seoIntroSlot (Block 5A-W-58H): an optional server-rendered
+//     short paragraph, dropped in AFTER quickFactsSlot and BEFORE
+//     the price-history chart. Populated for a small, hand-picked
+//     set of high-opportunity card pages only; null for every other
+//     card.
 export type CardPageClientProps = {
   setName:     string
   cardUrlSlug: string
   initialCardData?:  unknown
   initialTrendData?: unknown
   quickFactsSlot?:   React.ReactNode
+  seoIntroSlot?:     React.ReactNode
 }
 
 export default function CardPageClient({
-  setName, cardUrlSlug, initialCardData, initialTrendData, quickFactsSlot,
+  setName, cardUrlSlug, initialCardData, initialTrendData, quickFactsSlot, seoIntroSlot,
 }: CardPageClientProps) {
   // W46D — treat any value !== undefined as "server supplied data".
   // A legitimate null from the server means "no card row exists" but
@@ -817,6 +823,13 @@ export default function CardPageClient({
           slot is null on non-indexable pages so we don't pad thin
           cards with an empty panel. */}
       {quickFactsSlot}
+
+      {/* Block 5A-W-58H — small SEO intro paragraph, rendered server-
+          side by page.tsx for the ten hand-picked hero cards only.
+          Null for every other card. Placement respects the block-
+          brief flow: H1 → core price information → short hero
+          SEO/value context, so prices stay above the fold. */}
+      {seoIntroSlot}
 
       {/* Price History Chart */}
       {priceHistory.length > 1 && (

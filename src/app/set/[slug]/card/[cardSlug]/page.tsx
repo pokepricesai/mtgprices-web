@@ -7,6 +7,7 @@ import CardPageClient from './CardPageClient'
 import RecentSalesSection from '@/components/recentSales/RecentSalesSection'
 import { loadRecentSalesGroupedForCardIfEnabled } from '@/lib/recentSales/cardQueries'
 import { isCardIndexable } from '@/lib/seo-indexability/cardIndexability'
+import { getCardSeoOverride } from '@/lib/seo/cardSeoOverrides'
 import { displaySetName, resolveLanguage } from '@/lib/cardLanguage'
 // Block 5A-W-46B (with W46B-FIX1) — server-emit BreadcrumbSchema only.
 //   * BreadcrumbSchema moved up from CardPageClient (which fetched
@@ -218,6 +219,19 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     description = `Track ${name}${num} from ${descSetPhrase}: raw, PSA 9 and PSA 10 prices, grading spreads, PSA population and recent sold listings. Price guide updated daily.`
   }
 
+  // Block 5A-W-58H — controlled SEO overrides on a small set of
+  // hand-picked cards, informed by real Search Console query data.
+  // Fields are individually optional; when an override omits a
+  // field, the generated value stays. Nothing else about the page
+  // is touched — canonical, OG image, robots gate, structured data,
+  // H1, layout and price blocks all continue to derive from the
+  // real card row. openGraph.title / twitter.title interpolate the
+  // same locals below, so the override propagates to social
+  // metadata without a second SEO surface.
+  const override = getCardSeoOverride(cardSlug, card.set_name)
+  if (override?.title)       title       = override.title
+  if (override?.description) description = override.description
+
   // Block 5A-W-35 — thin-card gate. Card rows with no market signal
   // on any grade tier get robots: { index: false, follow: true } so
   // Google stops evaluating them for the index, but users landing
@@ -322,6 +336,30 @@ export default async function CardPage({ params }: { params: Promise<{ slug: str
     isSealed:   !!card.is_sealed,
   } : null
 
+  // Block 5A-W-58H — server-rendered SEO intro paragraph for the ten
+  // hand-picked cards. Only fires when the same override the metadata
+  // reads returned an `intro` string. Rendered by CardPageClient in
+  // the slot immediately after the Current Prices panel and Quick
+  // Facts, before the Price History chart — so prices stay above the
+  // fold and the intro provides context without pushing anything
+  // meaningful down. Null for every other card.
+  const seoOverride = card ? getCardSeoOverride(cardSlug, card.set_name) : null
+  const seoIntroSlot = seoOverride?.intro ? (
+    <p
+      data-testid="card-seo-intro"
+      style={{
+        fontSize:   14,
+        lineHeight: 1.6,
+        color:      'var(--text-muted)',
+        margin:     '0 0 20px',
+        maxWidth:   680,
+        fontFamily: "'Figtree', sans-serif",
+      }}
+    >
+      {seoOverride.intro}
+    </p>
+  ) : null
+
   return (
     <>
       {/* Block 5A-W-46B (with W46B-FIX1) — server-emitted BreadcrumbList.
@@ -367,6 +405,7 @@ export default async function CardPage({ params }: { params: Promise<{ slug: str
             pokemonName={null}
           />
         ) : null}
+        seoIntroSlot={seoIntroSlot}
       />
       {recentSalesCard && (
         <RecentSalesSection data={recentSalesData} card={recentSalesCard} />
