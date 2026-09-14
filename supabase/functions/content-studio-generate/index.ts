@@ -145,32 +145,277 @@ function parseJsonFromAi(s: string): any {
 }
 
 // ── Voice prompt (shared across every template) ─────────────────────────────
+//
+// Block 5A-W-58I — LukePokePrices voice. Rewritten from the prior
+// "PokePrices, a free Pokemon TCG price intelligence site" corporate
+// framing. The account is Luke's personal collector account, not a
+// company account. Voice is conversational, occasionally opinionated,
+// grounded in the supplied data. Archetype selection (below) drives
+// structural variety — the voice prompt sets identity + guardrails
+// only, it does NOT prescribe hook/data/CTA structure.
 
-const VOICE_PROMPT = `You write social posts for PokePrices, a free Pokemon TCG price intelligence site.
+const VOICE_PROMPT = `You are writing posts for @LukePokePrices — Luke, a UK-based Pokemon collector building PokePrices.io on the side. You are Luke posting from his own account, NOT a corporate brand voice.
 
-Voice rules — non-negotiable:
-- Human, casual, slightly punchy.
-- Drive engagement with questions, not statements.
-- No corporate or hypey language.
-- No em-dashes anywhere ("--" or hyphens are fine).
-- No fake certainty ("guaranteed", "always", "best ever").
-- No emoji unless explicitly asked.
-- Speak like a collector talking to other collectors.
-- Keep it tight. Twitter: under 240 chars including the question. Instagram: 2 short paragraphs max, plus 3-5 hashtags.
+Who Luke sounds like:
+- An actual Pokemon collector who looks at market data every day.
+- Knowledgeable without pretending to know everything.
+- Conversational, concise, occasionally dry or opinionated.
+- Comfortable saying "I don't get this", "this feels cheap", "this is weird", "I might be missing something".
+- Comfortable making an observation without turning it into a formal conclusion.
+- Building PokePrices because he keeps wanting to answer questions like the one in the post. Never a founder-marketing pitch.
+
+Do NOT sound like:
+- a corporate marketing account
+- an investment newsletter
+- a crypto account
+- an SEO article, press release, or ChatGPT
+- an engagement-bait account
+
+Banned phrases and shapes — never use these, or close paraphrases:
+- "Attention collectors!"
+- "Here's why this matters"
+- "Let's dive in"
+- "Game-changer" / "don't sleep on this"
+- "Is this the next big card?"
+- "Only time will tell"
+- "What are your thoughts?" / "Let us know in the comments"
+- "Whether you're a collector or investor..."
+- "In today's market..."
+- "This card is making waves"
+- "Here's what collectors need to know"
+- "Making moves" / "on the rise" / "gaining traction"
+- Neat three-part conclusions where every post lands the same way.
+
+Sound like a collector, NOT an analyst:
+- Prefer ordinary conversational language over market jargon.
+- Do not sound like a trader, analyst, investment newsletter or professional market commentator.
+- Do NOT use, or paraphrase, any of these:
+  - "floor forming"
+  - "actionable"
+  - "divergence"
+  - "support" / "resistance"
+  - "breakout"
+  - "conviction"
+  - "entry point"
+  - "market structure"
+  - "price discovery"
+  - "catching up to graded" / "raw floor caught up"
+  - "stable sales before calling it"
+  - "where the actual grading decision sits"
+- Luke often notices something without explaining it.
+- It is fine for a post to simply show two numbers and react ("$39 raw. $9k PSA 10. Right then.").
+- Do NOT feel obliged to explain WHY a price moved. You usually do not know, and neither does Luke.
+- Do NOT wrap every observation in a market thesis or a polished conclusion.
+- Slightly imperfect / simple language is preferable to polished analysis.
+- Sentence fragments are good. Half-thoughts are fine.
+- Very short posts should genuinely be very short.
+- Humour, when it lands, is understated or mildly incredulous — never a punchline.
+- Never manufacture certainty or a sophisticated explanation when the data only shows a price movement.
+
+Style examples of the register we want (do NOT reuse these exact phrases, they are just to calibrate):
+- "This is weird."
+- "That gap is ridiculous."
+- "Not sure what is going on here."
+- "I keep coming back to this card."
+- "Maybe I'm missing something."
+- "That has absolutely tanked."
+- "Honestly thought this would be worth more."
+- "This one has basically done nothing for six months."
+- "I genuinely didn't know this was worth that much."
+
+Also avoid:
+- forced enthusiasm
+- excessive emojis (default = none, at most one if the subject genuinely earns it)
+- hashtag piles (default = none; do NOT auto-append #Pokemon #PokemonTCG)
+- excessive em-dashes ("--" or hyphens are fine; do not overuse "—")
+- mentioning PokePrices in every post — only mention it when the post is genuinely about it
+- fake certainty ("guaranteed", "always", "best ever")
+
+Factual grounding — non-negotiable:
+- Use ONLY the supplied structured data. Do not invent prices, percentages, populations, rarities, release dates, sales counts, print runs, or card facts.
+- If the data does not support a claim, do not make the claim. It is fine to say "not enough data to call this" or "might just be low volume".
+- If evidence is weak, the writing should say so.
+
+Data usage:
+- Find the ONE or TWO most interesting facts in the input. Do NOT list every metric.
+- The post should be organised around the interesting thing, not around a template.
+
+Structural variety — driven by the MODE section in each request:
+- The MODE tells you which archetype to use for THIS post (short observation, personal reaction, question, mini story, etc.).
+- Follow the MODE, not a default hook-data-conclusion-question template.
+- Questions are allowed but NOT required. Do not end with a question unless the MODE calls for one AND the question is specific and interesting (not "what do you think?").
+
+X (Twitter) formatting:
+- Short paragraphs, deliberate line breaks.
+- Sentence fragments are fine.
+- Generally under ~280 characters, unless the MODE is a mini story.
+- No markdown headings.
+- Bullet lists only if the format genuinely works.
 
 Output: JSON object exactly matching the schema asked. No commentary, no preamble.`
 
-// Optional tone overlays. The caller can pass options.tone to nudge the AI
-// toward a specific engagement style. Default = the neutral voice above.
+// Optional tone overlays. Layer on top of the LukePokePrices voice. Most
+// posts should use the default overlay — the archetype system (below)
+// already covers most stylistic variation. Overlays exist for users who
+// explicitly opt in to a stance from the UI tone selector.
 const TONE_OVERLAY: Record<string, string> = {
   default: '',
-  bold: `\n\nTONE OVERLAY: BOLD AND CONTRARIAN. Take a strong, opinionated stance — even against popular opinion. Avoid nuance. Make readers either agree hard or disagree hard. One sharp argument beats three balanced ones. Still no em-dashes, still no fake certainty, but lean into a clear position.`,
-  educational: `\n\nTONE OVERLAY: EDUCATIONAL AND HIGH-CURIOSITY. Frame as a quick lesson with one juicy insight collectors might miss. Hooks like "Most collectors miss this..." or "Here is what the data actually shows..." work well. End on the engagement question.`,
-  humorous: `\n\nTONE OVERLAY: RELATABLE AND WITTY. Short, observational, slightly self-deprecating. Make the reader feel seen as a collector. One sharp line beats a paragraph. No corny jokes — just honest, dry collector humour.`,
+  bold: `\n\nTONE NUDGE: Slightly bolder than default. Take a clear position rather than sitting on the fence. Still no fake certainty, still grounded in the data.`,
+  educational: `\n\nTONE NUDGE: Slightly more curious / explanatory than default. Point at the one thing collectors might not have noticed. Do NOT lecture. Do NOT open with "Most collectors miss this...".`,
+  humorous: `\n\nTONE NUDGE: Slightly drier and more observational than default. One sharp line beats a paragraph. No corny jokes.`,
 }
 
 function voicePrompt(tone?: string): string {
   return VOICE_PROMPT + (TONE_OVERLAY[tone || 'default'] || '')
+}
+
+// ── Archetype system ────────────────────────────────────────────────────────
+//
+// Block 5A-W-58I — the primary variety mechanism. Each generate*()
+// function picks one archetype from a per-template candidate pool.
+// The archetype is written into the prompt as a MODE section, and
+// persisted back into data_payload.archetype so a regenerate call
+// can pass avoid_archetype and land on something different.
+//
+// Batch coordination: options.variant_index (0..N-1) is passed by
+// the client when generating multiple posts of the same template
+// in parallel (e.g. the weekly pack). It seeds the pick so different
+// indexes prefer different archetypes.
+
+type Archetype =
+  | 'straight_observation'
+  | 'personal_reaction'
+  | 'data_curiosity'
+  | 'debate_opinion'
+  | 'genuine_question'
+  | 'nostalgia'
+  | 'market_weirdness'
+  | 'mini_story'
+  | 'ultra_short'
+  | 'builder_note'
+
+const ARCHETYPES: Record<Archetype, { label: string; guide: string }> = {
+  straight_observation: {
+    label: 'Straight observation',
+    guide: 'Really just observation. State the one thing you noticed and stop. Show the numbers if they are the point. Do NOT explain why. Do NOT wrap up neatly. Do NOT end on a question. Fragments are fine. Two lines is often enough.',
+  },
+  personal_reaction: {
+    label: 'Personal reaction',
+    guide: 'First person, and it should actually sound personal. React the way you would react in a text to a mate — "didn\'t know it was worth that", "this one has basically done nothing", "honestly thought it would be more". No sales pitch, no CTA, no polished conclusion. Feel free to leave the reaction unresolved.',
+  },
+  data_curiosity: {
+    label: 'Data curiosity',
+    guide: 'Highlight ONE odd relationship between numbers and let it sit. Do NOT explain it away, do NOT invent a cause, do NOT turn it into a thesis. If it is weird, saying "weird" is enough. Do not end on a question.',
+  },
+  debate_opinion: {
+    label: 'Debate / opinion',
+    guide: 'Have an opinion, but a collector opinion — not an investment analysis. Something a real collector might disagree with. Keep it to one line where possible. No trading language, no "entry point" style framing.',
+  },
+  genuine_question: {
+    label: 'Genuine question',
+    guide: 'End on a specific, interesting question. NOT "what do you think?". A real question with concrete alternatives, e.g. "raw at $80 or PSA 10 at $220?".',
+  },
+  nostalgia: {
+    label: 'Nostalgia / collector angle',
+    guide: 'Talk about the card more than the chart. Use ONLY facts the input supports (set, era, look). Do not invent release-window sentiment, design commentary or scarcity claims.',
+  },
+  market_weirdness: {
+    label: 'Market weirdness',
+    guide: 'Dry and simple. A short, mildly incredulous observation is enough. Something in the shape of "Pokemon pricing continues to be normal." then the weird data. Do NOT explain the weirdness. Do NOT be smug. Do NOT reach for analyst language.',
+  },
+  mini_story: {
+    label: 'Mini story',
+    guide: '2 to 4 short paragraphs. Beginning, middle, end. Useful for big moves or interesting comparisons. Do NOT turn it into a marketing narrative.',
+  },
+  ultra_short: {
+    label: 'Ultra-short',
+    guide: 'One or two sentences. Genuinely tiny. Maybe just the numbers and a reaction word ("Right then." / "Weird one." / "OK.").',
+  },
+  builder_note: {
+    label: 'Builder / behind-the-scenes',
+    guide: 'Only use when the post is genuinely about building PokePrices. Human, not startup-bro. First person. No "we are thrilled to announce".',
+  },
+}
+
+// Per-template candidate archetype pools. builder_note is deliberately
+// absent from every card-driven pool — it is reserved for a future
+// build-update template.
+const TEMPLATE_ARCHETYPES: Record<string, Archetype[]> = {
+  card_battle:       ['personal_reaction', 'data_curiosity', 'debate_opinion', 'genuine_question', 'ultra_short'],
+  market_mover:      ['straight_observation', 'personal_reaction', 'data_curiosity', 'market_weirdness', 'ultra_short', 'mini_story'],
+  grading_gap:       ['straight_observation', 'data_curiosity', 'debate_opinion', 'market_weirdness', 'ultra_short'],
+  then_vs_now:       ['mini_story', 'nostalgia', 'personal_reaction', 'data_curiosity', 'market_weirdness'],
+  budget_builder:    ['straight_observation', 'debate_opinion', 'genuine_question', 'personal_reaction'],
+  collector_pulse:   ['straight_observation', 'data_curiosity', 'market_weirdness', 'personal_reaction'],
+  most_traded:       ['straight_observation', 'personal_reaction', 'market_weirdness', 'ultra_short'],
+  pokemon_battle:    ['genuine_question', 'ultra_short', 'personal_reaction'],
+  guess_the_pokemon: ['genuine_question', 'ultra_short', 'personal_reaction'],
+}
+
+function pickArchetype(
+  templateType: string,
+  opts: { variant_index?: number; avoid_archetype?: string },
+): Archetype {
+  const pool = TEMPLATE_ARCHETYPES[templateType] || (['personal_reaction'] as Archetype[])
+  const filtered = opts.avoid_archetype
+    ? pool.filter(a => a !== opts.avoid_archetype)
+    : pool
+  const src = filtered.length > 0 ? filtered : pool
+  const vi = typeof opts.variant_index === 'number' ? opts.variant_index : NaN
+  if (Number.isFinite(vi)) {
+    return src[Math.abs(Math.floor(vi)) % src.length]
+  }
+  return src[Math.floor(Math.random() * src.length)]
+}
+
+function archetypeSection(archetype: Archetype): string {
+  const a = ARCHETYPES[archetype]
+  return `MODE: ${a.label}\n${a.guide}`
+}
+
+// ── Recent-post repetition avoidance ────────────────────────────────────────
+//
+// Fetch the last 8 twitter_copy strings for the same template so the
+// model does not repeat openings, closings or structural moves. Fail
+// open — if the query errors, generation continues without history.
+
+async function getRecentTwitterHistory(templateType: string): Promise<string[]> {
+  try {
+    const { data } = await supabase
+      .from('social_content_posts')
+      .select('twitter_copy')
+      .eq('template_type', templateType)
+      .not('twitter_copy', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(12)
+    return (data || [])
+      .map((r: any) => (r.twitter_copy as string) || '')
+      .filter((s: string) => s.trim().length > 0)
+      .slice(0, 8)
+  } catch { return [] }
+}
+
+function recentPostsSection(recent: string[]): string {
+  if (!recent.length) return ''
+  const lines = recent
+    .slice(0, 8)
+    .map((r, i) => `${i + 1}. "${r.replace(/\s+/g, ' ').slice(0, 200)}"`)
+    .join('\n')
+  return `\n\nRECENT LUKEPOKEPRICES POSTS FOR THIS TEMPLATE — do NOT copy their openings, structures or closings. Vary sentence shape, length and any question wording:
+${lines}`
+}
+
+// Shared JSON schema tail for every template. Loosened from the
+// prior forced-question / hashtag-pile prescriptions so the model
+// actually varies structure.
+function jsonSchemaSection(): string {
+  return `Return JSON with this exact shape. No commentary, no preamble:
+{
+  "title": "short internal title for admin list, max 60 chars",
+  "hook": "the headline shown on the image, max 60 chars, no em-dash",
+  "twitter_copy": "the X/Twitter post text. Follow the MODE above. Not required to end with a question. No auto CTA. No hashtags unless the post genuinely earns one.",
+  "instagram_caption": "the Instagram caption. 1 to 3 short paragraphs. Hashtags optional (0 to 3 max). Do NOT auto-append '#Pokemon #PokemonTCG'."
+}`
 }
 
 // ── Template: Card Battle ───────────────────────────────────────────────────
@@ -238,21 +483,18 @@ async function generateCardBattle(options: any) {
     sales_30d:           p.sales_30d || 0,
   }))
 
+  const archetype = pickArchetype('card_battle', options)
+  const recent = await getRecentTwitterHistory('card_battle')
   const sys = voicePrompt(options.tone)
-  const usr = `Write a Card Battle social post comparing these two Pokemon cards:
+  const usr = `Write a Card Battle X post comparing these two Pokemon cards.
+Pick the ONE most interesting thing about the comparison. Do not list every metric.
 
 LEFT:  ${cards[0].card_name} (${cards[0].set_name}) - raw $${(cards[0].raw_usd / 100).toFixed(2)}, PSA 10 $${cards[0].psa10_usd ? (cards[0].psa10_usd / 100).toFixed(2) : "—"}, 30d ${cards[0].raw_pct_30d ?? "—"}%, 1y ${cards[0].raw_pct_365d ?? "—"}%
 RIGHT: ${cards[1].card_name} (${cards[1].set_name}) - raw $${(cards[1].raw_usd / 100).toFixed(2)}, PSA 10 $${cards[1].psa10_usd ? (cards[1].psa10_usd / 100).toFixed(2) : "—"}, 30d ${cards[1].raw_pct_30d ?? "—"}%, 1y ${cards[1].raw_pct_365d ?? "—"}%
 
-CTA: "Which are you taking?"
+${archetypeSection(archetype)}${recentPostsSection(recent)}
 
-Return JSON with this exact shape:
-{
-  "title": "short internal title for our admin list, max 60 chars",
-  "hook": "the headline shown on the image, max 50 chars, no em-dash",
-  "twitter_copy": "the X/Twitter post text, ends with the CTA question",
-  "instagram_caption": "the Instagram caption (2 short paragraphs + 3-5 hashtags at the end)"
-}`
+${jsonSchemaSection()}`
   const aiRaw = await callHaiku(sys, usr)
   const ai = parseJsonFromAi(aiRaw)
 
@@ -261,7 +503,7 @@ Return JSON with this exact shape:
     hook: ai.hook,
     twitter_copy: ai.twitter_copy,
     instagram_caption: ai.instagram_caption,
-    data_payload: { left: cards[0], right: cards[1] },
+    data_payload: { left: cards[0], right: cards[1], archetype },
   }
 }
 
@@ -318,8 +560,11 @@ async function generateMarketMover(options: any) {
   const windowLabel: Record<string, string> = { "7d": "this week", "30d": "this month", "90d": "this quarter", "1y": "this year" }
   const wt = windowLabel[options.time_window || "30d"]
 
+  const archetype = pickArchetype('market_mover', options)
+  const recent = await getRecentTwitterHistory('market_mover')
   const sys = voicePrompt(options.tone)
-  const usr = `Write a Market Mover social post about this card whose raw price has moved ${moveText} ${wt}:
+  const usr = `Write a Market Mover X post about a card whose raw price has moved ${moveText} ${wt}.
+Pick the ONE or TWO most interesting facts. Do not list every metric. If evidence is weak (e.g. big move on low volume), it is fine to say so.
 
 CARD:      ${card.card_name} (${card.set_name})
 RAW PRICE: $${(card.raw_usd / 100).toFixed(2)}
@@ -328,17 +573,14 @@ PSA 10:    ${card.psa10_usd ? "$" + (card.psa10_usd / 100).toFixed(2) : "—"}
 30d:       ${card.raw_pct_30d ?? "—"}%
 90d:       ${card.raw_pct_90d ?? "—"}%
 1y:        ${card.raw_pct_365d ?? "—"}%
+Direction: ${direction === "up" ? "rising" : "falling"}
+${direction === "up"
+  ? "Do not overhype. \"Making moves\" / \"on the rise\" / \"gaining traction\" are banned."
+  : "Do not make absolute predictions. \"Buy the dip\" language is banned."}
 
-Direction: ${direction === "up" ? "rising — frame it as collectors waking up to the card, don't overhype" : "falling — frame it as a possible entry point, don't make absolute predictions"}.
-CTA: "${direction === "up" ? "Still room to run?" : "Buying the dip?"}"
+${archetypeSection(archetype)}${recentPostsSection(recent)}
 
-Return JSON with this exact shape:
-{
-  "title": "short internal title, max 60 chars",
-  "hook": "headline on the image, max 50 chars, lead with the move (e.g. '${moveText} ${wt}')",
-  "twitter_copy": "X/Twitter post ending with the CTA question",
-  "instagram_caption": "Instagram caption (2 short paragraphs + 3-5 hashtags)"
-}`
+${jsonSchemaSection()}`
   const aiRaw = await callHaiku(sys, usr)
   const ai = parseJsonFromAi(aiRaw)
 
@@ -347,7 +589,7 @@ Return JSON with this exact shape:
     hook: ai.hook,
     twitter_copy: ai.twitter_copy,
     instagram_caption: ai.instagram_caption,
-    data_payload: { card, time_window: options.time_window || "30d", direction, move_pct: move },
+    data_payload: { card, time_window: options.time_window || "30d", direction, move_pct: move, archetype },
   }
 }
 
@@ -428,23 +670,20 @@ async function generateGradingGap(options: any) {
     grades:              Object.fromEntries(tiers.map(t => [t.label, dp[t.key]])),
   }
 
+  const archetype = pickArchetype('grading_gap', options)
+  const recent = await getRecentTwitterHistory('grading_gap')
   const sys = voicePrompt(options.tone)
-  const usr = `Write a Grading Gap social post about ${card.card_name} (${card.set_name}).
+  const usr = `Write a Grading Gap X post about ${card.card_name} (${card.set_name}).
+The interesting thing is the spread between grade tiers. Pick the one relationship that is actually worth pointing at — not every tier.
 
 Grade prices (USD):
 ${tiers.map(t => `  ${t.label}: $${(dp[t.key] / 100).toFixed(2)}`).join("\n")}
 
 Biggest gap detected: ${biggestGap.top.label} is ${biggestGap.ratio.toFixed(1)}x ${biggestGap.bottom.label}.
 
-CTA: "Which grade would you buy?"
+${archetypeSection(archetype)}${recentPostsSection(recent)}
 
-Return JSON with this exact shape:
-{
-  "title": "short internal title, max 60 chars",
-  "hook": "headline on the image, max 60 chars, lead with the biggest gap stat",
-  "twitter_copy": "X/Twitter post (under 240 chars) ending with the CTA question",
-  "instagram_caption": "Instagram caption (2 short paragraphs + 3-5 hashtags)"
-}`
+${jsonSchemaSection()}`
   const aiRaw = await callHaiku(sys, usr)
   const ai = parseJsonFromAi(aiRaw)
 
@@ -453,7 +692,7 @@ Return JSON with this exact shape:
     hook: ai.hook,
     twitter_copy: ai.twitter_copy,
     instagram_caption: ai.instagram_caption,
-    data_payload: { card, biggest_gap: { top: biggestGap.top.label, bottom: biggestGap.bottom.label, ratio: biggestGap.ratio } },
+    data_payload: { card, biggest_gap: { top: biggestGap.top.label, bottom: biggestGap.bottom.label, ratio: biggestGap.ratio }, archetype },
   }
 }
 
@@ -546,22 +785,18 @@ async function generateThenVsNow(options: any) {
   }
 
   const yrLabel = span === "2y" ? "2 years" : span === "3y" ? "3 years" : "5 years"
+  const archetype = pickArchetype('then_vs_now', options)
+  const recent = await getRecentTwitterHistory('then_vs_now')
   const sys = voicePrompt(options.tone)
-  const usr = `Write a Then vs Now social post for ${card.card_name} (${card.set_name}).
+  const usr = `Write a Then vs Now X post for ${card.card_name} (${card.set_name}).
 
 THEN (${thenDate}): $${thenPrice ? (thenPrice / 100).toFixed(2) : "—"}
 NOW  (${nowDate}):  $${nowPrice  ? (nowPrice  / 100).toFixed(2) : "—"}
-Growth: ${growth != null ? (growth > 0 ? "+" : "") + growth + "%" : "—"} over roughly ${yrLabel}
+Growth: ${growth != null ? (growth > 0 ? "+" : "") + growth + "%" : "—"} over roughly ${yrLabel}.
 
-CTA: "Would you have held?"
+${archetypeSection(archetype)}${recentPostsSection(recent)}
 
-Return JSON with this exact shape:
-{
-  "title": "short internal title, max 60 chars",
-  "hook": "headline on the image, max 50 chars, lead with the growth (e.g. 'Up ${growth ?? "X"}% in ${yrLabel}')",
-  "twitter_copy": "X/Twitter post ending with the CTA question",
-  "instagram_caption": "Instagram caption (2 short paragraphs + 3-5 hashtags)"
-}`
+${jsonSchemaSection()}`
   const aiRaw = await callHaiku(sys, usr)
   const ai = parseJsonFromAi(aiRaw)
 
@@ -570,7 +805,7 @@ Return JSON with this exact shape:
     hook: ai.hook,
     twitter_copy: ai.twitter_copy,
     instagram_caption: ai.instagram_caption,
-    data_payload: { card, span },
+    data_payload: { card, span, archetype },
   }
 }
 
@@ -630,23 +865,19 @@ async function generateBudgetBuilder(options: any) {
     raw_usd:             p.current_raw,
   }))
 
+  const archetype = pickArchetype('budget_builder', options)
+  const recent = await getRecentTwitterHistory('budget_builder')
   const sys = voicePrompt(options.tone)
-  const usr = `Write a Budget Builder social post: a $${budgetUsd.toFixed(0)} basket of 4 Pokemon cards.
+  const usr = `Write a Budget Builder X post: a $${budgetUsd.toFixed(0)} basket of 4 Pokemon cards. This template is inherently question-shaped ("what would you buy for $X?") but the wording is up to the MODE below — do NOT default to "Pick your four".
 
 Total raw value of basket: $${(running / 100).toFixed(2)}
 
 Cards in basket:
 ${cards.map((c, i) => `  ${i + 1}. ${c.card_name} (${c.set_name}) — raw $${(c.raw_usd / 100).toFixed(2)}`).join("\n")}
 
-CTA: "Pick your four."
+${archetypeSection(archetype)}${recentPostsSection(recent)}
 
-Return JSON with this exact shape:
-{
-  "title": "short internal title, max 60 chars",
-  "hook": "headline on the image, max 50 chars, frame it as a budget pitch (e.g. 'You have $${budgetUsd.toFixed(0)}. What are you buying?')",
-  "twitter_copy": "X/Twitter post ending with the CTA",
-  "instagram_caption": "Instagram caption (2 short paragraphs + 3-5 hashtags)"
-}`
+${jsonSchemaSection()}`
   const aiRaw = await callHaiku(sys, usr)
   const ai = parseJsonFromAi(aiRaw)
 
@@ -655,7 +886,7 @@ Return JSON with this exact shape:
     hook: ai.hook,
     twitter_copy: ai.twitter_copy,
     instagram_caption: ai.instagram_caption,
-    data_payload: { cards, budget_usd: budgetUsd, total_raw_usd_cents: running },
+    data_payload: { cards, budget_usd: budgetUsd, total_raw_usd_cents: running, archetype },
   }
 }
 
@@ -696,21 +927,17 @@ async function generateCollectorPulse(options: any) {
   const windowLabel: Record<string, string> = { "7d": "this week", "30d": "this month", "90d": "this quarter", "1y": "this year" }
   const wt = windowLabel[options.time_window || "7d"]
 
+  const archetype = pickArchetype('collector_pulse', options)
+  const recent = await getRecentTwitterHistory('collector_pulse')
   const sys = voicePrompt(options.tone)
-  const usr = `Write a Collector Pulse social post — what's trending ${wt}.
+  const usr = `Write a Collector Pulse X post — what's trending ${wt}. Name 1 or 2 specific cards from the list; do NOT list all five in prose. Do NOT open with "What are collectors watching".
 
 Top 5 risers ${wt}:
 ${cards.map((c, i) => `  ${i + 1}. ${c.card_name} (${c.set_name}) — raw $${(c.raw_usd / 100).toFixed(2)}, ${c.pct_change > 0 ? "+" : ""}${c.pct_change.toFixed(0)}%`).join("\n")}
 
-CTA: "What are collectors watching?"
+${archetypeSection(archetype)}${recentPostsSection(recent)}
 
-Return JSON with this exact shape:
-{
-  "title": "short internal title, max 60 chars",
-  "hook": "headline on the image, max 50 chars, e.g. 'What collectors are watching ${wt}'",
-  "twitter_copy": "X/Twitter post ending with the CTA — name 1-2 specific cards from the list",
-  "instagram_caption": "Instagram caption (2 short paragraphs + 3-5 hashtags)"
-}`
+${jsonSchemaSection()}`
   const aiRaw = await callHaiku(sys, usr)
   const ai = parseJsonFromAi(aiRaw)
 
@@ -719,7 +946,7 @@ Return JSON with this exact shape:
     hook: ai.hook,
     twitter_copy: ai.twitter_copy,
     instagram_caption: ai.instagram_caption,
-    data_payload: { cards, time_window: options.time_window || "7d" },
+    data_payload: { cards, time_window: options.time_window || "7d", archetype },
   }
 }
 
@@ -766,8 +993,10 @@ async function generateMostTraded(options: any) {
     sales_30d:           picked.sales_30d || 0,
   }
 
+  const archetype = pickArchetype('most_traded', options)
+  const recent = await getRecentTwitterHistory('most_traded')
   const sys = voicePrompt(options.tone)
-  const usr = `Write a Most Traded social post about the highest-volume Pokemon ${productMode === 'sealed' ? 'sealed product' : 'card'} right now.
+  const usr = `Write a Most Traded X post about the highest-volume Pokemon ${productMode === 'sealed' ? 'sealed product' : 'card'} right now. The point of this template is volume as a signal — what collectors are actually trading. Do NOT lead with "collectors are fighting over this".
 
 CARD:    ${card.card_name} (${card.set_name})
 SALES (30d): ${card.sales_30d}
@@ -775,17 +1004,9 @@ RAW:     $${(card.raw_usd / 100).toFixed(2)}
 PSA 10:  ${card.psa10_usd ? "$" + (card.psa10_usd / 100).toFixed(2) : "—"}
 30d %:   ${card.raw_pct_30d != null ? card.raw_pct_30d.toFixed(1) + "%" : "—"}
 
-Frame: volume is truth. This is what collectors are actually trading right now, not what pundits are talking about.
+${archetypeSection(archetype)}${recentPostsSection(recent)}
 
-CTA: "Are collectors fighting over this one?"
-
-Return JSON with this exact shape:
-{
-  "title": "short internal title, max 60 chars",
-  "hook": "headline on the image, max 50 chars — lead with the sales count, e.g. '${card.sales_30d} sales this month'",
-  "twitter_copy": "X/Twitter post ending with the CTA",
-  "instagram_caption": "Instagram caption (2 short paragraphs + 3-5 hashtags)"
-}`
+${jsonSchemaSection()}`
   const aiRaw = await callHaiku(sys, usr)
   const ai = parseJsonFromAi(aiRaw)
 
@@ -794,7 +1015,7 @@ Return JSON with this exact shape:
     hook: ai.hook,
     twitter_copy: ai.twitter_copy,
     instagram_caption: ai.instagram_caption,
-    data_payload: { card, time_window: "30d" },
+    data_payload: { card, time_window: "30d", archetype },
   }
 }
 
@@ -926,23 +1147,19 @@ async function generatePokemonBattle(options: any) {
   const lProb = Math.round((lScore / (lScore + rScore)) * 100)
   const rProb = 100 - lProb
 
+  const archetype = pickArchetype('pokemon_battle', options)
+  const recent = await getRecentTwitterHistory('pokemon_battle')
   const sys = voicePrompt(options.tone)
-  const usr = `Write a Pokemon Battle social post comparing two Pokemon side by side.
+  const usr = `Write a Pokemon Battle X post comparing two Pokemon side by side. This is a fun poll-shaped post; a specific question is expected but the wording is up to the MODE. Do NOT default to "Who wins?".
 
 LEFT:  ${L.name} (${L.types.join('/')}) — total stats ${L.total}: HP ${L.stats.hp}, Atk ${L.stats.attack}, Def ${L.stats.defense}, SpA ${L.stats['special-attack']}, SpD ${L.stats['special-defense']}, Spe ${L.stats.speed}
 RIGHT: ${R.name} (${R.types.join('/')}) — total stats ${R.total}: HP ${R.stats.hp}, Atk ${R.stats.attack}, Def ${R.stats.defense}, SpA ${R.stats['special-attack']}, SpD ${R.stats['special-defense']}, Spe ${R.stats.speed}
 
-Quick model says: ${L.name} ${lProb}% vs ${R.name} ${rProb}%. Don't read that as gospel — the question is meant to be fun, not a literal forecast.
+Quick model says: ${L.name} ${lProb}% vs ${R.name} ${rProb}%. That is a rough number, not a forecast.
 
-CTA: "Who wins?"
+${archetypeSection(archetype)}${recentPostsSection(recent)}
 
-Return JSON with this exact shape:
-{
-  "title": "short internal title, max 60 chars",
-  "hook": "headline on the image, max 50 chars, e.g. 'Who wins this one?'",
-  "twitter_copy": "X/Twitter post (under 240 chars) ending with the CTA",
-  "instagram_caption": "Instagram caption (2 short paragraphs + 3-5 hashtags)"
-}`
+${jsonSchemaSection()}`
   const aiRaw = await callHaiku(sys, usr)
   const ai = parseJsonFromAi(aiRaw)
 
@@ -951,7 +1168,7 @@ Return JSON with this exact shape:
     hook: ai.hook,
     twitter_copy: ai.twitter_copy,
     instagram_caption: ai.instagram_caption,
-    data_payload: { left: L, right: R, left_prob: lProb, right_prob: rProb },
+    data_payload: { left: L, right: R, left_prob: lProb, right_prob: rProb, archetype },
   }
 }
 
@@ -973,8 +1190,10 @@ async function generateGuessThePokemon(options: any) {
     `Strongest stat: ${highestStat[0].replace('-', ' ')} (${highestStat[1]})`,
   ]
 
+  const archetype = pickArchetype('guess_the_pokemon', options)
+  const recent = await getRecentTwitterHistory('guess_the_pokemon')
   const sys = voicePrompt(options.tone)
-  const usr = `Write a "Guess the Pokemon" social post. The Pokemon will appear as a ${difficulty} in the image.
+  const usr = `Write a "Guess the Pokemon" X post. The Pokemon will appear as a ${difficulty} in the image. This is a fun guessing game; a question is expected but the wording is up to the MODE. NEVER reveal the answer in any copy. Do NOT default to "Who is it?".
 
 Answer (internal only — DO NOT mention the name in any copy): ${P.name}
 
@@ -983,16 +1202,14 @@ Clues shown on the image:
   - ${clues[1]}
   - ${clues[2]}
 
-CTA: "Who is it?"
+${archetypeSection(archetype)}${recentPostsSection(recent)}
 
-Frame it as a fun guessing game. NEVER reveal the answer in any copy.
-
-Return JSON with this exact shape:
+Return JSON with this exact shape. No commentary, no preamble:
 {
-  "title": "short internal title (can include the answer for your own reference)",
-  "hook": "headline on the image, max 50 chars, e.g. 'Who is it?'",
-  "twitter_copy": "X/Twitter post — playful, ends with the CTA, no answer reveal",
-  "instagram_caption": "Instagram caption (2 short paragraphs + 3-5 hashtags) — no answer reveal"
+  "title": "short internal title (may include the answer for admin reference)",
+  "hook": "headline on the image, max 60 chars, no answer reveal",
+  "twitter_copy": "X/Twitter post — playful, no answer reveal. Follow the MODE above.",
+  "instagram_caption": "Instagram caption — 1 to 3 short paragraphs, 0 to 3 hashtags optional, no answer reveal, no auto-hashtag piles."
 }`
   const aiRaw = await callHaiku(sys, usr)
   const ai = parseJsonFromAi(aiRaw)
@@ -1002,7 +1219,7 @@ Return JSON with this exact shape:
     hook: ai.hook,
     twitter_copy: ai.twitter_copy,
     instagram_caption: ai.instagram_caption,
-    data_payload: { pokemon: P, generation: generationNumber, clues, difficulty },
+    data_payload: { pokemon: P, generation: generationNumber, clues, difficulty, archetype },
   }
 }
 

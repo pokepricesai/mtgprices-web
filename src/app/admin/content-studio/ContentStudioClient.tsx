@@ -922,9 +922,18 @@ export default function ContentStudioClient() {
     const results: SocialContentPost[] = []
     const errors: string[] = []
     let done = 0
+    // Block 5A-W-58I — coordinate archetype variety across a batch by
+    // passing variant_index. The edge function uses the index (mod
+    // pool size) to prefer a different archetype for each parallel
+    // call, so 5 card_battle posts do not all land on the same MODE.
+    // Reset the counter per template so two market_mover slots start
+    // from 0, 1 rather than sharing indexes with the card_battle run.
+    const perTemplateCounter = new Map<TemplateType, number>()
     await Promise.all(weeklyTasks.map(async t => {
+      const idx = perTemplateCounter.get(t.template_type) ?? 0
+      perTemplateCounter.set(t.template_type, idx + 1)
       try {
-        const post = await callGenerate(t.template_type, t.options)
+        const post = await callGenerate(t.template_type, { ...t.options, variant_index: idx })
         results.push(post)
       } catch (e: any) {
         errors.push(`${TEMPLATE_LABELS[t.template_type]}: ${e?.message || e}`)
@@ -949,6 +958,8 @@ export default function ContentStudioClient() {
     setGenerating(true)
     setLastError(null)
     try {
+      // Block 5A-W-58I — even a single generate picks a random-ish
+      // archetype server-side (no variant_index means true random).
       const post = await callGenerate(template_type, optionsFor(template_type))
       setPosts(prev => [post, ...prev])
     } catch (e: any) {
@@ -959,7 +970,17 @@ export default function ContentStudioClient() {
   async function regenerate(post: SocialContentPost) {
     setGenerating(true)
     try {
-      const newPost = await callGenerate(post.template_type, post.generated_options || {})
+      // Block 5A-W-58I — tell the edge function which archetype the
+      // previous draft used so regenerate lands on something
+      // different. If the previous archetype is missing (older
+      // drafts, non-58I posts), avoid_archetype is undefined and the
+      // server falls back to random selection over the full pool.
+      const prevArchetype: string | undefined =
+        (post.data_payload && typeof post.data_payload === 'object' && (post.data_payload as any).archetype)
+          ? String((post.data_payload as any).archetype)
+          : undefined
+      const opts = { ...(post.generated_options || {}), avoid_archetype: prevArchetype }
+      const newPost = await callGenerate(post.template_type, opts)
       // Delete the old draft, keep approved/used.
       if (post.status === 'draft' || post.status === 'rejected') {
         const del = await adminMutate('DELETE', { ids: [post.id] })

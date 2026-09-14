@@ -75,6 +75,29 @@ export const TONES: { value: Tone; label: string; hint: string }[] = [
 
 export interface ToneField { tone?: Tone }
 
+// Block 5A-W-58I — archetype identifiers persisted into
+// social_content_posts.data_payload.archetype by the edge function.
+// The client uses `avoid_archetype` on regenerate so the next draft
+// picks a different mode. `variant_index` is passed on parallel
+// generations of the same template (weekly pack) so archetypes
+// diverge across the batch.
+export type Archetype =
+  | 'straight_observation'
+  | 'personal_reaction'
+  | 'data_curiosity'
+  | 'debate_opinion'
+  | 'genuine_question'
+  | 'nostalgia'
+  | 'market_weirdness'
+  | 'mini_story'
+  | 'ultra_short'
+  | 'builder_note'
+
+export interface VarietyField {
+  variant_index?: number
+  avoid_archetype?: Archetype | string
+}
+
 // Time window for Market Mover.
 export type TimeWindow = '7d' | '30d' | '90d' | '1y'
 export const TIME_WINDOWS: { value: TimeWindow; label: string; trendKey: string }[] = [
