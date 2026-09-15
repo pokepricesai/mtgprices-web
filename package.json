@@ -1,6 +1,6 @@
 {
-  "name": "pokeprices-web",
-  "version": "0.4.0",
+  "name": "mtgprices-web",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",

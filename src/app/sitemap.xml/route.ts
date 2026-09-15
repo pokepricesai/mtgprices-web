@@ -1,36 +1,23 @@
-// app/sitemap.xml/route.ts
-// Custom route handler — replaces the Next.js MetadataRoute.Sitemap export.
-// The MetadataRoute helper only emits <urlset> output, which is the wrong
-// root element for a sitemap *index*. Sub-sitemap URLs wrapped in <url>
-// elements get read by Google as ordinary page URLs of the site rather
-// than as further sitemaps to crawl. Using <sitemapindex> + <sitemap>
-// children per the sitemaps.org spec makes Google walk each sub-sitemap.
+// Sitemap index. Sub-sitemaps for pages, sets and card shards.
+// Uses <sitemapindex> per the sitemaps.org spec.
 import { NextResponse } from 'next/server'
+import { CARD_SITEMAP_SHARDS } from '@/lib/mtg/sitemap'
 
-const BASE_URL = 'https://www.pokeprices.io'
+const BASE_URL = 'https://mtgprices.io'
 
-const SUB_SITEMAPS = [
-  'sitemap-pages.xml',
-  'sitemap-sets.xml',
-  'sitemap-pokemon.xml',
-  'sitemap-cards-1.xml',
-  'sitemap-cards-2.xml',
-  'sitemap-cards-3.xml',
-  'sitemap-cards-4.xml',
-  // Block 5A-W-50D — 5th shard covering row positions 50000..100000
-  // so cards with high ids (including the entire Japanese catalogue
-  // from the W48D bulk import) are discoverable by search engines.
-  'sitemap-cards-5.xml',
-  'sitemap-insights.xml',
-  // Block 5A-W-54B — per-event card-show URLs (upcoming + non-cancelled).
-  'sitemap-card-shows.xml',
-]
+export const revalidate = 3600  // 1h
 
 export async function GET() {
   const now = new Date().toISOString()
-  const entries = SUB_SITEMAPS.map(name =>
-    `  <sitemap>\n    <loc>${BASE_URL}/${name}</loc>\n    <lastmod>${now}</lastmod>\n  </sitemap>`
-  ).join('\n')
+  const sub: string[] = ['sitemap-pages.xml', 'sitemap-sets.xml']
+  for (let i = 1; i <= CARD_SITEMAP_SHARDS; i++) sub.push(`sitemap-cards-${i}.xml`)
+
+  const entries = sub
+    .map(
+      (name) =>
+        `  <sitemap>\n    <loc>${BASE_URL}/${name}</loc>\n    <lastmod>${now}</lastmod>\n  </sitemap>`
+    )
+    .join('\n')
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries}\n</sitemapindex>`
 

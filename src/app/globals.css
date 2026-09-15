@@ -1,90 +1,133 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
-
+/* MTGPrices — dark premium collector terminal palette (Sept 2026). */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --primary: #2563a8;
-  --primary-light: #3b82d6;
-  --primary-dark: #1a4d8a;
-  --primary-deep: #0f3060;
-  --accent: #ffcb05;
-  --accent-hover: #e6b800;
-  --accent-soft: rgba(255,203,5,0.15);
-  --bg: #deedfb;
-  --bg-light: #eaf3ff;
-  --card: #ffffff;
-  --border: #bdd4ee;
-  --border-light: #d4e4f5;
-  --text: #1a3a5c;
-  --text-muted: #5a7a9a;
-  --red: #e74c3c;
-  --green: #27ae60;
+  /* Approved starting palette */
+  --bg:               #111318;
+  --bg-light:         #171a21;
+  --surface:          #1A1E27;
+  --card:             #1A1E27;
+  --text:             #F3F0E8;
+  --text-muted:       #9AA3B2;
+
+  /* Interactive accents */
+  --primary:          #7C5CE7;   /* violet */
+  --primary-hover:    #8f72eb;
+  --primary-soft:     rgba(124,92,231,0.14);
+
+  --accent:           #C9A55C;   /* gold — prestige/highlight */
+  --accent-hover:     #d5b471;
+  --accent-soft:      rgba(201,165,92,0.14);
+
+  --green:            #4FAF78;   /* positive */
+  --red:              #D45D64;   /* negative */
+
+  --border:           #2A303B;
+  --border-light:     #343b48;
+
+  /* Contextual mana colours — used ONLY for MTG metadata pips,
+     never as global brand colours. */
+  --mana-w:           #F8F6D8;
+  --mana-u:           #63A8FF;
+  --mana-b:           #464646;
+  --mana-r:           #E45C4D;
+  --mana-g:           #4FAF78;
+  --mana-c:           #A6A197;
 }
 
 * { box-sizing: border-box; }
 
 body {
-  font-family: 'Nunito', system-ui, sans-serif;
+  font-family: 'Figtree', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3 { font-family: 'Nunito', sans-serif; font-weight: 800; }
+h1, h2, h3, h4 {
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { color: var(--primary-hover); }
 
 ::placeholder { color: var(--text-muted); opacity: 0.6; }
 
-@keyframes bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+/* Motion */
+@keyframes fadeIn   { from { opacity: 0; transform: translateY(6px);  } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-@keyframes twinkle { 0%, 100% { opacity: 0.2; transform: scale(0.6); } 50% { opacity: 1; transform: scale(1.1); } }
-@keyframes pokeball-bounce { 0%, 100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-4px) rotate(-10deg); } 75% { transform: translateY(-4px) rotate(10deg); } }
-@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-@keyframes pulseGlow { 0%, 100% { opacity: 0.55; transform: scale(1); } 50% { opacity: 0.9; transform: scale(1.04); } }
-
-.animate-fade-in { animation: fadeIn 0.3s ease-out; }
+@keyframes shimmer  { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.animate-fade-in    { animation: fadeIn 0.28s ease-out; }
 .animate-fade-in-up { animation: fadeInUp 0.4s ease-out both; }
 .delay-1 { animation-delay: 0.05s; } .delay-2 { animation-delay: 0.1s; } .delay-3 { animation-delay: 0.15s; } .delay-4 { animation-delay: 0.2s; }
 
-.card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-.card-hover:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(37,99,168,0.15); }
+/* Card hover — subtle premium lift */
+.card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
+.card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,0.45); border-color: var(--border-light); }
 
-.holo-shimmer { position: relative; overflow: hidden; }
-.holo-shimmer::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: left 0.5s ease; pointer-events: none; }
-.holo-shimmer:hover::after { left: 150%; }
+/* Skeleton — dark-mode */
+.skeleton { background: linear-gradient(90deg, #1a1e27 25%, #262b36 50%, #1a1e27 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 10px; }
 
-.skeleton { background: linear-gradient(90deg, #d4e4f5 25%, #eaf3ff 50%, #d4e4f5 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 10px; }
+.price-up   { color: var(--green); }
+.price-down { color: var(--red);   }
 
-.price-up { color: var(--green); }
-.price-down { color: var(--red); }
-
-::-webkit-scrollbar { width: 6px; }
+/* Scrollbar — flat, dark */
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
 
 details summary::-webkit-details-marker { display: none; }
 details summary::marker { display: none; }
 
-/* Horizontal chip strip used by DashboardNav. Hidden scrollbar for a
-   clean look, momentum scroll on iOS, and a right-edge fade hint so
-   users see there is more content when the strip overflows. */
-.dashnav-strip {
+/* Horizontal chip strip — used by nav */
+.chip-strip {
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
   -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 24px), transparent 100%);
           mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 24px), transparent 100%);
 }
-.dashnav-strip::-webkit-scrollbar { height: 0; width: 0; display: none; }
+.chip-strip::-webkit-scrollbar { display: none; }
 
-.sort-btn { background: white; border: 1.5px solid var(--border); border-radius: 20px; padding: 6px 16px; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: inherit; }
-.sort-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
-.sort-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 2px 8px rgba(37,99,168,0.25); }
+/* Sort buttons — dark pill style */
+.sort-btn {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+  padding: 6px 16px; font-size: 13px; font-weight: 600; color: var(--text-muted);
+  cursor: pointer; transition: all 0.15s; font-family: inherit;
+}
+.sort-btn:hover { background: var(--primary-soft); color: var(--text); border-color: var(--primary); }
+.sort-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-.insight-badge { display: inline-block; background: linear-gradient(135deg, rgba(255,203,5,0.18), rgba(255,203,5,0.08)); color: #7a6010; font-size: 13px; font-weight: 700; padding: 6px 16px; border-radius: 20px; border: 1px solid rgba(255,203,5,0.3); }
+/* Prestige badge — restrained gold */
+.badge-prestige {
+  display: inline-block; background: var(--accent-soft); color: var(--accent);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.02em;
+  padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(201,165,92,0.35);
+}
 
-.chat-message a { color: var(--primary); text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 2px; font-weight: 700; }
-.chat-message a:hover { color: var(--accent-hover); }
+/* Terminal-style monospace label */
+.label-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+/* Mana pip helper — used contextually only, never as page palette */
+.mana-pip {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; padding: 0 6px;
+  border-radius: 999px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12px;
+  color: #111318;
+}
+.mana-w { background: var(--mana-w); }
+.mana-u { background: var(--mana-u); color: #F3F0E8; }
+.mana-b { background: var(--mana-b); color: #F3F0E8; }
+.mana-r { background: var(--mana-r); color: #F3F0E8; }
+.mana-g { background: var(--mana-g); }
+.mana-c { background: var(--mana-c); }

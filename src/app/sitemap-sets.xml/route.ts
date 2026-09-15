@@ -1,26 +1,21 @@
-// app/sitemap-sets.xml/route.ts
+// app/sitemap-sets.xml/route.ts — MTG set index.
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { listSets } from '@/lib/mtg/sets'
 
-const BASE_URL = 'https://www.pokeprices.io'
+const BASE_URL = 'https://mtgprices.io'
 
 export async function GET() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-
-  const { data: sets, error } = await supabase
-    .from('set_metadata')
-    .select('set_name, updated_at')
-    .order('set_name')
-
-  if (error) console.error('sitemap-sets error:', error)
+  const sets = await listSets({ limit: 5000 })
 
   const now = new Date().toISOString()
-  const urls = (sets || []).map((s: any) =>
-    `  <url>\n    <loc>${BASE_URL}/set/${encodeURIComponent(s.set_name)}</loc>\n    <lastmod>${s.updated_at ? new Date(s.updated_at).toISOString() : now}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.85</priority>\n  </url>`
-  ).join('\n')
+  const urls = sets
+    .map(
+      (s) =>
+        `  <url>\n    <loc>${BASE_URL}/set/${encodeURIComponent(s.code)}</loc>\n    <lastmod>${
+          s.released_at ? new Date(s.released_at).toISOString() : now
+        }</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.75</priority>\n  </url>`
+    )
+    .join('\n')
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`
 

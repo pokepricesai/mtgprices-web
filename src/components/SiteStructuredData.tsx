@@ -1,30 +1,34 @@
-// Site-wide Organization + WebSite schema
-// Tells Google the site identity and canonical name for SERP rendering
+// Site-wide Organization + WebSite schema.
+// Tells Google the site identity and canonical name for SERP rendering.
+
+const SITE_URL = 'https://mtgprices.io'
+
 export default function SiteStructuredData() {
   const graph = {
     '@context': 'https://schema.org',
     '@graph': [
       {
         '@type': 'Organization',
-        '@id': 'https://www.pokeprices.io/#org',
-        name: 'PokePrices',
-        alternateName: 'PokePrices.io',
-        url: 'https://www.pokeprices.io',
+        '@id': `${SITE_URL}/#org`,
+        name: 'MTGPrices',
+        alternateName: 'MTGPrices.io',
+        url: SITE_URL,
         logo: {
           '@type': 'ImageObject',
-          url: 'https://www.pokeprices.io/logo.png',
+          url: `${SITE_URL}/logo.png`,
           width: 512,
           height: 512,
         },
-        description: 'Free Pokémon TCG price guide with live raw and PSA 10 values, PSA population data and grading analysis for 40,000+ cards.',
+        description:
+          'MTGPrices — live Magic: The Gathering card prices, printings, historical charts and set catalogue. Powered by Scryfall + MTGJSON.',
       },
       {
         '@type': 'WebSite',
-        '@id': 'https://www.pokeprices.io/#website',
-        url: 'https://www.pokeprices.io',
-        name: 'PokePrices',
-        publisher: { '@id': 'https://www.pokeprices.io/#org' },
-        inLanguage: 'en-GB',
+        '@id': `${SITE_URL}/#website`,
+        url: SITE_URL,
+        name: 'MTGPrices',
+        publisher: { '@id': `${SITE_URL}/#org` },
+        inLanguage: 'en-US',
       },
     ],
   }
