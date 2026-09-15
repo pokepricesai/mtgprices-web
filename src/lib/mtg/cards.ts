@@ -66,12 +66,33 @@ export function slugifyCardName(name: string): string {
 }
 
 /** URL slug format: "{collector_number}-{card-name-slug}".
- *  Splits on the first "-" after the leading collector-number segment. */
+ *
+ *  Both segments may contain "-" (e.g. "The List" collector numbers like
+ *  MKC-297), so a naive split on the first "-" is wrong. Instead we
+ *  return every plausible split point and let the caller disambiguate
+ *  against real collector numbers in the database. */
+export function candidateCardSlugSplits(slug: string): { collectorNumber: string; nameSlug: string }[] {
+  if (!slug) return []
+  const parts = slug.split('-')
+  if (parts.length === 0) return []
+  const out: { collectorNumber: string; nameSlug: string }[] = []
+  // Longest collector-number first — real MTG collector numbers with dashes
+  // (MKC-297, JGP-11, TWWK-1★) are meaningfully longer than the "just a
+  // number" case, so front-loading them is correct.
+  for (let cut = parts.length - 1; cut >= 1; cut--) {
+    out.push({
+      collectorNumber: parts.slice(0, cut).join('-'),
+      nameSlug: parts.slice(cut).join('-'),
+    })
+  }
+  return out
+}
+
+/** Back-compat helper — returns the shortest-collector split. Prefer
+ *  `candidateCardSlugSplits` for lookups. */
 export function parseCardSlug(slug: string): { collectorNumber: string; nameSlug: string } | null {
-  if (!slug) return null
-  const m = slug.match(/^([^-\s]+)(?:-(.+))?$/)
-  if (!m) return null
-  return { collectorNumber: m[1], nameSlug: m[2] ?? '' }
+  const splits = candidateCardSlugSplits(slug)
+  return splits[splits.length - 1] ?? null
 }
 
 export function buildCardSlug(collectorNumber: string, cardName: string): string {
@@ -155,10 +176,13 @@ export type MtgCardDetail = {
 export async function getCardBySlug(setCode: string, cardSlug: string): Promise<MtgCardDetail | null> {
   const supabase = getSupabaseServiceClient()
   const set = setCode.trim().toLowerCase()
-  const parsed = parseCardSlug(cardSlug)
-  if (!set || !parsed) return null
+  const splits = candidateCardSlugSplits(cardSlug)
+  if (!set || splits.length === 0) return null
 
-  // 1. Printing lookup by (set_code, collector_number). English preferred.
+  // Both collector_number and name-slug can contain "-", so the split
+  // between them is ambiguous. Query all candidate collector numbers
+  // and pick the one whose printing name slugifies back to the URL.
+  const candidates = splits.map((s) => s.collectorNumber)
   const { data: printings, error: pErr } = await supabase
     .from('mtg_printings')
     .select(`
@@ -167,14 +191,19 @@ export async function getCardBySlug(setCode: string, cardSlug: string): Promise<
       borderless, full_art, promo, digital, scryfall_uri
     `)
     .eq('set_code', set)
-    .eq('collector_number', parsed.collectorNumber)
-    .order('lang', { ascending: true })   // 'en' comes before other langs alphabetically
-    .limit(5)
+    .in('collector_number', candidates)
+    .order('lang', { ascending: true })
+    .limit(50)
   if (pErr) {
     console.error('getCardBySlug printing error:', pErr)
     return null
   }
-  const printing = (printings ?? []).find((p: any) => p.lang === 'en') ?? printings?.[0]
+  const rows = printings ?? []
+  const printing =
+    rows.find((p: any) => p.lang === 'en' && `${p.collector_number}-${slugifyCardName(p.name)}` === cardSlug) ??
+    rows.find((p: any) => `${p.collector_number}-${slugifyCardName(p.name)}` === cardSlug) ??
+    rows.find((p: any) => p.lang === 'en') ??
+    rows[0]
   if (!printing) return null
 
   // 2. Oracle card
