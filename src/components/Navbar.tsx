@@ -29,9 +29,9 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: 'Play',
     items: [
+      { label: 'My Decks', href: '/decks' },
       { label: 'Card Finder', href: '/card-finder?mode=play' },
       { label: 'Formats', href: '/formats' },
-      { label: 'Deck Builder', soon: true },
       { label: 'Test Your Deck', soon: true },
     ],
   },
@@ -53,9 +53,10 @@ const NAV_GROUPS: NavGroup[] = [
 
 const DESKTOP_LINKS: { label: string; href: string }[] = [
   { label: 'Card Finder', href: '/card-finder' },
+  { label: 'Decks', href: '/decks' },
+  { label: 'Collection', href: '/collection' },
   { label: 'Sets', href: '/browse' },
   { label: 'Formats', href: '/formats' },
-  { label: 'Collection', href: '/collection' },
 ]
 
 export default function Navbar() {

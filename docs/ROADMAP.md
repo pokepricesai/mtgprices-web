@@ -80,20 +80,52 @@ answer maps to a row that exists.
 
 ### Phase 3 — Decks & MTG Intelligence
 
-- Manual Deck Builder tied to `mtg_decks` / `mtg_deck_cards` (reviving
-  the deferred Stage 1D migrations).
-- Build for a chosen **format** with live legality / curve / composition.
-- **Commander** support (partner, background, singleton, colour
-  identity compatibility).
-- Build around a card / commander / theme.
-- Build **from your collection** — highlight owned vs missing.
-- Choose exact printing + finish per slot.
-- Deck value + cheapest available printing for each missing card.
-- Save + share decks.
-- **AI** (retrieval-grounded over `mtg_oracle_cards` + `mtg_rulings` +
-  `mtg_oracle_legalities` + collection + decks + prices): build me a
-  deck, improve my deck, explain card choices, find synergies, suggest
-  budget upgrades. Never invents anything.
+**3A — Manual Deck Builder** *(complete)*
+- `mtg_decks` + `mtg_deck_cards` (oracle_card_id required; printing_finish_id
+  optional as the preferred physical version).
+- Per-format rules layer (`src/lib/mtg/format-rules.ts`) with authoritative
+  Wizards/Commander RC sourcing. Deck-size, copy-limit, sideboard,
+  commander requirement, colour-identity enforcement, singleton, basic-land
+  exemption — extensible per format.
+- Full deck validator (`deck-rules.ts`): factual issues per card
+  (banned / not legal / too many copies / deck size / commander / colour
+  identity) + partner warnings.
+- Commander support: multiple commanders via Partner keyword; Partner-with /
+  Background / Friends forever / Doctor's companion flagged as warnings
+  rather than incorrectly blocked.
+- Currency-aware deck value: cheapest-available fallback when no
+  printing is preferred, labelled explicitly.
+- Owned vs missing lives in the deck rows and header. Reuses the
+  Phase 2C collection helpers with quantity awareness.
+- `DeckContext` — the AI-ready structured object (curve, type breakdown,
+  capability breakdown, colour identity, ownership, pricing, validation).
+  No LLM — Phase 3C plugs in later.
+- Text-list import ("4 Lightning Bolt"), plain-text export.
+- Add-to-Deck action on card page.
+
+**3B — Smart Deck Discovery**
+- Card Finder inside deck context.
+- Replacement / cheaper-alternative suggestions.
+- Capability-gap discovery (deck is short on draw / ramp / removal).
+- Collection-only discovery ("build from what I own").
+- Context-aware card search across decks.
+
+**3C — AI Deck Intelligence**
+Retrieval-grounded over the live DB. Every answer must cite the row(s)
+it came from. Never invent cards, rules, legality, or prices.
+- Build a deck from a brief.
+- Build from my collection.
+- Improve my deck.
+- Explain deck choices.
+- Identify weaknesses.
+- Suggest replacements + synergies.
+- Budget upgrades against the user's valuation basis.
+
+**3D — Sharing + Purchasing**
+- Public deck URLs.
+- Share decks.
+- Buy missing cards.
+- Purchasing / affiliate optimisation.
 
 ### Phase 4 — Test Your Deck / Gameplay
 

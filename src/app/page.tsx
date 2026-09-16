@@ -127,12 +127,12 @@ export default async function HomePage() {
           <AudienceCard
             title="Play"
             tagline="For deck builders and players"
-            body="Full Oracle text, keywords, factual card capabilities, format legality across Standard through Vintage and everything in between. The rules and rulings behind every card."
+            body="Manual Deck Builder with format-aware validation, Commander colour identity, mana curve, capability breakdown and deck value at your chosen valuation basis. Owned vs missing lives right beside the list."
             actions={[
-              { label: 'Find for Play', href: '/card-finder?mode=play' },
-              { label: 'Explore formats', href: '/formats' },
+              { label: 'My decks', href: '/decks' },
+              { label: 'Formats', href: '/formats' },
             ]}
-            soon={['Deck Builder', 'AI deck assistant', 'Test Your Deck']}
+            soon={['Smart deck discovery', 'AI deck assistant', 'Test Your Deck']}
           />
         </div>
       </section>

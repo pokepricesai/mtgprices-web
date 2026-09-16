@@ -20,6 +20,7 @@ import OtherPrintings from '@/components/mtg/OtherPrintings'
 import RulingsList from '@/components/mtg/RulingsList'
 import SimilarCards from '@/components/mtg/SimilarCards'
 import AddToCollection from '@/components/mtg/AddToCollection'
+import AddToDeck from '@/components/mtg/AddToDeck'
 import CardPageClient from './CardPageClient'
 
 export const revalidate = 300
@@ -164,11 +165,16 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
             chartSeries={chartSeries}
           />
 
-          {/* Add to Collection */}
-          <div style={{ marginTop: 14 }}>
+          {/* Add to Collection + Add to Deck */}
+          <div style={{ marginTop: 14, display: 'grid', gap: 8 }}>
             <AddToCollection
               finishes={finishes.map((f) => ({ id: f.id, finish: f.finish as 'nonfoil' | 'foil' | 'etched' }))}
               cardName={printing.name}
+            />
+            <AddToDeck
+              oracleId={oracle.id}
+              cardName={printing.name}
+              preferredFinishId={finishes.find((f) => f.finish === 'nonfoil')?.id ?? finishes[0]?.id ?? null}
             />
           </div>
 
