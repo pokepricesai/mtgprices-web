@@ -14,10 +14,12 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const { setCode } = await params
   const set = await getSetByCode(setCode)
   if (!set) return { title: 'Set not found' }
+  const canonical = `https://mtgprices.io/set/${set.code}`
   return {
     title: `${set.name} — MTG prices`,
     description: `Every card in ${set.name} with live paper prices, images and Scryfall metadata.`,
-    alternates: { canonical: `https://mtgprices.io/set/${set.code}` },
+    alternates: { canonical },
+    openGraph: { url: canonical },
   }
 }
 

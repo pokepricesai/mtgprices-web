@@ -21,10 +21,17 @@ const nextConfig = {
   // Content-Security-Policy is intentionally deferred — see
   // docs/deployment-safety.md.
   async headers() {
+    const preLaunch = process.env.SITE_LAUNCHED !== 'true'
     const baseline = [
       { key: 'X-Content-Type-Options', value: 'nosniff' },
       { key: 'Referrer-Policy',        value: 'strict-origin-when-cross-origin' },
       { key: 'X-Frame-Options',        value: 'SAMEORIGIN' },
+      // Pre-launch: block indexing at the header level too, in addition
+      // to the per-page <meta name="robots"> directive. Removed
+      // automatically when SITE_LAUNCHED=true at build time.
+      ...(preLaunch
+        ? [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }]
+        : []),
       {
         key: 'Permissions-Policy',
         // camera + geolocation are kept on for the scanner and vendor

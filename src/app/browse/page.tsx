@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: 'Browse MTG sets',
   description: 'Every Magic: The Gathering set with live prices, sorted newest first.',
   alternates: { canonical: 'https://mtgprices.io/browse' },
+  openGraph: { url: 'https://mtgprices.io/browse' },
 }
 
 export default async function BrowsePage() {

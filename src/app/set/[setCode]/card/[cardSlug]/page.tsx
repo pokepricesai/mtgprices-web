@@ -42,6 +42,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     title: `${detail.printing.name} (${detail.printing.set_code.toUpperCase()}) — MTG price & printings`,
     description: `${detail.printing.name} from ${detail.printing.set_code.toUpperCase()}. Live paper price, 90-day chart, legality, rulings and other printings.`,
     alternates: { canonical },
+    openGraph: { url: canonical },
   }
 }
 

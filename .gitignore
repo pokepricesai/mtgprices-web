@@ -23,3 +23,5 @@ seo/exports/
 # never committed. The scaffold script recreates the folder structure
 # locally. Only manual-assets/jp/README.md + the two indexes ship.
 manual-assets/jp/inbox/
+.vercel
+.env*

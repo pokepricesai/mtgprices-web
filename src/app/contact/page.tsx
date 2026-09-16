@@ -4,6 +4,7 @@ export const metadata: Metadata = {
   title: 'Contact',
   description: 'Get in touch with the MTGPrices team.',
   alternates: { canonical: 'https://mtgprices.io/contact' },
+  openGraph: { url: 'https://mtgprices.io/contact' },
 }
 
 export default function ContactPage() {

@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: 'Search cards',
   description: 'Search live MTG card prices and printings across every set.',
   alternates: { canonical: 'https://mtgprices.io/cards/search' },
+  openGraph: { url: 'https://mtgprices.io/cards/search' },
 }
 
 type SearchParams = { q?: string }

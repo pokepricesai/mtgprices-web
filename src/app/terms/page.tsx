@@ -4,6 +4,7 @@ export const metadata: Metadata = {
   title: 'Terms',
   description: 'Terms of use for MTGPrices.io.',
   alternates: { canonical: 'https://mtgprices.io/terms' },
+  openGraph: { url: 'https://mtgprices.io/terms' },
 }
 
 export default function TermsPage() {

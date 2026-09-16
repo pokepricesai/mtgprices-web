@@ -4,14 +4,37 @@ import './globals.css'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import SiteStructuredData from '@/components/SiteStructuredData'
+import { SITE_LAUNCHED, SITE_URL } from '@/lib/launch'
 
-const SITE_URL = 'https://mtgprices.io'
 const SITE_NAME = 'MTGPrices'
 const SITE_TAGLINE = 'Live MTG card prices, sets, and history'
 const SITE_DESCRIPTION =
   'MTGPrices — live Magic: The Gathering card prices, printings, historical charts and set catalogue. Powered by Scryfall + MTGJSON. Free, no login required.'
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
+
+const LAUNCHED_ROBOTS: NonNullable<Metadata['robots']> = {
+  index: true,
+  follow: true,
+  googleBot: {
+    index: true,
+    follow: true,
+    'max-video-preview': -1,
+    'max-image-preview': 'large',
+    'max-snippet': -1,
+  },
+}
+
+const PRE_LAUNCH_ROBOTS: NonNullable<Metadata['robots']> = {
+  index: false,
+  follow: false,
+  nocache: true,
+  googleBot: {
+    index: false,
+    follow: false,
+    noimageindex: true,
+  },
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -26,6 +49,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
+    // Per-page metadata SHOULD set its own openGraph.url so social
+    // previews resolve to the specific page. The site-root URL here is
+    // the fallback for pages that don't set one (currently just "/").
     url: SITE_URL,
     siteName: SITE_NAME,
     title: `${SITE_NAME} — ${SITE_TAGLINE}`,
@@ -38,17 +64,7 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
   },
   alternates: { canonical: SITE_URL },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
+  robots: SITE_LAUNCHED ? LAUNCHED_ROBOTS : PRE_LAUNCH_ROBOTS,
   // Favicon + apple-icon + OG image are all generated dynamically from
   // src/app/{icon,apple-icon,opengraph-image}.tsx via @vercel/og.
 }
