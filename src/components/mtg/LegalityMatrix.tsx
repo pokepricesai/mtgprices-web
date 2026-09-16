@@ -12,10 +12,10 @@ type Props = {
 }
 
 const BADGE: Record<string, { bg: string; fg: string; label: string }> = {
-  legal:      { bg: 'rgba(79,175,120,0.15)', fg: '#82e2a5', label: 'Legal' },
-  banned:     { bg: 'rgba(212,93,100,0.15)', fg: '#f2a9ae', label: 'Banned' },
-  restricted: { bg: 'rgba(201,165,92,0.18)', fg: '#f2d68a', label: 'Restricted' },
-  not_legal:  { bg: 'rgba(154,163,178,0.10)', fg: '#9AA3B2', label: 'Not legal' },
+  legal:      { bg: 'rgba(43,134,89,0.14)', fg: 'var(--green)', label: 'Legal' },
+  banned:     { bg: 'rgba(180,65,70,0.14)', fg: 'var(--red)', label: 'Banned' },
+  restricted: { bg: 'var(--accent-soft)', fg: 'var(--amber)', label: 'Restricted' },
+  not_legal:  { bg: 'rgba(107,114,128,0.10)', fg: '#9AA3B2', label: 'Not legal' },
 }
 
 export default function LegalityMatrix({ legalities }: Props) {

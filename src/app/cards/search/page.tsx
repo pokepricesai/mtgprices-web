@@ -102,7 +102,7 @@ export default async function CardsSearchPage({ searchParams }: { searchParams: 
                   style={{
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                     width: 26, height: 26, borderRadius: '50%',
-                    background: colors.includes(c) ? '#c8b8ff' : 'var(--bg-light)',
+                    background: colors.includes(c) ? 'var(--primary)' : 'var(--bg-light)',
                     color: '#25313f',
                     fontSize: 11, fontWeight: 800, cursor: 'pointer',
                     border: '1px solid var(--border)',
@@ -125,7 +125,7 @@ export default async function CardsSearchPage({ searchParams }: { searchParams: 
                   style={{
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                     width: 26, height: 26, borderRadius: '50%',
-                    background: identity.includes(c) ? '#c8b8ff' : 'var(--bg-light)',
+                    background: identity.includes(c) ? 'var(--primary)' : 'var(--bg-light)',
                     color: '#25313f',
                     fontSize: 11, fontWeight: 800, cursor: 'pointer',
                     border: '1px solid var(--border)',

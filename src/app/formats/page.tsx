@@ -66,8 +66,8 @@ export default async function FormatsIndex() {
                   </p>
                   <div style={{ display: 'flex', gap: 12, marginTop: 12, fontSize: 12, color: 'var(--text-muted)' }}>
                     <span><strong style={{ color: 'var(--green)' }}>{f.legal.toLocaleString()}</strong> legal</span>
-                    {f.banned > 0 && <span><strong style={{ color: '#f2a9ae' }}>{f.banned}</strong> banned</span>}
-                    {f.restricted > 0 && <span><strong style={{ color: '#f2d68a' }}>{f.restricted}</strong> restricted</span>}
+                    {f.banned > 0 && <span><strong style={{ color: 'var(--red)' }}>{f.banned}</strong> banned</span>}
+                    {f.restricted > 0 && <span><strong style={{ color: 'var(--amber)' }}>{f.restricted}</strong> restricted</span>}
                   </div>
                 </Link>
               ))}

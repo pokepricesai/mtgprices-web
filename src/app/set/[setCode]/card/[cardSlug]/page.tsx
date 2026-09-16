@@ -19,6 +19,7 @@ import LegalityMatrix from '@/components/mtg/LegalityMatrix'
 import OtherPrintings from '@/components/mtg/OtherPrintings'
 import RulingsList from '@/components/mtg/RulingsList'
 import SimilarCards from '@/components/mtg/SimilarCards'
+import AddToCollection from '@/components/mtg/AddToCollection'
 import CardPageClient from './CardPageClient'
 
 export const revalidate = 300
@@ -36,20 +37,20 @@ const PROVIDER_LABEL: Record<string, string> = {
 }
 
 const PROVIDER_COLOUR: Record<string, string> = {
-  tcgplayer: '#C9A55C',
-  cardkingdom: '#7C5CE7',
-  cardmarket: '#63A8FF',
-  manapool: '#4FAF78',
-  cardhoarder: '#e07d3a',
+  tcgplayer: '#A0813F',
+  cardkingdom: '#6841E6',
+  cardmarket: '#3E7DBF',
+  manapool: '#2B8659',
+  cardhoarder: '#C1571F',
 }
 
 const RARITY_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
-  common:    { bg: 'rgba(154,163,178,0.18)', fg: '#c4cad4', label: 'Common' },
-  uncommon:  { bg: 'rgba(192,200,208,0.20)', fg: '#dae0e7', label: 'Uncommon' },
-  rare:      { bg: 'rgba(201,165,92,0.18)',  fg: '#f2d68a', label: 'Rare' },
-  mythic:    { bg: 'rgba(224,125,58,0.20)',  fg: '#f2b28a', label: 'Mythic' },
-  special:   { bg: 'rgba(124,92,231,0.20)',  fg: '#c8b8ff', label: 'Special' },
-  bonus:     { bg: 'rgba(124,92,231,0.20)',  fg: '#c8b8ff', label: 'Bonus' },
+  common:    { bg: 'rgba(107,114,128,0.15)', fg: 'var(--text-muted)', label: 'Common' },
+  uncommon:  { bg: 'rgba(107,114,128,0.14)', fg: 'var(--text-muted)', label: 'Uncommon' },
+  rare:      { bg: 'var(--accent-soft)',  fg: 'var(--amber)', label: 'Rare' },
+  mythic:    { bg: 'rgba(224,125,58,0.16)',  fg: '#c1571f', label: 'Mythic' },
+  special:   { bg: 'var(--primary-soft)',  fg: 'var(--primary)', label: 'Special' },
+  bonus:     { bg: 'var(--primary-soft)',  fg: 'var(--primary)', label: 'Bonus' },
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
@@ -106,7 +107,7 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
       key: `${s.provider}_${s.market}_${s.currency}_${s.price_type}`,
       label: PROVIDER_LABEL[s.provider] ?? s.provider,
       provider: s.provider,
-      color: PROVIDER_COLOUR[s.provider] ?? '#F3F0E8',
+      color: PROVIDER_COLOUR[s.provider] ?? '#17203A',
       points: s.points.map((p) => ({ date: p.observed_on, value: Number(p.price) })),
     }))
     .filter((s) => s.points.length > 0)
@@ -163,6 +164,14 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
             chartSeries={chartSeries}
           />
 
+          {/* Add to Collection */}
+          <div style={{ marginTop: 14 }}>
+            <AddToCollection
+              finishes={finishes.map((f) => ({ id: f.id, finish: f.finish as 'nonfoil' | 'foil' | 'etched' }))}
+              cardName={printing.name}
+            />
+          </div>
+
           {/* Print meta */}
           <div style={{ marginTop: 20, padding: 14, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 13, display: 'grid', gap: 6 }}>
             <div className="label-mono" style={{ marginBottom: 4 }}>This printing</div>
@@ -206,13 +215,13 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
             {oracle.reserved && (
               <span style={{
                 fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
-                background: 'rgba(212,93,100,0.15)', color: '#f2a9ae', letterSpacing: 0.4, textTransform: 'uppercase',
+                background: 'rgba(180,65,70,0.14)', color: 'var(--red)', letterSpacing: 0.4, textTransform: 'uppercase',
               }} title="On the WOTC Reserved List — will never be reprinted in a tournament-legal set.">Reserved list</span>
             )}
             {oracle.game_changer && (
               <span style={{
                 fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
-                background: 'rgba(201,165,92,0.18)', color: '#f2d68a', letterSpacing: 0.4, textTransform: 'uppercase',
+                background: 'var(--accent-soft)', color: 'var(--amber)', letterSpacing: 0.4, textTransform: 'uppercase',
               }} title="Flagged by WOTC as a Game Changer in Commander bracket 4.">Game changer</span>
             )}
             {oracle.color_identity && oracle.color_identity.length > 0 && (

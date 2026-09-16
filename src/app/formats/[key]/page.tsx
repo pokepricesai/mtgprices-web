@@ -57,8 +57,8 @@ export default async function FormatPage({ params }: { params: Promise<Params> }
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginBottom: 28 }}>
         <StatTile label="Legal cards"    value={counts.legal.toLocaleString()} color="var(--green)" />
-        <StatTile label="Banned"         value={counts.banned.toLocaleString()} color="#f2a9ae" />
-        <StatTile label="Restricted"     value={counts.restricted.toLocaleString()} color="#f2d68a" />
+        <StatTile label="Banned"         value={counts.banned.toLocaleString()} color="var(--red)" />
+        <StatTile label="Restricted"     value={counts.restricted.toLocaleString()} color="var(--amber)" />
       </div>
 
       <SpotlightBlock title={`Banned in ${f.label}`} cards={banned} emptyText={`No cards are currently banned in ${f.label}.`} />
@@ -90,8 +90,8 @@ export default async function FormatPage({ params }: { params: Promise<Params> }
             {['creature-removal', 'card-draw', 'ramp', 'counter-spell', 'board-wipe', 'tutor', 'token-creation', 'graveyard-interaction'].map((c) => (
               <Link key={c} href={`/card-finder?mode=play&legal=${f.key}&caps=${c}`} style={{
                 fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 999,
-                background: 'rgba(124,92,231,0.12)', color: '#c8b8ff',
-                border: '1px solid rgba(124,92,231,0.25)', textDecoration: 'none',
+                background: 'var(--primary-soft)', color: 'var(--primary)',
+                border: '1px solid rgba(104,65,230,0.25)', textDecoration: 'none',
               }}>
                 {c.split('-').map((s) => s[0].toUpperCase() + s.slice(1)).join(' ')}
               </Link>

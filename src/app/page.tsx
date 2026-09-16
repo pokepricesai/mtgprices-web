@@ -66,8 +66,8 @@ export default async function HomePage() {
       {/* Card Finder — flagship discovery surface */}
       <section style={{ paddingTop: 44 }}>
         <div style={{
-          padding: '28px 26px', background: 'linear-gradient(140deg, rgba(124,92,231,0.10), rgba(201,165,92,0.05))',
-          border: '1px solid rgba(124,92,231,0.35)', borderRadius: 16, position: 'relative', overflow: 'hidden',
+          padding: '28px 26px', background: 'linear-gradient(140deg, var(--primary-soft), rgba(201,165,92,0.05))',
+          border: '1px solid rgba(104,65,230,0.35)', borderRadius: 16, position: 'relative', overflow: 'hidden',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 260 }}>
@@ -103,8 +103,8 @@ export default async function HomePage() {
             ].map((s, i) => (
               <Link key={i} href={`/card-finder?q=${encodeURIComponent(s)}`} style={{
                 fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 999,
-                background: 'rgba(124,92,231,0.10)', color: '#c8b8ff',
-                border: '1px solid rgba(124,92,231,0.25)', textDecoration: 'none',
+                background: 'var(--primary-soft)', color: 'var(--primary)',
+                border: '1px solid rgba(104,65,230,0.25)', textDecoration: 'none',
               }}>{s}</Link>
             ))}
           </div>
@@ -117,12 +117,12 @@ export default async function HomePage() {
           <AudienceCard
             title="Collect"
             tagline="For collectors and buyers"
-            body="Live prices from TCGplayer, Card Kingdom, Cardmarket, ManaPool and Cardhoarder. Every printing, every finish, price history and set catalogue in one place."
+            body="Live prices from TCGplayer, Card Kingdom, Cardmarket, ManaPool and Cardhoarder. Every printing, every finish, price history and set catalogue — plus your own collection with transparent, currency-aware valuation."
             actions={[
+              { label: 'My collection', href: '/collection' },
               { label: 'Find for Collecting', href: '/card-finder?mode=collecting' },
-              { label: 'Browse sets', href: '/browse' },
             ]}
-            soon={['Collection tracking', 'Deck value', 'Market movement dashboards']}
+            soon={['Deck value from collection', 'Market movement dashboards']}
           />
           <AudienceCard
             title="Play"
@@ -165,7 +165,7 @@ export default async function HomePage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 {set.icon_svg_uri ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={set.icon_svg_uri} alt="" aria-hidden style={{ width: 22, height: 22, filter: 'invert(85%)' }} />
+                  <img src={set.icon_svg_uri} alt="" aria-hidden style={{ width: 22, height: 22, opacity: 0.85 }} />
                 ) : (
                   <span style={{ width: 22, height: 22, borderRadius: 6, background: 'var(--bg-light)', border: '1px solid var(--border)' }} />
                 )}
@@ -274,8 +274,8 @@ function AudienceCard({
             {soon.map((s) => (
               <span key={s} style={{
                 fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999,
-                background: 'rgba(124,92,231,0.15)', color: '#c8b8ff',
-                border: '1px solid rgba(124,92,231,0.25)',
+                background: 'var(--primary-soft)', color: 'var(--primary)',
+                border: '1px solid rgba(104,65,230,0.25)',
               }}>{s}</span>
             ))}
           </div>
@@ -303,7 +303,7 @@ function SoonTile({ title, body }: { title: string; body: string }) {
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
         <span style={{
           fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
-          background: 'rgba(124,92,231,0.15)', color: '#c8b8ff',
+          background: 'var(--primary-soft)', color: 'var(--primary)',
           letterSpacing: 0.4, textTransform: 'uppercase',
         }}>Soon</span>
       </div>

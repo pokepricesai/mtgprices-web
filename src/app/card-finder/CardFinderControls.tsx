@@ -108,13 +108,13 @@ export default function CardFinderControls({ mode, initialParams, suggestions, w
             {suggestions.map((s, i) => (
               <span key={i} style={{
                 fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999,
-                background: 'rgba(124,92,231,0.12)', color: '#c8b8ff',
+                background: 'var(--primary-soft)', color: 'var(--primary)',
               }}>{s}</span>
             ))}
             {warnings.map((w, i) => (
               <span key={i} style={{
                 fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999,
-                background: 'rgba(201,165,92,0.15)', color: '#f2d68a',
+                background: 'var(--accent-soft)', color: 'var(--amber)',
               }}>{w}</span>
             ))}
           </div>

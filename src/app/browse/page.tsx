@@ -75,7 +75,7 @@ export default async function BrowsePage() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   {set.icon_svg_uri ? (
-                    <img src={set.icon_svg_uri} alt="" aria-hidden style={{ width: 20, height: 20, filter: 'invert(85%)' }} />
+                    <img src={set.icon_svg_uri} alt="" aria-hidden style={{ width: 20, height: 20, opacity: 0.85 }} />
                   ) : (
                     <span style={{ width: 20, height: 20, borderRadius: 4, background: 'var(--bg-light)', border: '1px solid var(--border)' }} />
                   )}

@@ -58,7 +58,7 @@ export function parseManaCost(cost: string | null | undefined): ManaToken[] {
 
 /** CSS background/foreground for a single mana pip. */
 export function manaColors(token: ManaToken): { bg: string; fg: string; ring?: string } {
-  if (token.isTap)       return { bg: '#2A303B', fg: '#F3F0E8' }
+  if (token.isTap)       return { bg: '#2A303B', fg: '#FFFFFF' }
   if (token.isSnow)      return { bg: '#e6ecf5', fg: '#25313f' }
   if (token.isGeneric)   return { bg: '#c8c1b0', fg: '#25313f' }
   if (token.isX)         return { bg: '#c8c1b0', fg: '#25313f' }

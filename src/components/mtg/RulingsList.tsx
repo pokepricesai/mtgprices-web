@@ -48,8 +48,8 @@ export default function RulingsList({ rulings, initialCount = 6 }: Props) {
                 fontWeight: 700,
                 padding: '2px 8px',
                 borderRadius: 999,
-                background: 'rgba(124,92,231,0.15)',
-                color: '#c8b8ff',
+                background: 'var(--primary-soft)',
+                color: 'var(--primary)',
                 letterSpacing: 0.4,
                 textTransform: 'uppercase',
               }}

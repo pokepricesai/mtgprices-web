@@ -1,40 +1,45 @@
-/* MTGPrices — dark premium collector terminal palette (Sept 2026). */
+/* MTGPrices — light premium collector palette (Sept 2026 refresh).
+   Warm off-white background, near-white surfaces, dark navy/charcoal
+   text. Violet remains the primary accent, gold is a restrained
+   prestige highlight. Card artwork is the strongest visual element. */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Approved starting palette */
-  --bg:               #111318;
-  --bg-light:         #171a21;
-  --surface:          #1A1E27;
-  --card:             #1A1E27;
-  --text:             #F3F0E8;
-  --text-muted:       #9AA3B2;
+  /* Base */
+  --bg:               #F6F5F1;   /* warm off-white page background */
+  --bg-light:         #EEEBE2;   /* subtle emphasis behind surfaces */
+  --surface:          #FFFFFF;   /* main content cards */
+  --card:             #FFFFFF;
+  --text:             #17203A;   /* dark navy-charcoal */
+  --text-muted:       #6B7280;   /* muted grey */
 
   /* Interactive accents */
-  --primary:          #7C5CE7;   /* violet */
-  --primary-hover:    #8f72eb;
-  --primary-soft:     rgba(124,92,231,0.14);
+  --primary:          #6841E6;   /* violet — slightly deeper for light-bg contrast */
+  --primary-hover:    #5B36CD;
+  --primary-soft:     rgba(104,65,230,0.12);
 
-  --accent:           #C9A55C;   /* gold — prestige/highlight */
-  --accent-hover:     #d5b471;
-  --accent-soft:      rgba(201,165,92,0.14);
+  --accent:           #A0813F;   /* gold — restrained, WCAG-readable on white */
+  --accent-hover:     #8B6E33;
+  --accent-soft:      rgba(160,129,63,0.16);
 
-  --green:            #4FAF78;   /* positive */
-  --red:              #D45D64;   /* negative */
+  --green:            #2B8659;   /* positive/legal */
+  --red:              #B44146;   /* negative/banned */
+  --amber:            #9A7220;   /* warning / restricted */
 
-  --border:           #2A303B;
-  --border-light:     #343b48;
+  --border:           #E4E1D9;   /* warm subtle border */
+  --border-light:     #D8D4C9;
 
   /* Contextual mana colours — used ONLY for MTG metadata pips,
-     never as global brand colours. */
-  --mana-w:           #F8F6D8;
-  --mana-u:           #63A8FF;
+     never as global brand colours. Values tuned for the light palette. */
+  --mana-w:           #F5F0DC;
+  --mana-u:           #8ecff6;
   --mana-b:           #464646;
-  --mana-r:           #E45C4D;
-  --mana-g:           #4FAF78;
-  --mana-c:           #A6A197;
+  --mana-r:           #E68A78;
+  --mana-g:           #86C89A;
+  --mana-c:           #B9B1A0;
 }
 
 * { box-sizing: border-box; }
@@ -56,7 +61,7 @@ h1, h2, h3, h4 {
 a { color: var(--primary); text-decoration: none; }
 a:hover { color: var(--primary-hover); }
 
-::placeholder { color: var(--text-muted); opacity: 0.6; }
+::placeholder { color: var(--text-muted); opacity: 0.7; }
 
 /* Motion */
 @keyframes fadeIn   { from { opacity: 0; transform: translateY(6px);  } to { opacity: 1; transform: translateY(0); } }
@@ -66,26 +71,35 @@ a:hover { color: var(--primary-hover); }
 .animate-fade-in-up { animation: fadeInUp 0.4s ease-out both; }
 .delay-1 { animation-delay: 0.05s; } .delay-2 { animation-delay: 0.1s; } .delay-3 { animation-delay: 0.15s; } .delay-4 { animation-delay: 0.2s; }
 
-/* Card hover — subtle premium lift */
+/* Card hover — soft lift on light backgrounds */
 .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
-.card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,0.45); border-color: var(--border-light); }
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(23,32,58,0.08), 0 2px 6px rgba(23,32,58,0.06);
+  border-color: var(--border-light);
+}
 
-/* Skeleton — dark-mode */
-.skeleton { background: linear-gradient(90deg, #1a1e27 25%, #262b36 50%, #1a1e27 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 10px; }
+/* Skeleton — light-mode */
+.skeleton {
+  background: linear-gradient(90deg, #edeae1 25%, #f7f5ef 50%, #edeae1 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 10px;
+}
 
 .price-up   { color: var(--green); }
 .price-down { color: var(--red);   }
 
-/* Scrollbar — flat, dark */
-::-webkit-scrollbar { width: 8px; height: 8px; }
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
 
 details summary::-webkit-details-marker { display: none; }
 details summary::marker { display: none; }
 
-/* Horizontal chip strip — used by nav */
+/* Horizontal chip strip */
 .chip-strip {
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -95,20 +109,20 @@ details summary::marker { display: none; }
 }
 .chip-strip::-webkit-scrollbar { display: none; }
 
-/* Sort buttons — dark pill style */
+/* Sort buttons */
 .sort-btn {
   background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
   padding: 6px 16px; font-size: 13px; font-weight: 600; color: var(--text-muted);
   cursor: pointer; transition: all 0.15s; font-family: inherit;
 }
-.sort-btn:hover { background: var(--primary-soft); color: var(--text); border-color: var(--primary); }
-.sort-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.sort-btn:hover { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
+.sort-btn.active { background: var(--primary); color: #FFFFFF; border-color: var(--primary); }
 
-/* Prestige badge — restrained gold */
+/* Prestige badge */
 .badge-prestige {
   display: inline-block; background: var(--accent-soft); color: var(--accent);
   font-size: 12px; font-weight: 700; letter-spacing: 0.02em;
-  padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(201,165,92,0.35);
+  padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(160,129,63,0.28);
 }
 
 /* Terminal-style monospace label */
@@ -118,16 +132,23 @@ details summary::marker { display: none; }
   color: var(--text-muted);
 }
 
-/* Mana pip helper — used contextually only, never as page palette */
+/* Focus ring for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Mana pip helper — used contextually only */
 .mana-pip {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 20px; height: 20px; padding: 0 6px;
   border-radius: 999px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12px;
-  color: #111318;
+  color: #17203A;
 }
 .mana-w { background: var(--mana-w); }
-.mana-u { background: var(--mana-u); color: #F3F0E8; }
-.mana-b { background: var(--mana-b); color: #F3F0E8; }
-.mana-r { background: var(--mana-r); color: #F3F0E8; }
-.mana-g { background: var(--mana-g); }
+.mana-u { background: var(--mana-u); color: #0b2a49; }
+.mana-b { background: var(--mana-b); color: #F5F0DC; }
+.mana-r { background: var(--mana-r); color: #4a1010; }
+.mana-g { background: var(--mana-g); color: #0f3418; }
 .mana-c { background: var(--mana-c); }

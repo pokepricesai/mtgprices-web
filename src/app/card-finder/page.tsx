@@ -201,10 +201,10 @@ export default async function CardFinderPage({ searchParams }: { searchParams: P
 function ExampleChip({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <Link href={href} style={{
-      padding: '5px 12px', background: 'rgba(124,92,231,0.10)',
-      color: '#c8b8ff', borderRadius: 999,
+      padding: '5px 12px', background: 'var(--primary-soft)',
+      color: 'var(--primary)', borderRadius: 999,
       fontSize: 12, fontWeight: 600, textDecoration: 'none',
-      border: '1px solid rgba(124,92,231,0.25)',
+      border: '1px solid rgba(104,65,230,0.25)',
     }}>{children}</Link>
   )
 }
@@ -289,7 +289,7 @@ function ResultCard({ h }: { h: FinderHit }) {
             {h.reasons.slice(0, 4).map((r, i) => (
               <span key={i} style={{
                 fontSize: 10, padding: '2px 7px', borderRadius: 999,
-                background: 'rgba(124,92,231,0.12)', color: '#c8b8ff',
+                background: 'var(--primary-soft)', color: 'var(--primary)',
               }}>{r}</span>
             ))}
           </div>

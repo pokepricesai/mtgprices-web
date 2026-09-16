@@ -62,7 +62,7 @@ export default async function SimilarCards({ oracleId, currentPrintingId }: Prop
                   {h.reasons.slice(0, 2).map((r, i) => (
                     <span key={i} style={{
                       fontSize: 10, padding: '2px 6px', borderRadius: 999,
-                      background: 'rgba(124,92,231,0.12)', color: '#c8b8ff',
+                      background: 'var(--primary-soft)', color: 'var(--primary)',
                     }}>{r}</span>
                   ))}
                 </div>

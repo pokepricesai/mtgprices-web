@@ -57,7 +57,7 @@ export default async function SetPage({ params }: { params: Promise<Params> }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
           {set.icon_svg_uri ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={set.icon_svg_uri} alt="" aria-hidden style={{ width: 26, height: 26, filter: 'invert(85%)' }} />
+            <img src={set.icon_svg_uri} alt="" aria-hidden style={{ width: 26, height: 26, opacity: 0.85 }} />
           ) : null}
           <span className="label-mono">{set.code}</span>
           {set.set_type && <span className="label-mono" style={{ color: 'var(--accent)' }}>{set.set_type.replace(/_/g, ' ')}</span>}

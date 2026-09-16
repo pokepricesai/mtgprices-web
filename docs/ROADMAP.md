@@ -54,13 +54,29 @@ answer maps to a row that exists.
   identity / mana value / type — factual only).
 - Pagination.
 
-**2C — Accounts + Collections**
-- Supabase Auth (email + Google).
-- Per-user owned cards — exact printing + finish + quantity, optional
-  condition + acquired price.
-- Collection value at current market prices.
-- CSV import/export (Moxfield / Archidekt / Deckbox flavours).
-- RLS-locked, service-role never exposed to the browser.
+**2C — Accounts + Collections** *(complete)*
+- Supabase Auth: Google OAuth + email magic link (@supabase/ssr).
+- Light theme refresh — warm off-white background, white surfaces,
+  navy/charcoal text; violet primary; gold restrained. Applied across
+  every existing surface (nav, home, card, set, finder, formats,
+  chart, badges).
+- Per-user owned cards — exact printing + finish + condition +
+  quantity, optional acquired price/date/notes.
+- `mtg_collection_items`, `mtg_collection_imports`, `mtg_user_prefs`
+  with full RLS (`auth.uid() = user_id`). Aggregation key:
+  (user, printing_finish, condition). Never one row per copy.
+- Transparent, currency-aware valuation — user picks the provider /
+  currency / price-type basis. USD and EUR never silently FX. Missing
+  prices are reported, not treated as zero.
+- CSV import: generic + auto-detects Moxfield / Deckbox / Archidekt
+  columns. Matches on (set_code + collector_number) first, then
+  name+set. Ambiguous rows are never silently imported. Import audit
+  trail per invocation.
+- Reusable collection module: `userOwns`, `getOwnedPrintings`,
+  `findMissing`, `getCollectionSummary`, `computeValuation` — ready
+  for Phase 3 Deck Builder to consume.
+- Nav updates: My Collection live in Collect; Account chip top-right;
+  auth-aware mobile menu.
 
 ### Phase 3 — Decks & MTG Intelligence
 

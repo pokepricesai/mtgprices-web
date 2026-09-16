@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser'
 
 // Site navigation. Reflects the three-audience IA (Collect / Play /
 // Community + eventual AI). Live routes only appear as real links.
@@ -20,9 +21,9 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'Collect',
     items: [
       { label: 'Card Finder', href: '/card-finder?mode=collecting' },
+      { label: 'Cards', href: '/cards/search' },
       { label: 'Sets', href: '/browse' },
-      { label: 'Cards (catalogue)', href: '/cards/search' },
-      { label: 'Collection', soon: true },
+      { label: 'My Collection', href: '/collection' },
     ],
   },
   {
@@ -52,9 +53,9 @@ const NAV_GROUPS: NavGroup[] = [
 
 const DESKTOP_LINKS: { label: string; href: string }[] = [
   { label: 'Card Finder', href: '/card-finder' },
-  { label: 'Cards', href: '/cards/search' },
   { label: 'Sets', href: '/browse' },
   { label: 'Formats', href: '/formats' },
+  { label: 'Collection', href: '/collection' },
 ]
 
 export default function Navbar() {
@@ -62,8 +63,23 @@ export default function Navbar() {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [signedIn, setSignedIn] = useState<boolean | null>(null)
 
   useEffect(() => { setMenuOpen(false) }, [pathname])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const supabase = getSupabaseBrowserClient()
+      const { data } = await supabase.auth.getUser()
+      if (!cancelled) setSignedIn(Boolean(data.user))
+      const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+        if (!cancelled) setSignedIn(Boolean(session?.user))
+      })
+      return () => sub.subscription.unsubscribe()
+    })()
+    return () => { cancelled = true }
+  }, [])
 
   function submitSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -168,6 +184,19 @@ export default function Navbar() {
         </div>
       </form>
 
+      {/* Account chip — desktop */}
+      <Link
+        href={signedIn ? '/account' : `/login?next=${encodeURIComponent(pathname ?? '/')}`}
+        className="nav-account"
+        style={{
+          padding: '6px 12px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+          background: signedIn ? 'var(--primary-soft)' : 'transparent',
+          color: signedIn ? 'var(--primary)' : 'var(--text)',
+          border: `1px solid ${signedIn ? 'rgba(104,65,230,0.25)' : 'var(--border)'}`,
+          textDecoration: 'none', flexShrink: 0,
+        }}
+      >{signedIn ? 'Account' : 'Sign in'}</Link>
+
       <button
         className="mobile-menu-btn"
         onClick={() => setMenuOpen((v) => !v)}
@@ -206,6 +235,20 @@ export default function Navbar() {
             />
           </form>
 
+          {/* Account row */}
+          <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+            <Link
+              href={signedIn ? '/account' : `/login?next=${encodeURIComponent(pathname ?? '/')}`}
+              onClick={() => setMenuOpen(false)}
+              style={{
+                display: 'block', padding: '10px 12px', borderRadius: 10,
+                background: signedIn ? 'var(--primary-soft)' : 'var(--bg-light)',
+                color: signedIn ? 'var(--primary)' : 'var(--text)',
+                fontSize: 14, fontWeight: 700, textDecoration: 'none',
+              }}
+            >{signedIn ? 'Account · Collection' : 'Sign in / Create account'}</Link>
+          </div>
+
           {NAV_GROUPS.map((g) => (
             <div key={g.title} style={{ marginBottom: 20 }}>
               <div className="label-mono" style={{ marginBottom: 6, color: 'var(--accent)' }}>{g.title}</div>
@@ -231,7 +274,7 @@ export default function Navbar() {
                     <span>{it.label}</span>
                     <span style={{
                       fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
-                      background: 'rgba(124,92,231,0.15)', color: '#c8b8ff',
+                      background: 'var(--primary-soft)', color: 'var(--primary)',
                       letterSpacing: 0.4, textTransform: 'uppercase',
                     }}>Soon</span>
                   </div>
