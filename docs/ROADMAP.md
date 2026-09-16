@@ -128,16 +128,31 @@ answer maps to a row that exists.
 - `Copy decklist` button — wires the existing `deckToText()` helper.
 - Add-to-Deck compact on `/card-finder` result cards.
 
-**3C — AI Deck Intelligence**
+**3C — AI Deck Intelligence** *(implementation complete; awaiting paid Gateway credits)*
 Retrieval-grounded over the live DB. Every answer must cite the row(s)
-it came from. Never invent cards, rules, legality, or prices.
-- Build a deck from a brief.
-- Build from my collection.
-- Improve my deck.
-- Explain deck choices.
-- Identify weaknesses.
-- Suggest replacements + synergies.
-- Budget upgrades against the user's valuation basis.
+it came from. Never invents cards, rules, legality, or prices.
+- Vercel AI Gateway via `ai` v7. Model IDs env-var-configurable
+  (AI_MODEL_CHEAP / AI_MODEL_REASONING).
+- Server-side tools bound to a deck: getDeckContext, searchLegalCards,
+  findAlternatives, findCheaperAlternatives, getCardDetails,
+  getFormatRule. Same primitives the UI + tools call.
+- Grounding contract: every model-proposed oracle_card_id must appear
+  in the tool-authorised set for that conversation. Deterministic
+  validator runs against the PROJECTED deck; if it worsens,
+  suggestions are trimmed. Every AI-generated deck is re-validated
+  server-side at save time.
+- Rate limiting: rolling 24h quota per user + estimated-cost ceiling,
+  logged to mtg_ai_usage (RLS: user reads own). AI_DAILY_OPS_LIMIT
+  and AI_DAILY_CENTS_LIMIT env-controlled.
+- Prompt-injection sanitiser strips ###system / "ignore previous
+  instructions" / "you are" from user briefs.
+- Four surfaces:
+    Analyse Deck (cheap tier, 1 tool call typically)
+    Improve Deck (reasoning tier, up to 12 tool steps)
+    Replace Card (cheap tier, 1-2 tool calls)
+    Build Deck (reasoning tier, up to 20 tool steps, 90s timeout)
+- Every UI change requires explicit user confirmation. Nothing auto-
+  saves.
 
 **3D — Sharing + Purchasing**
 - Public deck URLs.
