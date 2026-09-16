@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser'
+import BuildWithAI from './BuildWithAI'
 
 type Props = {
   formats: Array<{ key: string; label: string; group: string; hasCommander: boolean; blurb: string }>
@@ -87,7 +88,11 @@ export default function NewDeckClient({ formats }: Props) {
         <button type="submit" disabled={saving} style={{
           background: 'var(--primary)', color: '#fff', border: 'none',
           padding: '11px 20px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer', flex: 1,
-        }}>{saving ? 'Creating…' : 'Create deck'}</button>
+        }}>{saving ? 'Creating…' : 'Create deck manually'}</button>
+      </div>
+
+      <div style={{ marginTop: 24, padding: 16, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12 }}>
+        <BuildWithAI formats={formats} />
       </div>
     </form>
   )

@@ -25,6 +25,7 @@ import DeckSearchPanel from './DeckSearchPanel'
 import DeckStatsPanel from './DeckStatsPanel'
 import DeckValidationPanel from './DeckValidationPanel'
 import DeckCardRow from './DeckCardRow'
+import DeckAIPanel from './DeckAIPanel'
 
 const ZONE_TITLES: Record<DeckZone, string> = {
   commander: 'Commander',
@@ -180,6 +181,9 @@ export default function DeckBuilderClient({ initialContext }: Props) {
             <DeckValidationPanel validation={ctx.validation} totals={ctx.totals} pricing={ctx.pricing} rule={rule} />
             <DeckStatsPanel ctx={ctx} onFilterByCapability={(cap) => setSearchSeedCaps([cap])} />
           </div>
+
+          {/* AI panel */}
+          <DeckAIPanel deckId={ctx.deck.id} />
 
           {/* Copy list */}
           <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
