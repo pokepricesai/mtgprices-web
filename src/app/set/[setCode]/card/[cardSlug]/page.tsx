@@ -1,14 +1,23 @@
-// app/set/[setCode]/card/[cardSlug]/page.tsx — MTG card page.
+// app/set/[setCode]/card/[cardSlug]/page.tsx — deep MTG card page.
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getCardBySlug, buildCardSlug, type MtgFinish } from '@/lib/mtg/cards'
+import { getCardBySlug, type MtgFinish } from '@/lib/mtg/cards'
 import {
   getCurrentPricesForFinishes,
   getPriceHistory,
-  pickHeadlinePrice,
+  getHeadlinePricesByPrinting,
   type MtgCurrentPrice,
 } from '@/lib/mtg/prices'
+import { classifyCard } from '@/lib/mtg/classify'
+import { extractFaces, normaliseLayout } from '@/lib/mtg/faces'
+import ManaCost from '@/components/mtg/ManaCost'
+import OracleText from '@/components/mtg/OracleText'
+import CardFaces from '@/components/mtg/CardFaces'
+import CapabilityChips from '@/components/mtg/CapabilityChips'
+import LegalityMatrix from '@/components/mtg/LegalityMatrix'
+import OtherPrintings from '@/components/mtg/OtherPrintings'
+import RulingsList from '@/components/mtg/RulingsList'
 import CardPageClient from './CardPageClient'
 
 export const revalidate = 300
@@ -26,11 +35,20 @@ const PROVIDER_LABEL: Record<string, string> = {
 }
 
 const PROVIDER_COLOUR: Record<string, string> = {
-  tcgplayer: '#C9A55C',   // gold
-  cardkingdom: '#7C5CE7', // violet
-  cardmarket: '#63A8FF',  // blue
-  manapool: '#4FAF78',    // green
-  cardhoarder: '#e07d3a', // orange (MTGO)
+  tcgplayer: '#C9A55C',
+  cardkingdom: '#7C5CE7',
+  cardmarket: '#63A8FF',
+  manapool: '#4FAF78',
+  cardhoarder: '#e07d3a',
+}
+
+const RARITY_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
+  common:    { bg: 'rgba(154,163,178,0.18)', fg: '#c4cad4', label: 'Common' },
+  uncommon:  { bg: 'rgba(192,200,208,0.20)', fg: '#dae0e7', label: 'Uncommon' },
+  rare:      { bg: 'rgba(201,165,92,0.18)',  fg: '#f2d68a', label: 'Rare' },
+  mythic:    { bg: 'rgba(224,125,58,0.20)',  fg: '#f2b28a', label: 'Mythic' },
+  special:   { bg: 'rgba(124,92,231,0.20)',  fg: '#c8b8ff', label: 'Special' },
+  bonus:     { bg: 'rgba(124,92,231,0.20)',  fg: '#c8b8ff', label: 'Bonus' },
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
@@ -46,8 +64,6 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   }
 }
 
-// ────────────────────────────────────────────────────────────────
-
 export default async function MtgCardPage({ params }: { params: Promise<Params> }) {
   const { setCode, cardSlug } = await params
   const detail = await getCardBySlug(setCode, cardSlug)
@@ -55,19 +71,30 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
 
   const { printing, oracle, finishes, legalities, rulings, otherPrintings } = detail
 
-  // Fetch current prices for every finish.
+  const layoutKind = normaliseLayout(oracle.layout)
+  const faces = extractFaces(oracle)
+  const caps = classifyCard({
+    type_line: oracle.type_line,
+    oracle_text: oracle.oracle_text,
+    keywords: oracle.keywords,
+    produced_mana: oracle.produced_mana,
+    card_faces: oracle.card_faces,
+  })
+
+  // Prices + chart data.
   const finishIds = finishes.map((f) => f.id)
-  const currentByFinish = await getCurrentPricesForFinishes(finishIds)
+  const [currentByFinish, otherPricesByPrinting] = await Promise.all([
+    getCurrentPricesForFinishes(finishIds),
+    otherPrintings.length > 0
+      ? getHeadlinePricesByPrinting(otherPrintings.map((p) => p.id))
+      : Promise.resolve(new Map<string, number>()),
+  ])
 
-  // Pick the default finish: prefer nonfoil, else first available.
   const defaultFinish: MtgFinish | undefined = finishes.find((f) => f.finish === 'nonfoil') ?? finishes[0]
-
-  // 90-day history for the default finish, aggregated per provider.
   const historySeries = defaultFinish
     ? await getPriceHistory({ printingFinishId: defaultFinish.id, daysBack: 90 })
     : []
 
-  // Shape series for the client chart.
   const chartSeries = historySeries
     .map((s) => ({
       key: `${s.provider}_${s.market}_${s.currency}_${s.price_type}`,
@@ -76,10 +103,18 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
       color: PROVIDER_COLOUR[s.provider] ?? '#F3F0E8',
       points: s.points.map((p) => ({ date: p.observed_on, value: Number(p.price) })),
     }))
-    // Drop empty series (defensive).
     .filter((s) => s.points.length > 0)
 
-  // Structured data for the card.
+  // Second image for DFC/transform/MDFC — pulled from oracle.card_faces
+  // if present. This is the back-face image of the *default* printing;
+  // artwork may differ from this printing but rules are equivalent.
+  const backImage =
+    (['transform', 'modal_dfc'].includes(layoutKind))
+      ? (faces[1] && faces[1].image_uri_normal ? faces[1].image_uri_normal : null)
+      : null
+
+  const rarityStyle = printing.rarity ? RARITY_STYLE[printing.rarity] : null
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
@@ -89,11 +124,11 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
   }
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 24px 64px' }}>
+    <div style={{ maxWidth: 1180, margin: '0 auto', padding: '20px 24px 80px' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       {/* Breadcrumb */}
-      <div style={{ marginBottom: 12, fontSize: 12, color: 'var(--text-muted)' }}>
+      <nav aria-label="Breadcrumb" style={{ marginBottom: 16, fontSize: 12, color: 'var(--text-muted)' }}>
         <Link href="/browse" style={{ color: 'inherit' }}>Sets</Link>
         <span style={{ margin: '0 6px', opacity: 0.5 }}>›</span>
         <Link href={`/set/${printing.set_code}`} style={{ color: 'inherit' }}>
@@ -101,267 +136,154 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
         </Link>
         <span style={{ margin: '0 6px', opacity: 0.5 }}>›</span>
         <span style={{ color: 'var(--text)' }}>{printing.name}</span>
-      </div>
+      </nav>
 
-      {/* Two-column layout: image + summary // details */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(260px, 320px) 1fr',
-          gap: 32,
-          alignItems: 'start',
-        }}
-        className="mtg-card-grid"
-      >
-        {/* Left: image, current price, finish switcher */}
+      {/* Hero: image(s) + summary */}
+      <div className="mtg-card-hero" style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) 1fr', gap: 32, alignItems: 'start' }}>
         <div>
-          <div
-            style={{
-              aspectRatio: '5 / 7',
-              background: 'var(--bg-light)',
-              border: '1px solid var(--border)',
-              borderRadius: 14,
-              overflow: 'hidden',
-            }}
-          >
-            {printing.image_uri ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={printing.image_uri}
-                alt={printing.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              />
-            ) : (
-              <div
-                style={{
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--text-muted)',
-                }}
-              >
-                No image
-              </div>
+          {/* Card image(s) */}
+          <div style={{ display: 'grid', gap: 12 }}>
+            <CardImage src={printing.image_uri} alt={printing.name} />
+            {backImage && (
+              <CardImage src={backImage} alt={`${printing.name} — back face`} caption="Back face (default printing artwork)" />
             )}
           </div>
 
+          {/* Client: finish switcher + prices + chart */}
           <CardPageClient
             finishes={finishes}
             defaultFinishId={defaultFinish?.id ?? null}
             currentPricesByFinish={serializePriceMap(currentByFinish)}
             chartSeries={chartSeries}
           />
+
+          {/* Print meta */}
+          <div style={{ marginTop: 20, padding: 14, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 13, display: 'grid', gap: 6 }}>
+            <div className="label-mono" style={{ marginBottom: 4 }}>This printing</div>
+            <Row k="Set" v={<Link href={`/set/${printing.set_code}`} style={{ color: 'var(--accent)' }}>{printing.set_code.toUpperCase()}</Link>} />
+            <Row k="Collector #" v={printing.collector_number ?? '—'} />
+            <Row k="Released" v={printing.released_at ?? '—'} />
+            <Row k="Rarity" v={printing.rarity ? printing.rarity : '—'} />
+            <Row k="Artist" v={printing.artist ?? '—'} />
+            <Row k="Language" v={(printing.lang ?? 'en').toUpperCase()} />
+            <Row k="Layout" v={oracle.layout ?? 'normal'} />
+            {(printing.borderless || printing.full_art || printing.promo || printing.reprint) && (
+              <Row k="Attributes" v={[
+                printing.borderless && 'Borderless',
+                printing.full_art && 'Full art',
+                printing.promo && 'Promo',
+                printing.reprint && 'Reprint',
+              ].filter(Boolean).join(' · ')} />
+            )}
+            {printing.scryfall_uri && (
+              <Row k="Scryfall" v={<a href={printing.scryfall_uri} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>Open ↗</a>} />
+            )}
+          </div>
         </div>
 
-        {/* Right: gameplay metadata + oracle text + printings + legality + rulings */}
+        {/* Right column */}
         <div>
-          <h1 style={{ fontSize: 28, margin: 0 }}>{printing.name}</h1>
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 10,
-              alignItems: 'center',
-              marginTop: 8,
-              color: 'var(--text-muted)',
-              fontSize: 13,
-            }}
-          >
-            <span className="label-mono" style={{ color: 'var(--accent)' }}>
-              {printing.set_code.toUpperCase()}
-            </span>
-            {printing.collector_number && <span>#{printing.collector_number}</span>}
-            {printing.rarity && (
-              <span
-                className="badge-prestige"
-                style={{
-                  padding: '2px 10px',
-                  fontSize: 11,
-                  textTransform: 'uppercase',
-                }}
-              >
-                {printing.rarity}
+          {/* Title + tags */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
+            <h1 style={{ fontSize: 32, margin: 0, lineHeight: 1.1 }}>{printing.name}</h1>
+            {oracle.mana_cost && !faces.some((f) => f.mana_cost) && <ManaCost cost={oracle.mana_cost} size={22} />}
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 12 }}>
+            {rarityStyle && (
+              <span style={{
+                fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
+                background: rarityStyle.bg, color: rarityStyle.fg,
+                letterSpacing: 0.4, textTransform: 'uppercase',
+              }}>{rarityStyle.label}</span>
+            )}
+            {oracle.reserved && (
+              <span style={{
+                fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
+                background: 'rgba(212,93,100,0.15)', color: '#f2a9ae', letterSpacing: 0.4, textTransform: 'uppercase',
+              }} title="On the WOTC Reserved List — will never be reprinted in a tournament-legal set.">Reserved list</span>
+            )}
+            {oracle.game_changer && (
+              <span style={{
+                fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
+                background: 'rgba(201,165,92,0.18)', color: '#f2d68a', letterSpacing: 0.4, textTransform: 'uppercase',
+              }} title="Flagged by WOTC as a Game Changer in Commander bracket 4.">Game changer</span>
+            )}
+            {oracle.color_identity && oracle.color_identity.length > 0 && (
+              <span style={{ fontSize: 12, color: 'var(--text-muted)', display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                <span>Colour ID</span>
+                <ManaCost cost={oracle.color_identity.map((c) => `{${c}}`).join('')} size={14} />
               </span>
             )}
-            {printing.artist && <span>Illus. {printing.artist}</span>}
+            {oracle.mana_value != null && (
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>MV <strong style={{ color: 'var(--text)' }}>{oracle.mana_value}</strong></span>
+            )}
           </div>
 
-          <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <MetaRow label="Type" value={oracle.type_line ?? '—'} />
-            <MetaRow label="Mana cost" value={oracle.mana_cost ?? '—'} />
-            {oracle.power || oracle.toughness ? (
-              <MetaRow label="P / T" value={`${oracle.power ?? '—'} / ${oracle.toughness ?? '—'}`} />
-            ) : null}
-            {oracle.loyalty ? <MetaRow label="Loyalty" value={oracle.loyalty} /> : null}
-            {oracle.defense ? <MetaRow label="Defense" value={oracle.defense} /> : null}
-            {oracle.mana_value != null ? <MetaRow label="Mana value" value={String(oracle.mana_value)} /> : null}
-            {oracle.color_identity && oracle.color_identity.length > 0 ? (
-              <MetaRow label="Color identity" value={oracle.color_identity.join('')} />
-            ) : null}
-          </div>
-
-          {oracle.oracle_text && (
-            <div style={{ marginTop: 20 }}>
-              <div className="label-mono">Rules text</div>
-              <div
-                style={{
-                  marginTop: 6,
-                  padding: 14,
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 10,
-                  whiteSpace: 'pre-wrap',
-                  fontSize: 14,
-                  lineHeight: 1.55,
-                }}
-              >
-                {oracle.oracle_text}
-              </div>
-            </div>
+          {oracle.type_line && !faces.some((f) => f.type_line) && (
+            <div style={{ fontSize: 15, color: 'var(--text-muted)', marginBottom: 20 }}>{oracle.type_line}</div>
           )}
 
+          {/* Faces / rules text */}
+          <div style={{ marginBottom: 24 }}>
+            <CardFaces faces={faces} layoutKind={layoutKind} />
+          </div>
+
+          {/* Keywords */}
           {oracle.keywords && oracle.keywords.length > 0 && (
-            <div style={{ marginTop: 16 }}>
-              <div className="label-mono">Keywords</div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+            <div style={{ marginBottom: 20 }}>
+              <div className="label-mono" style={{ marginBottom: 8 }}>Keywords</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {oracle.keywords.map((k) => (
-                  <span
-                    key={k}
-                    style={{
-                      background: 'var(--bg-light)',
-                      border: '1px solid var(--border)',
-                      padding: '3px 10px',
-                      borderRadius: 999,
-                      fontSize: 12,
-                    }}
-                  >
-                    {k}
-                  </span>
+                  <span key={k} style={{
+                    background: 'var(--surface)', border: '1px solid var(--border)',
+                    padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 500,
+                  }}>{k}</span>
                 ))}
               </div>
             </div>
           )}
 
-          {legalities.length > 0 && (
-            <div style={{ marginTop: 24 }}>
-              <div className="label-mono">Legality</div>
-              <div
-                style={{
-                  marginTop: 8,
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-                  gap: 6,
-                }}
-              >
-                {legalities
-                  .slice()
-                  .sort((a, b) => a.format.localeCompare(b.format))
-                  .map((l) => (
-                    <LegalityRow key={l.format} format={l.format} legality={l.legality} />
-                  ))}
+          {/* Capabilities */}
+          {caps.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <div className="label-mono" style={{ marginBottom: 8 }}>Card capabilities</div>
+              <CapabilityChips caps={caps} />
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8, fontStyle: 'italic' }}>
+                Derived deterministically from card types, Oracle text and keywords. Not a strategic evaluation.
               </div>
             </div>
           )}
 
-          {otherPrintings.length > 0 && (
-            <div style={{ marginTop: 24 }}>
-              <div className="label-mono">Other printings ({otherPrintings.length})</div>
-              <div
-                style={{
-                  marginTop: 8,
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
-                  gap: 8,
-                }}
-              >
-                {otherPrintings.slice(0, 12).map((op) => {
-                  const opSlug = op.collector_number ? buildCardSlug(op.collector_number, op.name) : ''
-                  return (
-                    <Link
-                      key={op.id}
-                      href={opSlug ? `/set/${op.set_code}/card/${opSlug}` : '#'}
-                      style={{
-                        display: 'block',
-                        background: 'var(--surface)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 8,
-                        padding: 6,
-                        textDecoration: 'none',
-                        color: 'var(--text)',
-                      }}
-                    >
-                      <div
-                        style={{
-                          aspectRatio: '5 / 7',
-                          background: 'var(--bg-light)',
-                          borderRadius: 5,
-                          overflow: 'hidden',
-                          marginBottom: 6,
-                        }}
-                      >
-                        {op.image_uri_small ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={op.image_uri_small}
-                            alt={op.name}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            loading="lazy"
-                          />
-                        ) : null}
-                      </div>
-                      <div style={{ fontSize: 11, fontWeight: 700 }}>{op.set_code.toUpperCase()}</div>
-                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                        {op.released_at ?? ''}
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
-            </div>
-          )}
+          {/* Legality */}
+          <div style={{ marginBottom: 24 }}>
+            <div className="label-mono" style={{ marginBottom: 8 }}>Format legality</div>
+            <LegalityMatrix legalities={legalities} />
+          </div>
 
-          {rulings.length > 0 && (
-            <div style={{ marginTop: 24 }}>
-              <div className="label-mono">Rulings ({rulings.length})</div>
-              <div
-                style={{
-                  marginTop: 8,
-                  padding: 14,
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 10,
-                }}
-              >
-                {rulings.slice(0, 20).map((r, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      borderBottom: i < Math.min(19, rulings.length - 1) ? '1px solid var(--border)' : 'none',
-                      padding: '10px 0',
-                      fontSize: 13,
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    <div style={{ color: 'var(--text-muted)', fontSize: 11, marginBottom: 4 }}>
-                      {r.published_at ?? '—'}
-                      {r.source && ` · ${r.source}`}
-                    </div>
-                    <div>{r.comment}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Other printings */}
+          <div style={{ marginBottom: 24 }}>
+            <div className="label-mono" style={{ marginBottom: 8 }}>Other printings</div>
+            <OtherPrintings
+              currentPrintingId={printing.id}
+              otherPrintings={otherPrintings}
+              headlinePriceByPrinting={otherPricesByPrinting}
+            />
+          </div>
+
+          {/* Rulings */}
+          <div style={{ marginBottom: 24 }}>
+            <div className="label-mono" style={{ marginBottom: 8 }}>Rulings {rulings.length > 0 && <span style={{ color: 'var(--text-muted)' }}>({rulings.length})</span>}</div>
+            <RulingsList rulings={rulings} initialCount={6} />
+          </div>
         </div>
       </div>
 
       <style
-        // Two-column at large widths, stacked below.
         dangerouslySetInnerHTML={{
           __html: `
-            @media (max-width: 780px) {
-              .mtg-card-grid { grid-template-columns: 1fr !important; }
+            @media (max-width: 820px) {
+              .mtg-card-hero { grid-template-columns: 1fr !important; }
             }
           `,
         }}
@@ -370,61 +292,32 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
   )
 }
 
-// ────────────────────────────────────────────────────────────────
-
-function MetaRow({ label, value }: { label: string; value: string }) {
+function CardImage({ src, alt, caption }: { src: string | null; alt: string; caption?: string }) {
   return (
     <div>
-      <div className="label-mono">{label}</div>
-      <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{value}</div>
+      <div style={{ aspectRatio: '5 / 7', background: 'var(--bg-light)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
+        {src ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src} alt={alt} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        ) : (
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>No image</div>
+        )}
+      </div>
+      {caption && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>{caption}</div>}
     </div>
   )
 }
 
-const LEGALITY_STYLE: Record<string, { bg: string; fg: string }> = {
-  legal:       { bg: 'rgba(79,175,120,0.18)', fg: 'var(--green)' },
-  banned:      { bg: 'rgba(212,93,100,0.18)', fg: 'var(--red)'   },
-  restricted:  { bg: 'rgba(201,165,92,0.18)', fg: 'var(--accent)' },
-  not_legal:   { bg: 'transparent',           fg: 'var(--text-muted)' },
-}
-
-function LegalityRow({ format, legality }: { format: string; legality: string }) {
-  const style = LEGALITY_STYLE[legality] ?? LEGALITY_STYLE.not_legal
+function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '6px 10px',
-        border: '1px solid var(--border)',
-        borderRadius: 6,
-        fontSize: 12,
-      }}
-    >
-      <span style={{ color: 'var(--text-muted)', textTransform: 'capitalize' }}>{format}</span>
-      <span
-        style={{
-          background: style.bg,
-          color: style.fg,
-          padding: '2px 8px',
-          borderRadius: 4,
-          fontWeight: 700,
-          textTransform: 'capitalize',
-          fontSize: 11,
-        }}
-      >
-        {legality.replace(/_/g, ' ')}
-      </span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+      <span style={{ color: 'var(--text-muted)' }}>{k}</span>
+      <span style={{ textAlign: 'right', textTransform: k === 'Layout' ? 'capitalize' : undefined }}>{v}</span>
     </div>
   )
 }
 
-/** Convert a Map<finishId, MtgCurrentPrice[]> into a plain object so it
- *  can cross the RSC → client-component boundary. */
-function serializePriceMap(
-  m: Map<string, MtgCurrentPrice[]>,
-): Record<string, MtgCurrentPrice[]> {
+function serializePriceMap(m: Map<string, MtgCurrentPrice[]>): Record<string, MtgCurrentPrice[]> {
   const out: Record<string, MtgCurrentPrice[]> = {}
   for (const [k, v] of Array.from(m.entries())) out[k] = v
   return out

@@ -23,6 +23,9 @@ export type MtgOracleCard = {
   keywords: string[] | null
   layout: string | null
   card_faces: unknown
+  produced_mana: string[] | null
+  reserved: boolean | null
+  game_changer: boolean | null
 }
 
 export type MtgPrinting = {
@@ -46,6 +49,9 @@ export type MtgPrinting = {
   promo: boolean | null
   digital: boolean | null
   scryfall_uri: string | null
+  reprint: boolean | null
+  textless: boolean | null
+  variation: boolean | null
 }
 
 export type MtgFinish = {
@@ -56,48 +62,10 @@ export type MtgFinish = {
 export type MtgLegality = { format: string; legality: string }
 export type MtgRuling  = { source: string; published_at: string | null; comment: string }
 
-/** Convert "Massacre Girl, Known Killer" → "massacre-girl-known-killer". */
-export function slugifyCardName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[’']/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
-/** URL slug format: "{collector_number}-{card-name-slug}".
- *
- *  Both segments may contain "-" (e.g. "The List" collector numbers like
- *  MKC-297), so a naive split on the first "-" is wrong. Instead we
- *  return every plausible split point and let the caller disambiguate
- *  against real collector numbers in the database. */
-export function candidateCardSlugSplits(slug: string): { collectorNumber: string; nameSlug: string }[] {
-  if (!slug) return []
-  const parts = slug.split('-')
-  if (parts.length === 0) return []
-  const out: { collectorNumber: string; nameSlug: string }[] = []
-  // Longest collector-number first — real MTG collector numbers with dashes
-  // (MKC-297, JGP-11, TWWK-1★) are meaningfully longer than the "just a
-  // number" case, so front-loading them is correct.
-  for (let cut = parts.length - 1; cut >= 1; cut--) {
-    out.push({
-      collectorNumber: parts.slice(0, cut).join('-'),
-      nameSlug: parts.slice(cut).join('-'),
-    })
-  }
-  return out
-}
-
-/** Back-compat helper — returns the shortest-collector split. Prefer
- *  `candidateCardSlugSplits` for lookups. */
-export function parseCardSlug(slug: string): { collectorNumber: string; nameSlug: string } | null {
-  const splits = candidateCardSlugSplits(slug)
-  return splits[splits.length - 1] ?? null
-}
-
-export function buildCardSlug(collectorNumber: string, cardName: string): string {
-  return `${collectorNumber}-${slugifyCardName(cardName)}`
-}
+// Pure slug helpers live in ./slug so client components can import
+// them without pulling in the server-only Supabase client.
+export { slugifyCardName, buildCardSlug, parseCardSlug, candidateCardSlugSplits } from './slug'
+import { slugifyCardName, candidateCardSlugSplits } from './slug'
 
 // ─── Set → card grid ─────────────────────────────────────────────────────
 
@@ -119,7 +87,7 @@ export async function listPrintingsForSet(setCode: string, opts: { includeDigita
     .select(`
       id, oracle_card_id, set_id, scryfall_id, set_code, collector_number, lang, name,
       layout, rarity, artist, image_uri, image_uri_small, art_crop_uri, released_at,
-      borderless, full_art, promo, digital, scryfall_uri,
+      borderless, full_art, promo, digital, scryfall_uri, reprint, textless, variation,
       oracle:mtg_oracle_cards ( name, type_line, mana_cost, colors )
     `)
     .eq('set_code', normalised)
@@ -155,6 +123,9 @@ export async function listPrintingsForSet(setCode: string, opts: { includeDigita
     promo: r.promo,
     digital: r.digital,
     scryfall_uri: r.scryfall_uri,
+    reprint: r.reprint ?? null,
+    textless: r.textless ?? null,
+    variation: r.variation ?? null,
     oracle_name: r.oracle?.name ?? r.name,
     oracle_type_line: r.oracle?.type_line ?? null,
     oracle_mana_cost: r.oracle?.mana_cost ?? null,
@@ -188,7 +159,7 @@ export async function getCardBySlug(setCode: string, cardSlug: string): Promise<
     .select(`
       id, oracle_card_id, set_id, scryfall_id, set_code, collector_number, lang, name,
       layout, rarity, artist, image_uri, image_uri_small, art_crop_uri, released_at,
-      borderless, full_art, promo, digital, scryfall_uri
+      borderless, full_art, promo, digital, scryfall_uri, reprint, textless, variation
     `)
     .eq('set_code', set)
     .in('collector_number', candidates)
@@ -209,7 +180,7 @@ export async function getCardBySlug(setCode: string, cardSlug: string): Promise<
   // 2. Oracle card
   const { data: oracle, error: oErr } = await supabase
     .from('mtg_oracle_cards')
-    .select('id, oracle_id, name, mana_cost, mana_value, type_line, oracle_text, power, toughness, loyalty, defense, colors, color_identity, keywords, layout, card_faces')
+    .select('id, oracle_id, name, mana_cost, mana_value, type_line, oracle_text, power, toughness, loyalty, defense, colors, color_identity, keywords, layout, card_faces, produced_mana, reserved, game_changer')
     .eq('id', printing.oracle_card_id)
     .maybeSingle()
   if (oErr || !oracle) {
@@ -244,7 +215,7 @@ export async function getCardBySlug(setCode: string, cardSlug: string): Promise<
     .select(`
       id, oracle_card_id, set_id, scryfall_id, set_code, collector_number, lang, name,
       layout, rarity, artist, image_uri, image_uri_small, art_crop_uri, released_at,
-      borderless, full_art, promo, digital, scryfall_uri
+      borderless, full_art, promo, digital, scryfall_uri, reprint, textless, variation
     `)
     .eq('oracle_card_id', oracle.id)
     .eq('lang', 'en')
@@ -278,39 +249,89 @@ export type MtgSearchHit = {
   released_at: string | null
 }
 
-/** Simple name-search. English printings only. Returns the freshest
- *  printing per oracle_card_id to avoid drowning the results in reprints. */
-export async function searchCards(query: string, limit = 40): Promise<MtgSearchHit[]> {
-  const supabase = getSupabaseServiceClient()
-  const q = query.trim()
-  if (q.length < 2) return []
+export type MtgSearchFilters = {
+  /** Substring match on oracle name (case-insensitive). Blank = any. */
+  name?: string
+  /** Substring match on type_line (case-insensitive). Blank = any. */
+  type?: string
+  /** Substring match on oracle_text (case-insensitive). Blank = any. */
+  text?: string
+  /** Match if the card's colors include ANY of these. Blank = any. */
+  colors?: string[]
+  /** Match if the card's color_identity is a SUBSET of these letters. */
+  colorIdentity?: string[]
+  /** Include colourless as "C" — the field literally checks `colors=[]`. */
+  colorless?: boolean
+  /** Include only cards legal in this format. */
+  legalIn?: string
+  /** Rarity of the returned printing (applied to mtg_printings). */
+  rarity?: string
+}
 
-  // ilike over mtg_oracle_cards.name — Scryfall convention is exact name;
-  // ilike gives us forgiving substring matching.
-  const { data: oracles, error: oErr } = await supabase
+/** Multi-filter card search. Name is optional — pass filters alone and
+ *  you get an arbitrary slice of the DB matching the constraints. */
+export async function searchCards(
+  filters: MtgSearchFilters,
+  limit = 60,
+): Promise<MtgSearchHit[]> {
+  const supabase = getSupabaseServiceClient()
+  const name = (filters.name ?? '').trim()
+  const type = (filters.type ?? '').trim()
+  const text = (filters.text ?? '').trim()
+  const colors = (filters.colors ?? []).filter((c) => 'WUBRG'.includes(c.toUpperCase())).map((c) => c.toUpperCase())
+  const colorId = (filters.colorIdentity ?? []).filter((c) => 'WUBRG'.includes(c.toUpperCase())).map((c) => c.toUpperCase())
+  const legalIn = (filters.legalIn ?? '').trim()
+  const rarity = (filters.rarity ?? '').trim()
+  const anyFilter = name.length >= 2 || type.length >= 2 || text.length >= 2 || colors.length > 0 || colorId.length > 0 || legalIn.length > 0 || rarity.length > 0 || filters.colorless
+  if (!anyFilter) return []
+
+  // Step 1 — apply oracle-level filters.
+  let oraclesQ = supabase
     .from('mtg_oracle_cards')
     .select('id, name, type_line, mana_cost, colors')
-    .ilike('name', `%${q}%`)
-    .limit(limit * 2)
+    .limit(300)   // upper bound before we page through
+  if (name.length >= 2)  oraclesQ = oraclesQ.ilike('name', `%${name}%`)
+  if (type.length >= 2)  oraclesQ = oraclesQ.ilike('type_line', `%${type}%`)
+  if (text.length >= 2)  oraclesQ = oraclesQ.ilike('oracle_text', `%${text}%`)
+  if (colors.length > 0) oraclesQ = oraclesQ.overlaps('colors', colors)
+  if (filters.colorless) oraclesQ = oraclesQ.eq('colors', '{}')
+  if (colorId.length > 0) oraclesQ = oraclesQ.containedBy('color_identity', colorId)
+  const { data: oracles, error: oErr } = await oraclesQ
   if (oErr || !oracles || oracles.length === 0) {
     if (oErr) console.error('searchCards oracle error:', oErr)
     return []
   }
+  let oracleIds: string[] = oracles.map((o: any) => o.id)
 
-  const oracleIds = oracles.map((o: any) => o.id)
-  const { data: printings, error: pErr } = await supabase
+  // Step 2 — narrow by format legality if requested.
+  if (legalIn.length > 0) {
+    const { data: legals } = await supabase
+      .from('mtg_oracle_legalities')
+      .select('oracle_card_id')
+      .in('oracle_card_id', oracleIds)
+      .eq('format', legalIn)
+      .eq('legality', 'legal')
+    const kept = new Set<string>((legals ?? []).map((r: any) => r.oracle_card_id))
+    oracleIds = oracleIds.filter((id) => kept.has(id))
+    if (oracleIds.length === 0) return []
+  }
+
+  // Step 3 — fetch printings for the surviving oracles.
+  let printingsQ = supabase
     .from('mtg_printings')
     .select('id, oracle_card_id, set_code, collector_number, name, image_uri_small, rarity, released_at')
     .in('oracle_card_id', oracleIds)
     .eq('lang', 'en')
     .eq('digital', false)
     .order('released_at', { ascending: false, nullsFirst: false })
+  if (rarity.length > 0) printingsQ = printingsQ.eq('rarity', rarity)
+  const { data: printings, error: pErr } = await printingsQ
   if (pErr) {
     console.error('searchCards printing error:', pErr)
     return []
   }
 
-  // Freshest printing per oracle_card_id
+  // Freshest printing per oracle.
   const seen = new Set<string>()
   const oracleById = new Map<string, any>(oracles.map((o: any) => [o.id, o]))
   const hits: MtgSearchHit[] = []

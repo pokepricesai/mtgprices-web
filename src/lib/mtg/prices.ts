@@ -159,6 +159,28 @@ export async function getPriceHistory(q: MtgHistoryQuery): Promise<MtgHistorySer
 
 // ─── Aggregate helper for card grids ────────────────────────────────────
 
+/** Finishes-by-printing map: printing_id → available finish strings.
+ *  Chunked in the same way as prices so PostgREST likes the IN clause. */
+export async function getFinishesByPrinting(printingIds: string[]): Promise<Map<string, string[]>> {
+  const out = new Map<string, string[]>()
+  if (!printingIds.length) return out
+  const supabase = getSupabaseServiceClient()
+  const chunks: string[][] = []
+  for (let i = 0; i < printingIds.length; i += IN_CHUNK) chunks.push(printingIds.slice(i, i + IN_CHUNK))
+  const results = await Promise.all(
+    chunks.map((chunk) => supabase.from('mtg_printing_finishes').select('printing_id, finish').in('printing_id', chunk))
+  )
+  for (const { data, error } of results) {
+    if (error) { console.error('getFinishesByPrinting chunk error:', error); continue }
+    for (const row of data ?? []) {
+      const arr = out.get((row as any).printing_id) ?? []
+      arr.push((row as any).finish)
+      out.set((row as any).printing_id, arr)
+    }
+  }
+  return out
+}
+
 /** For a list of printing ids, return the freshest paper-USD-retail
  *  price for each printing's nonfoil finish (falling back to any
  *  finish). Used to show a headline price on the set page grid. */

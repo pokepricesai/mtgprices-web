@@ -164,3 +164,83 @@ will be scoped separately.
 Anything that materially compromises the collector/pricing product to serve
 gameplay, or vice versa. Both must be first-class. If a design choice forces
 a tradeoff, escalate — do not silently pick one side.
+
+---
+
+## Phased delivery plan
+
+The pillars above are the destination. This is the sequence.
+
+### Phase 2A — Product shell + Deep card intelligence  *(current)*
+
+Pre-launch. `SITE_LAUNCHED=false`. No accounts, no writes.
+
+- Restructured navigation around **Collect / Play / AI / Community**, with
+  future areas represented as coming-soon (never dead links).
+- Mature homepage that communicates both audiences.
+- **Deep card pages** — layouts (normal / split / flip / transform / MDFC /
+  meld / adventure / saga / …), Oracle text per face, keywords, factual
+  capabilities classifier (derived from Oracle text + types only), grouped
+  format legality, printings intelligence, finish-aware prices, rulings.
+- Set page filtering + sorting.
+- Search broadened beyond name (type, colour, rarity, format legality).
+- `/formats` area listing formats present in `mtg_oracle_legalities`.
+
+### Phase 2B — Accounts + Collections
+
+- Auth (Supabase Auth, email + OAuth).
+- Per-user owned cards — exact printing, finish, quantity, optional
+  condition + acquired price.
+- Collection value at current market prices.
+- Migrate the PokePrices portfolio schema patterns where they apply.
+- Basic import/export (CSV, dek, Moxfield, Archidekt-style).
+
+### Phase 2C — Deck Builder
+
+- Manual deck builder tied to `mtg_decks` / `mtg_deck_cards` (reviving the
+  deferred Stage 1D migrations).
+- Build for a chosen **format** with live legality/curve/composition.
+- **Commander** support (partner, background, singleton, colour identity).
+- Build around a card / commander / theme.
+- Build **from your collection** — highlight owned vs missing.
+- Choose exact printing + finish per slot.
+- Show deck value + cheapest available printing for each missing card.
+- Save + share decks (public URL).
+
+### Phase 2D — AI
+
+Retrieval-grounded over the live DB. Every answer must cite the row(s) it
+came from. Never invent cards, rules, legality, or prices.
+
+- Card / rules Q&A over `mtg_oracle_cards` + `mtg_rulings` +
+  `mtg_oracle_legalities`.
+- "Build me a deck" and "Improve my deck" over `mtg_decks` +
+  `mtg_deck_cards` + the collection.
+- Explain card choices, find synergies, suggest budget upgrades.
+
+### Phase 2E — Community
+
+- **Events** — local game nights, organised play, tournaments, card shows.
+- **Vendors** — LGSs, card shops, online sellers, show vendors.
+- **Creators** — streamers, deck/strategy creators, video/content creators.
+- **Event organisers / owners** — venues, organisers, promoters treated as
+  first-class entities that persist across events.
+
+### Phase 2F — Test Your Deck
+
+V1:
+
+- Opening-hand + mulligan testing.
+- Land-drop probability and mana/colour availability by turn.
+- Curve and goldfish simulation.
+
+Later:
+
+- Opponent archetypes and interaction (blockers, removal, counter-magic).
+- Repeated batch simulations for expected win-rate against archetype proxies.
+- AI-driven gameplay decisions.
+
+**Do not attempt to rebuild the complete Magic rules engine from scratch
+without first evaluating existing rules-engine options** (Forge, XMage,
+Cockatrice logic, MTGA modding surfaces, published open-source rules
+implementations).
