@@ -24,10 +24,40 @@ export async function POST(req: NextRequest) {
   if (!rule) return NextResponse.json({ error: 'unsupported_format' }, { status: 400 })
   const commanderIds: string[] = Array.isArray(body.commander_oracle_ids) ? body.commander_oracle_ids.slice(0, 2) : []
   const main: Array<{ oracle_card_id: string; quantity: number }> = Array.isArray(body.main) ? body.main : []
+  const basicLandsToAdd: number = Math.max(0, Math.min(60, Number(body.basic_lands_to_add ?? 0) | 0))
   if (main.length === 0 && commanderIds.length === 0) return NextResponse.json({ error: 'empty_deck' }, { status: 400 })
 
-  // Fetch oracle metadata to run the validator.
+  // Fetch oracle metadata to run the validator. If the caller
+  // requested auto-filled basics, resolve commander colour identity
+  // and add the appropriate basic-land oracle IDs to `main`.
   const s = getSupabaseServiceClient()
+  if (basicLandsToAdd > 0 && commanderIds.length > 0) {
+    const { data: ciRows } = await s.from('mtg_oracle_cards').select('color_identity').in('id', commanderIds)
+    const colours = new Set<string>()
+    for (const r of (ciRows ?? []) as any[]) for (const c of (r.color_identity ?? [])) colours.add(c)
+    const basicByColour: Record<string, string> = { W: 'Plains', U: 'Island', B: 'Swamp', R: 'Mountain', G: 'Forest' }
+    const wantedNames = Array.from(colours).map((c) => basicByColour[c]).filter(Boolean)
+    if (wantedNames.length > 0) {
+      const { data: basics } = await s
+        .from('mtg_oracle_cards')
+        .select('id, name, type_line')
+        .ilike('type_line', 'Basic Land%')
+        .in('name', wantedNames)
+      // Dedup by name — a name like "Plains" can appear multiple times
+      // in the oracle table across special basic printings (snow, full-art).
+      const byName = new Map<string, { id: string; name: string }>()
+      for (const b of (basics ?? []) as any[]) if (!byName.has(b.name)) byName.set(b.name, { id: b.id, name: b.name })
+      const basicList = Array.from(byName.values())
+      if (basicList.length > 0) {
+        const perColour = Math.floor(basicLandsToAdd / basicList.length)
+        const remainder = basicLandsToAdd - perColour * basicList.length
+        basicList.forEach((b, i) => {
+          const qty = perColour + (i < remainder ? 1 : 0)
+          if (qty > 0) main.push({ oracle_card_id: b.id, quantity: qty })
+        })
+      }
+    }
+  }
   const allIds = Array.from(new Set([...commanderIds, ...main.map((m) => m.oracle_card_id)]))
   const [{ data: oracles }, { data: legalities }] = await Promise.all([
     s.from('mtg_oracle_cards').select('id, name, type_line, color_identity, keywords, oracle_text').in('id', allIds),

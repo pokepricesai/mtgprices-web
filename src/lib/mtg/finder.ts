@@ -180,20 +180,34 @@ export async function findCards(query: FinderQuery, opts: { page?: number; pageS
   for (const r of oracleRows) oracleById.set(r.id, r)
 
   // ── STEP 3: freshest printing per oracle ─────────────────────
-  let pq = supabase
-    .from('mtg_printings')
-    .select('id, oracle_card_id, set_code, collector_number, name, image_uri, image_uri_small, rarity, released_at')
-    .in('oracle_card_id', oracleIds)
-    .eq('lang', 'en')
-    .eq('digital', false)
-    .order('released_at', { ascending: false, nullsFirst: false })
-  if (query.rarity) pq = pq.eq('rarity', query.rarity)
-  if (query.setCode) pq = pq.eq('set_code', query.setCode.toLowerCase())
-  if (query.releasedFrom) pq = pq.gte('released_at', query.releasedFrom)
-  if (query.releasedTo)   pq = pq.lte('released_at', query.releasedTo)
-  if (query.artist && query.artist.length >= 2) pq = pq.ilike('artist', `%${query.artist.trim()}%`)
-  const { data: printings, error: pErr } = await pq
-  if (pErr) { console.error('findCards printings err:', pErr); return emptyResult(query, page, pageSize) }
+  // Chunk the .in(oracle_ids, [...]) — PostgREST has a URL-size
+  // header cap around ~16KB. 200 UUIDs (36 chars each) blows it
+  // out. Chunk to 60 IDs per request. Each chunk is a separate
+  // round-trip; run them in parallel.
+  const IN_ORACLE_CHUNK = 60
+  const buildPrintingsQuery = (chunk: string[]) => {
+    let q = supabase
+      .from('mtg_printings')
+      .select('id, oracle_card_id, set_code, collector_number, name, image_uri, image_uri_small, rarity, released_at')
+      .in('oracle_card_id', chunk)
+      .eq('lang', 'en')
+      .eq('digital', false)
+      .order('released_at', { ascending: false, nullsFirst: false })
+    if (query.rarity) q = q.eq('rarity', query.rarity)
+    if (query.setCode) q = q.eq('set_code', query.setCode.toLowerCase())
+    if (query.releasedFrom) q = q.gte('released_at', query.releasedFrom)
+    if (query.releasedTo)   q = q.lte('released_at', query.releasedTo)
+    if (query.artist && query.artist.length >= 2) q = q.ilike('artist', `%${query.artist.trim()}%`)
+    return q
+  }
+  const printingChunks: string[][] = []
+  for (let i = 0; i < oracleIds.length; i += IN_ORACLE_CHUNK) printingChunks.push(oracleIds.slice(i, i + IN_ORACLE_CHUNK))
+  const printingResults = await Promise.all(printingChunks.map(buildPrintingsQuery))
+  const printings: PrintingRow[] = []
+  for (const { data, error } of printingResults) {
+    if (error) { console.error('findCards printings err:', error); return emptyResult(query, page, pageSize) }
+    for (const p of (data ?? []) as PrintingRow[]) printings.push(p)
+  }
 
   // Freshest per oracle_card_id.
   const seen = new Set<string>()

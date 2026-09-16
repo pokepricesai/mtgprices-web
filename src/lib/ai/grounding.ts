@@ -53,14 +53,21 @@ export const ReplaceSchema = z.object({
   })).max(12),
 })
 
+// Build schema — kept small so Sonnet 5 can emit it in reasonable
+// time. main[] is capped at 45 named cards; `basic_lands_to_add`
+// tells the save endpoint to auto-fill the remainder with basic
+// Islands/Plains/Swamps/Mountains/Forests picked from the
+// commander's colour identity. Keeps model output tokens sane and
+// predictable.
 export const BuildSchema = z.object({
   summary: z.string().max(4000),
   commanders: z.array(z.object({ oracle_card_id: z.string().uuid() })).max(2),
   main: z.array(z.object({
     oracle_card_id: z.string().uuid(),
-    quantity: z.number().int().min(1).max(4).default(1),
+    quantity: z.number().int().min(1).max(4),
     reason: z.string().max(400).optional(),
-  })).max(120),
+  })).max(45),
+  basic_lands_to_add: z.number().int().min(0).max(60).default(0),
   warnings: z.array(z.string().max(400)).optional(),
 })
 
@@ -250,6 +257,7 @@ export async function verifyBuildResponse(
   summary: string
   commanders: string[]
   main: Array<{ oracle_card_id: string; quantity: number; reason?: string | null }>
+  basic_lands_to_add: number
   warnings: string[]
 }>> {
   const parsed = BuildSchema.safeParse(raw)
@@ -284,6 +292,7 @@ export async function verifyBuildResponse(
       summary: parsed.data.summary,
       commanders: parsed.data.commanders.map((c) => c.oracle_card_id),
       main: parsed.data.main.map((c) => ({ oracle_card_id: c.oracle_card_id, quantity: c.quantity, reason: c.reason ?? null })),
+      basic_lands_to_add: parsed.data.basic_lands_to_add ?? 0,
       warnings: parsed.data.warnings ?? [],
     },
     rejected: [],

@@ -66,7 +66,9 @@ export function composeDeckQuery(deck: DeckContext, request: Partial<FinderQuery
  *  by first pulling the caller's collection + deck contents into an
  *  ID set. */
 export async function searchLegalCards(deck: DeckContext, opts: DeckSearchOptions = {}): Promise<DeckSearchResult> {
-  const supabase = await getSupabaseServerClient()
+  // getSupabaseServerClient() intentionally NOT called at top level —
+  // it requires Next's request scope. Only getOwnedTotalsForOracles()
+  // needs the caller session, and it self-scopes.
   const query = composeDeckQuery(deck, opts.request)
   const page = Math.max(1, opts.page ?? 1)
   const pageSize = Math.min(60, Math.max(1, opts.pageSize ?? 30))

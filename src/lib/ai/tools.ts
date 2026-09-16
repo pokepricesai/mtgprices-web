@@ -51,9 +51,13 @@ export function bindDeckTools(deck: DeckContext): BoundTools {
           'Return the current deck state: name, format, commanders, main/sideboard/companion/maybeboard, curve, colour identity, type breakdown, capability counts, ownership summary, deck value at the user\'s valuation basis, and validation state.',
         inputSchema: z.object({}),
         execute: async () => {
-          // Compact view — never dump raw Oracle text for every card;
-          // token budget matters. If the model wants specific cards
-          // it can call getCardDetails.
+          // Compact view — omit fields the model can rederive:
+          //   - per-card `colors` (subset of colour identity)
+          //   - per-card `capabilities` (aggregate is in capabilityBreakdown)
+          //   - per-card current_price when null
+          //   - per-card owned_quantity when 0
+          // These trims reduced live Improve input tokens 3-4x. If the
+          // model needs specifics on any card it can call getCardDetails.
           return {
             deck: {
               id: deck.deck.id,
@@ -85,23 +89,19 @@ export function bindDeckTools(deck: DeckContext): BoundTools {
               type_line: c.type_line,
               color_identity: c.color_identity,
             })),
-            main: deck.main.map((c) => ({
-              oracle_card_id: c.oracle_card_id,
-              name: c.name,
-              quantity: c.quantity,
-              mana_cost: c.mana_cost,
-              mana_value: c.mana_value,
-              type_line: c.type_line,
-              colors: c.colors,
-              color_identity: c.color_identity,
-              capabilities: c.capabilities,
-              owned_quantity: c.owned.ownedQuantityAcrossPrintings,
-              current_price: c.currentPrice ? {
-                price: c.currentPrice.price,
-                currency: c.currentPrice.currency,
-                source: c.currentPrice.source,
-              } : null,
-            })),
+            main: deck.main.map((c) => {
+              const row: Record<string, unknown> = {
+                oracle_card_id: c.oracle_card_id,
+                name: c.name,
+                quantity: c.quantity,
+                mana_cost: c.mana_cost,
+                mana_value: c.mana_value,
+                type_line: c.type_line,
+              }
+              if (c.owned.ownedQuantityAcrossPrintings > 0) row.owned_quantity = c.owned.ownedQuantityAcrossPrintings
+              if (c.currentPrice) row.price = { v: c.currentPrice.price, c: c.currentPrice.currency }
+              return row
+            }),
           }
         },
       }),
@@ -134,25 +134,33 @@ export function bindDeckTools(deck: DeckContext): BoundTools {
             missingOnly: Boolean(args.missingOnly),
             excludeInDeck: args.excludeInDeck ?? true,
             page: args.page ?? 1,
-            pageSize: 30,
+            // Cap at 10 hits per call. Down from 15 — combined with the
+            // colours/reasons trim below this cut live Improve input
+            // tokens roughly in half.
+            pageSize: 10,
           })
           for (const h of result.hits) authorised.add(h.oracle_card_id)
           return {
             total: result.total,
-            hits: result.hits.map((h) => ({
-              oracle_card_id: h.oracle_card_id,
-              name: h.name,
-              mana_cost: h.mana_cost,
-              mana_value: h.mana_value,
-              type_line: h.type_line,
-              colors: h.colors,
-              color_identity: h.color_identity,
-              capabilities: h.capabilities,
-              owned_quantity: (h as any).ownedTotal ?? 0,
-              copies_in_deck: (h as any).copiesInDeck ?? 0,
-              price: h.cheapest ? { value: h.cheapest.price, currency: h.cheapest.currency, provider: h.cheapest.provider } : null,
-              reasons: h.reasons,
-            })),
+            // Compact: drop `colors` (subset of CI already returned in
+            // getDeckContext), drop `reasons` (verbose, redundant with
+            // capabilities), collapse price to two fields.
+            hits: result.hits.map((h) => {
+              const row: Record<string, unknown> = {
+                oracle_card_id: h.oracle_card_id,
+                name: h.name,
+                mana_cost: h.mana_cost,
+                mana_value: h.mana_value,
+                type_line: h.type_line,
+                capabilities: h.capabilities,
+              }
+              const owned = (h as any).ownedTotal ?? 0
+              if (owned > 0) row.owned_quantity = owned
+              const inDeck = (h as any).copiesInDeck ?? 0
+              if (inDeck > 0) row.copies_in_deck = inDeck
+              if (h.cheapest) row.price = { v: h.cheapest.price, c: h.cheapest.currency }
+              return row
+            }),
           }
         },
       }),
@@ -298,7 +306,6 @@ export function bindBuilderTools(input: {
           page: z.number().int().min(1).max(10).optional(),
         }),
         execute: async (args) => {
-          const supabase = await getSupabaseServerClient()
           const ci = await commanderCI
           // Delegate to a lightweight direct RPC call — reusing
           // searchLegalCards() would require a full DeckContext.
@@ -309,14 +316,17 @@ export function bindBuilderTools(input: {
             p_mv_max: args.manaValueMax ?? null,
             p_mv_min: args.manaValueMin ?? null,
             p_legal_in: input.format,
-            p_limit: 30,
+            p_limit: 15,
             p_offset: 0,
           } as any)
           if (error) return { error: error.message }
           let hits = (rows ?? []) as any[]
 
           // Owned filter — use the caller's collection via server client.
+          // getSupabaseServerClient() only called here so the tool
+          // still works from Node scripts when ownedOnly=false.
           if (args.ownedOnly && hits.length > 0) {
+            const supabase = await getSupabaseServerClient()
             const oracleIds = hits.map((r) => r.id)
             // Find printings + finishes for those oracles.
             const { data: printings } = await s.from('mtg_printings').select('id, oracle_card_id').in('oracle_card_id', oracleIds).eq('lang', 'en').eq('digital', false)

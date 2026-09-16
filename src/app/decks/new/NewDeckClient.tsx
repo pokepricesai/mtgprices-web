@@ -91,9 +91,13 @@ export default function NewDeckClient({ formats }: Props) {
         }}>{saving ? 'Creating…' : 'Create deck manually'}</button>
       </div>
 
-      <div style={{ marginTop: 24, padding: 16, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12 }}>
-        <BuildWithAI formats={formats} />
-      </div>
+      {/* Build with AI is hidden until the staged pipeline (Plan → Candidates → Select → Repair)
+          passes live acceptance. Analyse/Improve/Replace remain live in the deck editor. */}
+      {process.env.NEXT_PUBLIC_AI_BUILD_ENABLED === 'true' && (
+        <div style={{ marginTop: 24, padding: 16, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12 }}>
+          <BuildWithAI formats={formats} />
+        </div>
+      )}
     </form>
   )
 }

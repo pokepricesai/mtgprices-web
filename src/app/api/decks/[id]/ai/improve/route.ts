@@ -15,7 +15,10 @@ import { getSupabaseServiceClient } from '@/lib/supabaseService'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-export const maxDuration = 60
+// Sonnet 5's reasoning tier averaged 30-60s in live testing with
+// tool loops. Bumped from 60s so genuine long-running improves have
+// headroom before hitting the timeout.
+export const maxDuration = 120
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser()
@@ -45,7 +48,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     system: IMPROVE_SYSTEM,
     prompt: improveUserPrompt(goal, custom),
     tools: bound.tools,
-    maxSteps: 12,
+    // 5 steps is enough for: getDeckContext → 3 searchLegalCards calls
+    // → emit JSON. Previously 12; the higher cap encouraged the model
+    // to keep searching with tiny filter variations and blew up input
+    // tokens.
+    maxSteps: 5,
+    timeoutMs: 90_000,
   })
 
   if (!result.ok) {
