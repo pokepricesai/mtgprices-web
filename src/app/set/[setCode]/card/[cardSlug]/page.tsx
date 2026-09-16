@@ -9,7 +9,7 @@ import {
   getHeadlinePricesByPrinting,
   type MtgCurrentPrice,
 } from '@/lib/mtg/prices'
-import { classifyCard } from '@/lib/mtg/classify'
+import { classify as classifyCard, type CardCapability } from '@/lib/mtg/capabilities'
 import { extractFaces, normaliseLayout } from '@/lib/mtg/faces'
 import ManaCost from '@/components/mtg/ManaCost'
 import OracleText from '@/components/mtg/OracleText'
@@ -18,6 +18,7 @@ import CapabilityChips from '@/components/mtg/CapabilityChips'
 import LegalityMatrix from '@/components/mtg/LegalityMatrix'
 import OtherPrintings from '@/components/mtg/OtherPrintings'
 import RulingsList from '@/components/mtg/RulingsList'
+import SimilarCards from '@/components/mtg/SimilarCards'
 import CardPageClient from './CardPageClient'
 
 export const revalidate = 300
@@ -73,13 +74,18 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
 
   const layoutKind = normaliseLayout(oracle.layout)
   const faces = extractFaces(oracle)
-  const caps = classifyCard({
-    type_line: oracle.type_line,
-    oracle_text: oracle.oracle_text,
-    keywords: oracle.keywords,
-    produced_mana: oracle.produced_mana,
-    card_faces: oracle.card_faces,
-  })
+  // Prefer pre-computed capabilities from mtg_oracle_cards.capabilities
+  // (Phase 2B backfill). Fall back to a live classify call if the row
+  // is missing tags for any reason (defence in depth).
+  const caps: CardCapability[] = (oracle.capabilities as CardCapability[] | undefined)?.length
+    ? oracle.capabilities as CardCapability[]
+    : classifyCard({
+        type_line: oracle.type_line,
+        oracle_text: oracle.oracle_text,
+        keywords: oracle.keywords,
+        produced_mana: oracle.produced_mana,
+        card_faces: oracle.card_faces,
+      })
 
   // Prices + chart data.
   const finishIds = finishes.map((f) => f.id)
@@ -275,6 +281,11 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
           <div style={{ marginBottom: 24 }}>
             <div className="label-mono" style={{ marginBottom: 8 }}>Rulings {rulings.length > 0 && <span style={{ color: 'var(--text-muted)' }}>({rulings.length})</span>}</div>
             <RulingsList rulings={rulings} initialCount={6} />
+          </div>
+
+          {/* Similar cards (deterministic) */}
+          <div style={{ marginBottom: 12 }}>
+            <SimilarCards oracleId={oracle.id} currentPrintingId={printing.id} />
           </div>
         </div>
       </div>

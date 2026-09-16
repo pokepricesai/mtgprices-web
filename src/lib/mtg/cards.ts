@@ -26,6 +26,7 @@ export type MtgOracleCard = {
   produced_mana: string[] | null
   reserved: boolean | null
   game_changer: boolean | null
+  capabilities: string[]
 }
 
 export type MtgPrinting = {
@@ -180,7 +181,7 @@ export async function getCardBySlug(setCode: string, cardSlug: string): Promise<
   // 2. Oracle card
   const { data: oracle, error: oErr } = await supabase
     .from('mtg_oracle_cards')
-    .select('id, oracle_id, name, mana_cost, mana_value, type_line, oracle_text, power, toughness, loyalty, defense, colors, color_identity, keywords, layout, card_faces, produced_mana, reserved, game_changer')
+    .select('id, oracle_id, name, mana_cost, mana_value, type_line, oracle_text, power, toughness, loyalty, defense, colors, color_identity, keywords, layout, card_faces, produced_mana, reserved, game_changer, capabilities')
     .eq('id', printing.oracle_card_id)
     .maybeSingle()
   if (oErr || !oracle) {

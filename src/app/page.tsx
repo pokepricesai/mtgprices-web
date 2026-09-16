@@ -55,9 +55,58 @@ export default async function HomePage() {
         <div style={{ marginTop: 26, maxWidth: 720 }}>
           <HomeSearch placeholder="Search a card — e.g. Lightning Bolt, Sheoldred, Ragavan…" />
           <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-muted)' }}>
-            Or jump straight to
-            {' '}<Link href="/browse" style={{ color: 'var(--accent)' }}>every set</Link>
+            Or {' '}
+            <Link href="/card-finder" style={{ color: 'var(--accent)' }}>find a card by what it does</Link>
+            {' · '}<Link href="/browse" style={{ color: 'var(--accent)' }}>every set</Link>
             {' · '}<Link href="/formats" style={{ color: 'var(--accent)' }}>formats</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Card Finder — flagship discovery surface */}
+      <section style={{ paddingTop: 44 }}>
+        <div style={{
+          padding: '28px 26px', background: 'linear-gradient(140deg, rgba(124,92,231,0.10), rgba(201,165,92,0.05))',
+          border: '1px solid rgba(124,92,231,0.35)', borderRadius: 16, position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 260 }}>
+              <div className="label-mono" style={{ color: 'var(--accent)', marginBottom: 6 }}>New · Card Finder</div>
+              <h2 style={{ margin: 0, fontSize: 24, lineHeight: 1.2 }}>Find the right MTG card even when you do not know its name.</h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.55, marginTop: 8, maxWidth: 640 }}>
+                Search by what a card <em>does</em> — capability, colour, mana value, format legality, price.
+                Or search collector-side: set, era, rarity, finish, Reserved List, cheapest printing.
+                Every result cites the constraints it satisfied. No invented recommendations.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+              <Link href="/card-finder?mode=play" style={{
+                background: 'var(--primary)', color: '#fff',
+                border: 'none', borderRadius: 10, padding: '10px 18px',
+                fontWeight: 700, fontSize: 14, textDecoration: 'none',
+              }}>Find for Play</Link>
+              <Link href="/card-finder?mode=collecting" style={{
+                background: 'transparent', color: 'var(--text)',
+                border: '1px solid var(--border)', borderRadius: 10, padding: '9px 18px',
+                fontWeight: 600, fontSize: 14, textDecoration: 'none',
+              }}>Find for Collecting</Link>
+            </div>
+          </div>
+          <div style={{ marginTop: 18, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {[
+              'blue card draw for commander under 3 mana',
+              'cheap black creature removal',
+              'foil mythics under $10',
+              'reserved list cards',
+              'green ramp legal in modern',
+              'cards that make creature tokens',
+            ].map((s, i) => (
+              <Link key={i} href={`/card-finder?q=${encodeURIComponent(s)}`} style={{
+                fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 999,
+                background: 'rgba(124,92,231,0.10)', color: '#c8b8ff',
+                border: '1px solid rgba(124,92,231,0.25)', textDecoration: 'none',
+              }}>{s}</Link>
+            ))}
           </div>
         </div>
       </section>
@@ -70,7 +119,7 @@ export default async function HomePage() {
             tagline="For collectors and buyers"
             body="Live prices from TCGplayer, Card Kingdom, Cardmarket, ManaPool and Cardhoarder. Every printing, every finish, price history and set catalogue in one place."
             actions={[
-              { label: 'Search cards', href: '/cards/search' },
+              { label: 'Find for Collecting', href: '/card-finder?mode=collecting' },
               { label: 'Browse sets', href: '/browse' },
             ]}
             soon={['Collection tracking', 'Deck value', 'Market movement dashboards']}
@@ -80,8 +129,8 @@ export default async function HomePage() {
             tagline="For deck builders and players"
             body="Full Oracle text, keywords, factual card capabilities, format legality across Standard through Vintage and everything in between. The rules and rulings behind every card."
             actions={[
+              { label: 'Find for Play', href: '/card-finder?mode=play' },
               { label: 'Explore formats', href: '/formats' },
-              { label: 'Card search', href: '/cards/search' },
             ]}
             soon={['Deck Builder', 'AI deck assistant', 'Test Your Deck']}
           />

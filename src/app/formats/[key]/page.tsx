@@ -67,17 +67,36 @@ export default async function FormatPage({ params }: { params: Promise<Params> }
       )}
 
       <section style={{ marginTop: 40, padding: 20, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12 }}>
-        <div className="label-mono" style={{ marginBottom: 6 }}>Explore cards for this format</div>
+        <div className="label-mono" style={{ marginBottom: 6 }}>Explore {f.label} cards</div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
-          <Link href={`/cards/search?legal=${f.key}`} style={{
+          <Link href={`/card-finder?mode=play&legal=${f.key}`} style={{
             background: 'var(--primary)', color: '#fff',
-            padding: '9px 18px', borderRadius: 10, fontWeight: 600, fontSize: 13, textDecoration: 'none',
-          }}>Search legal cards</Link>
+            padding: '9px 18px', borderRadius: 10, fontWeight: 700, fontSize: 13, textDecoration: 'none',
+          }}>Open Card Finder</Link>
+          <Link href={`/cards/search?legal=${f.key}`} style={{
+            background: 'transparent', color: 'var(--text)',
+            border: '1px solid var(--border)',
+            padding: '8px 18px', borderRadius: 10, fontWeight: 600, fontSize: 13, textDecoration: 'none',
+          }}>Catalogue search</Link>
           <Link href="/formats" style={{
             background: 'transparent', color: 'var(--text)',
             border: '1px solid var(--border)',
             padding: '8px 18px', borderRadius: 10, fontWeight: 600, fontSize: 13, textDecoration: 'none',
           }}>All formats</Link>
+        </div>
+        <div style={{ marginTop: 14 }}>
+          <div className="label-mono" style={{ marginBottom: 6 }}>Popular capabilities in {f.label}</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {['creature-removal', 'card-draw', 'ramp', 'counter-spell', 'board-wipe', 'tutor', 'token-creation', 'graveyard-interaction'].map((c) => (
+              <Link key={c} href={`/card-finder?mode=play&legal=${f.key}&caps=${c}`} style={{
+                fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 999,
+                background: 'rgba(124,92,231,0.12)', color: '#c8b8ff',
+                border: '1px solid rgba(124,92,231,0.25)', textDecoration: 'none',
+              }}>
+                {c.split('-').map((s) => s[0].toUpperCase() + s.slice(1)).join(' ')}
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
     </div>

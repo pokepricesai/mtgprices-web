@@ -19,14 +19,16 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: 'Collect',
     items: [
-      { label: 'Cards', href: '/cards/search' },
+      { label: 'Card Finder', href: '/card-finder?mode=collecting' },
       { label: 'Sets', href: '/browse' },
+      { label: 'Cards (catalogue)', href: '/cards/search' },
       { label: 'Collection', soon: true },
     ],
   },
   {
     title: 'Play',
     items: [
+      { label: 'Card Finder', href: '/card-finder?mode=play' },
       { label: 'Formats', href: '/formats' },
       { label: 'Deck Builder', soon: true },
       { label: 'Test Your Deck', soon: true },
@@ -49,6 +51,7 @@ const NAV_GROUPS: NavGroup[] = [
 ]
 
 const DESKTOP_LINKS: { label: string; href: string }[] = [
+  { label: 'Card Finder', href: '/card-finder' },
   { label: 'Cards', href: '/cards/search' },
   { label: 'Sets', href: '/browse' },
   { label: 'Formats', href: '/formats' },

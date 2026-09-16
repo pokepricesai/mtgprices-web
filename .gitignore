@@ -25,3 +25,6 @@ seo/exports/
 manual-assets/jp/inbox/
 .vercel
 .env*
+
+# Supabase CLI local link state
+supabase/.temp/
