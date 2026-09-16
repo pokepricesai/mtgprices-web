@@ -15,6 +15,7 @@ import { CAPABILITY_LABELS, TYPE_CAPABILITIES, type CardCapability, CAPABILITY_T
 import { FORMATS } from '@/lib/mtg/formats'
 import { buildCardSlug } from '@/lib/mtg/slug'
 import ManaCost from '@/components/mtg/ManaCost'
+import AddToDeck from '@/components/mtg/AddToDeck'
 import CardFinderControls from './CardFinderControls'
 
 export const dynamic = 'force-dynamic'
@@ -249,53 +250,57 @@ function ResultCard({ h }: { h: FinderHit }) {
   const href = slug ? `/set/${h.printing.set_code}/card/${slug}` : '#'
   const dot = h.printing.rarity ? RARITY_COLOR[h.printing.rarity] ?? 'var(--text-muted)' : 'var(--text-muted)'
   return (
-    <Link
-      href={href}
+    <div
       className="card-hover"
       style={{
-        display: 'block', background: 'var(--surface)',
+        display: 'flex', flexDirection: 'column', background: 'var(--surface)',
         border: '1px solid var(--border)', borderRadius: 12,
-        padding: 12, textDecoration: 'none', color: 'var(--text)',
+        padding: 12, color: 'var(--text)',
       }}
     >
-      <div style={{
-        aspectRatio: '5 / 7', borderRadius: 6, background: 'var(--bg-light)',
-        marginBottom: 10, overflow: 'hidden',
-      }}>
-        {h.printing.image_uri_small ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={h.printing.image_uri_small} alt={h.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-        ) : null}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.name}</div>
-        {h.mana_cost && <span style={{ flexShrink: 0 }}><ManaCost cost={h.mana_cost} size={13} /></span>}
-      </div>
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center', color: 'var(--text-muted)', fontSize: 11 }}>
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: dot }} aria-hidden />
-        <span style={{ textTransform: 'uppercase' }}>{h.printing.set_code}</span>
-        {h.printing.collector_number && <span>· #{h.printing.collector_number}</span>}
-        <span style={{ marginLeft: 'auto', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', color: h.cheapest ? 'var(--text)' : 'var(--text-muted)', fontWeight: h.cheapest ? 700 : 500 }}>
-          {fmtPrice(h.cheapest)}
-        </span>
-      </div>
-      {h.type_line && (
-        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.35 }}>{h.type_line}</div>
-      )}
-      {h.reasons.length > 0 && (
-        <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-          <div className="label-mono" style={{ marginBottom: 4, fontSize: 9 }}>Why matched</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {h.reasons.slice(0, 4).map((r, i) => (
-              <span key={i} style={{
-                fontSize: 10, padding: '2px 7px', borderRadius: 999,
-                background: 'var(--primary-soft)', color: 'var(--primary)',
-              }}>{r}</span>
-            ))}
-          </div>
+      <Link href={href} style={{ color: 'inherit', textDecoration: 'none' }}>
+        <div style={{
+          aspectRatio: '5 / 7', borderRadius: 6, background: 'var(--bg-light)',
+          marginBottom: 10, overflow: 'hidden',
+        }}>
+          {h.printing.image_uri_small ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={h.printing.image_uri_small} alt={h.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+          ) : null}
         </div>
-      )}
-    </Link>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.name}</div>
+          {h.mana_cost && <span style={{ flexShrink: 0 }}><ManaCost cost={h.mana_cost} size={13} /></span>}
+        </div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', color: 'var(--text-muted)', fontSize: 11 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: dot }} aria-hidden />
+          <span style={{ textTransform: 'uppercase' }}>{h.printing.set_code}</span>
+          {h.printing.collector_number && <span>· #{h.printing.collector_number}</span>}
+          <span style={{ marginLeft: 'auto', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', color: h.cheapest ? 'var(--text)' : 'var(--text-muted)', fontWeight: h.cheapest ? 700 : 500 }}>
+            {fmtPrice(h.cheapest)}
+          </span>
+        </div>
+        {h.type_line && (
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.35 }}>{h.type_line}</div>
+        )}
+        {h.reasons.length > 0 && (
+          <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+            <div className="label-mono" style={{ marginBottom: 4, fontSize: 9 }}>Why matched</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {h.reasons.slice(0, 4).map((r, i) => (
+                <span key={i} style={{
+                  fontSize: 10, padding: '2px 7px', borderRadius: 999,
+                  background: 'var(--primary-soft)', color: 'var(--primary)',
+                }}>{r}</span>
+              ))}
+            </div>
+          </div>
+        )}
+      </Link>
+      <div style={{ marginTop: 10 }}>
+        <AddToDeck oracleId={h.oracle_card_id} cardName={h.name} preferredFinishId={null} />
+      </div>
+    </div>
   )
 }
 

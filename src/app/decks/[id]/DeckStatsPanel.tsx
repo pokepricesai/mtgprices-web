@@ -3,7 +3,7 @@
 import type { DeckContext } from '@/lib/mtg/deck-context'
 import { CAPABILITY_LABELS, type CardCapability } from '@/lib/mtg/capabilities'
 
-export default function DeckStatsPanel({ ctx }: { ctx: DeckContext }) {
+export default function DeckStatsPanel({ ctx, onFilterByCapability }: { ctx: DeckContext; onFilterByCapability?: (cap: CardCapability) => void }) {
   const typeEntries = Object.entries(ctx.typeBreakdown).filter(([, v]) => v > 0)
   const capEntries = Object.entries(ctx.capabilityBreakdown).filter(([, v]) => (v ?? 0) > 0).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0)).slice(0, 8)
   const maxCurve = Math.max(1, ...ctx.curve)
@@ -65,10 +65,25 @@ export default function DeckStatsPanel({ ctx }: { ctx: DeckContext }) {
           <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.4 }}>Capabilities in main</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
             {capEntries.map(([cap, n]) => (
-              <span key={cap} style={{ ...chip, background: 'var(--primary-soft)', color: 'var(--primary)', border: '1px solid rgba(104,65,230,0.25)' }}>
-                {CAPABILITY_LABELS[cap as CardCapability] ?? cap} <b style={{ marginLeft: 4, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{n}</b>
-              </span>
+              onFilterByCapability ? (
+                <button
+                  key={cap}
+                  type="button"
+                  onClick={() => onFilterByCapability(cap as CardCapability)}
+                  title={`Find more ${(CAPABILITY_LABELS[cap as CardCapability] ?? cap).toLowerCase()} in this deck's search`}
+                  style={{ ...chip, background: 'var(--primary-soft)', color: 'var(--primary)', border: '1px solid rgba(104,65,230,0.25)', cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  {CAPABILITY_LABELS[cap as CardCapability] ?? cap} <b style={{ marginLeft: 4, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{n}</b>
+                </button>
+              ) : (
+                <span key={cap} style={{ ...chip, background: 'var(--primary-soft)', color: 'var(--primary)', border: '1px solid rgba(104,65,230,0.25)' }}>
+                  {CAPABILITY_LABELS[cap as CardCapability] ?? cap} <b style={{ marginLeft: 4, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{n}</b>
+                </span>
+              )
             ))}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 6, fontStyle: 'italic' }}>
+            Counts only. No sufficient/insufficient labels — those are Phase 3C.
           </div>
         </div>
       )}

@@ -103,12 +103,30 @@ answer maps to a row that exists.
 - Text-list import ("4 Lightning Bolt"), plain-text export.
 - Add-to-Deck action on card page.
 
-**3B — Smart Deck Discovery**
-- Card Finder inside deck context.
-- Replacement / cheaper-alternative suggestions.
-- Capability-gap discovery (deck is short on draw / ramp / removal).
-- Collection-only discovery ("build from what I own").
-- Context-aware card search across decks.
+**3B — Smart Deck Discovery** *(complete)*
+- `mtg_search_oracle_cards` RPC: single-round-trip Oracle search with
+  covering index `(format, legality, oracle_id)` on
+  `mtg_oracle_legalities`. Measured 7.7 s → 105 ms p50 on the
+  commander+cap+color+MV path — ~75× speed-up.
+- Deck-context primitives (`src/lib/mtg/deck-search.ts`):
+  `composeDeckQuery`, `searchLegalCards`, `findAlternativesInDeck`,
+  `findCheaperAlternatives` — the same functions Phase 3C will call.
+- Deck-builder search panel: NL box (deterministic parser),
+  capabilities, MV ceiling, price ceiling, owned-only, missing-only,
+  hide-already-in-deck. Reasons rendered per hit.
+- Alternatives sheet on every deck card row: Find alternatives /
+  Find cheaper alternatives (auto-scoped to deck format + commander CI
+  + valuation basis). Factual why-matched, never strategic claims.
+- Clickable capability chips in the stats panel — "Card draw: 8" opens
+  the search prefiltered. No sufficient/insufficient labels.
+- Copy-limit awareness in search results (per-format singleton /
+  4-of-limit; basic-land exemption).
+- Companion validator: deterministic rules for Keruga / Lurrus /
+  Obosh / Gyruda / Yorion / Jegantha / Umori. Kaheera / Lutri / Zirda
+  surface as warnings because their restrictions are not reliably
+  parseable from Oracle text.
+- `Copy decklist` button — wires the existing `deckToText()` helper.
+- Add-to-Deck compact on `/card-finder` result cards.
 
 **3C — AI Deck Intelligence**
 Retrieval-grounded over the live DB. Every answer must cite the row(s)

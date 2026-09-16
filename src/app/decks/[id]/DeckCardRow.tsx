@@ -19,6 +19,9 @@ type Props = {
   onRemove: () => void
   onMoveZone: (zone: DeckZone) => void
   onSetPreferredFinish: (printingFinishId: string | null) => void
+  onFindAlternatives?: () => void
+  onFindCheaper?: () => void
+  onFilterByCapability?: (cap: import('@/lib/mtg/capabilities').CardCapability) => void
 }
 
 export default function DeckCardRow(props: Props) {
@@ -90,6 +93,35 @@ export default function DeckCardRow(props: Props) {
       </div>
       {expanded && (
         <div style={{ gridColumn: '1 / -1', padding: '10px 4px 6px', borderTop: '1px solid var(--border)', marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          {cardHref && (
+            <a href={cardHref} style={{ ...miniBtn, textDecoration: 'none', padding: '4px 10px' }}>View card</a>
+          )}
+          {props.onFindAlternatives && (
+            <button type="button" onClick={props.onFindAlternatives} style={{ ...miniBtn, padding: '4px 10px' }}>Find alternatives</button>
+          )}
+          {props.onFindCheaper && (
+            <button type="button" onClick={props.onFindCheaper} style={{ ...miniBtn, padding: '4px 10px' }}>Cheaper alternatives</button>
+          )}
+          {props.onFilterByCapability && card.capabilities.length > 0 && (
+            <details style={{ position: 'relative' }}>
+              <summary style={{ ...miniBtn, listStyle: 'none', padding: '4px 10px' }}>Find by capability</summary>
+              <div style={{
+                position: 'absolute', top: 30, left: 0, zIndex: 5,
+                background: 'var(--surface)', border: '1px solid var(--border)',
+                borderRadius: 8, padding: 6, minWidth: 180,
+                boxShadow: '0 6px 20px rgba(23,32,58,0.10)',
+              }}>
+                {card.capabilities.filter((c) => !['creature', 'planeswalker', 'battle', 'enchantment', 'artifact', 'land', 'instant', 'sorcery', 'legendary-creature'].includes(c)).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => props.onFilterByCapability!(c)}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '4px 8px', background: 'transparent', border: 'none', fontSize: 12, cursor: 'pointer', color: 'var(--text)', borderRadius: 4 }}
+                  >{c.replace(/-/g, ' ')}</button>
+                ))}
+              </div>
+            </details>
+          )}
           <label style={{ fontSize: 11, color: 'var(--text-muted)' }}>
             Zone:
             <select

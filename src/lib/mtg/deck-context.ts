@@ -14,6 +14,7 @@ import type { FormatKey } from './formats.data'
 import type { CardCapability } from './capabilities'
 import type { DeckZone, DeckCardForValidation, ValidationResult } from './deck-rules'
 import { validateDeck, typeBreakdown, manaCurve, capabilityBreakdown, unionColorIdentity, parseCardTypes } from './deck-rules'
+import { validateCompanion } from './companion'
 import { getFormatRule } from './format-rules'
 import { VALUATION_BASES, findBasis, type ValuationBasis } from './valuation.data'
 import type { DeckRow, DeckCardRow } from './decks'
@@ -341,6 +342,26 @@ export async function buildDeckContext(deck: DeckRow, cards: DeckCardRow[]): Pro
     legality: c.legality,
   }))
   const validation = validateDeck({ format: deck.format, cards: validationInput })
+  // Layer Companion restrictions on top of the base validator.
+  const companionResult = validateCompanion({
+    format: deck.format,
+    cards: context.map((c) => ({
+      oracle_card_id: c.oracle_card_id,
+      name: c.name,
+      quantity: c.quantity,
+      zone: c.zone,
+      type_line: c.type_line,
+      color_identity: c.color_identity,
+      keywords: c.keywords,
+      oracle_text: c.oracle_text,
+      legality: c.legality,
+      mana_cost: c.mana_cost,
+      mana_value: c.mana_value,
+    })),
+  })
+  validation.issues.push(...companionResult.issues)
+  validation.warnings.push(...companionResult.warnings)
+  validation.ok = validation.issues.length === 0
 
   // Deck value.
   let deckValue = 0

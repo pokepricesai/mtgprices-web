@@ -42,6 +42,8 @@ export default function DeckBuilderClient({ initialContext }: Props) {
   const [pending, startTransition] = useTransition()
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [nameDraft, setNameDraft] = useState(initialContext.deck.name)
+  const [searchSeedCaps, setSearchSeedCaps] = useState<import('@/lib/mtg/capabilities').CardCapability[] | undefined>(undefined)
+  const [altSheet, setAltSheet] = useState<{ oracleId: string; name: string; mode: 'similar' | 'cheaper' } | null>(null)
   const rule = getFormatRule(ctx.deck.format)
 
   function reload() {
@@ -176,7 +178,12 @@ export default function DeckBuilderClient({ initialContext }: Props) {
           {/* Validation + Stats */}
           <div style={{ display: 'grid', gap: 12, gridTemplateColumns: '1fr 1fr', marginBottom: 16 }} className="deck-topcards">
             <DeckValidationPanel validation={ctx.validation} totals={ctx.totals} pricing={ctx.pricing} rule={rule} />
-            <DeckStatsPanel ctx={ctx} />
+            <DeckStatsPanel ctx={ctx} onFilterByCapability={(cap) => setSearchSeedCaps([cap])} />
+          </div>
+
+          {/* Copy list */}
+          <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
+            <CopyDeckButton deckId={ctx.deck.id} />
           </div>
 
           {/* Zone list */}
@@ -217,6 +224,9 @@ export default function DeckBuilderClient({ initialContext }: Props) {
                         onRemove={() => removeCard(e.deck_card_id)}
                         onMoveZone={(z) => moveZone(e.deck_card_id, z)}
                         onSetPreferredFinish={(pf) => setPreferredFinish(e.deck_card_id, pf)}
+                        onFindAlternatives={() => setAltSheet({ oracleId: e.oracle_card_id, name: e.name, mode: 'similar' })}
+                        onFindCheaper={() => setAltSheet({ oracleId: e.oracle_card_id, name: e.name, mode: 'cheaper' })}
+                        onFilterByCapability={(cap) => setSearchSeedCaps([cap])}
                         currentZone={zone}
                         format={ctx.deck.format}
                       />
@@ -233,12 +243,26 @@ export default function DeckBuilderClient({ initialContext }: Props) {
         {/* Right column: search */}
         <div className="deck-search-col">
           <DeckSearchPanel
+            key={searchSeedCaps?.join(',') ?? 'default'}
+            deckId={ctx.deck.id}
             deckFormat={ctx.deck.format}
             commanderColorIdentity={commanderColorIdentity}
             onAdd={(oracleId, zone) => addOracle(oracleId, zone)}
+            initialCaps={searchSeedCaps}
           />
         </div>
       </div>
+
+      {altSheet && (
+        <AlternativesSheet
+          deckId={ctx.deck.id}
+          oracleId={altSheet.oracleId}
+          cardName={altSheet.name}
+          mode={altSheet.mode}
+          onClose={() => setAltSheet(null)}
+          onAdd={(oracleId) => { addOracle(oracleId, 'main'); setAltSheet(null) }}
+        />
+      )}
 
       <style
         dangerouslySetInnerHTML={{
@@ -251,6 +275,117 @@ export default function DeckBuilderClient({ initialContext }: Props) {
           `,
         }}
       />
+    </div>
+  )
+}
+
+function CopyDeckButton({ deckId }: { deckId: string }) {
+  const [status, setStatus] = useState<'idle' | 'copying' | 'copied' | 'err'>('idle')
+  async function copy() {
+    setStatus('copying')
+    try {
+      const res = await fetch(`/api/decks/${deckId}/export`)
+      if (!res.ok) throw new Error('export failed')
+      const text = await res.text()
+      await navigator.clipboard.writeText(text)
+      setStatus('copied')
+    } catch {
+      setStatus('err')
+    }
+    setTimeout(() => setStatus('idle'), 1600)
+  }
+  const label = status === 'copying' ? 'Copying…' : status === 'copied' ? 'Copied!' : status === 'err' ? 'Copy failed' : 'Copy decklist'
+  return (
+    <button type="button" onClick={copy} style={{
+      background: 'transparent', color: 'var(--primary)',
+      border: '1px solid var(--primary)', padding: '8px 14px',
+      borderRadius: 10, fontWeight: 700, fontSize: 12, cursor: 'pointer',
+    }}>{label}</button>
+  )
+}
+
+function AlternativesSheet({ deckId, oracleId, cardName, mode, onClose, onAdd }: {
+  deckId: string; oracleId: string; cardName: string; mode: 'similar' | 'cheaper';
+  onClose: () => void; onAdd: (oracleId: string) => void
+}) {
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<any>(null)
+  useMemo(() => {
+    setLoading(true)
+    const q = mode === 'cheaper' ? '&cheaper=1' : ''
+    fetch(`/api/decks/${deckId}/alternatives?oracle=${oracleId}${q}`)
+      .then((r) => r.json())
+      .then((d) => { setData(d); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [deckId, oracleId, mode])
+
+  const items = mode === 'cheaper' ? (data?.alternatives ?? []) : (data?.alternatives ?? [])
+
+  return (
+    <div onClick={onClose} role="dialog" aria-modal="true" style={{
+      position: 'fixed', inset: 0, background: 'rgba(23,32,58,0.35)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 1000, padding: 16,
+    }}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        background: 'var(--surface)', borderRadius: 14, padding: 18,
+        maxWidth: 720, width: '100%', maxHeight: '80vh', overflowY: 'auto',
+        boxShadow: '0 24px 60px rgba(23,32,58,0.18)', border: '1px solid var(--border)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+          <div>
+            <div className="label-mono" style={{ marginBottom: 4 }}>{mode === 'cheaper' ? 'Cheaper alternatives' : 'Find alternatives'}</div>
+            <h3 style={{ margin: 0, fontSize: 18 }}>for {cardName}</h3>
+          </div>
+          <button type="button" onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }} aria-label="Close">✕</button>
+        </div>
+
+        {loading && <div style={{ color: 'var(--text-muted)' }}>Loading…</div>}
+        {!loading && mode === 'cheaper' && data?.reason && (
+          <div style={{ padding: 10, background: 'var(--accent-soft)', borderRadius: 8, color: 'var(--amber)', fontSize: 13, marginBottom: 12 }}>
+            {data.reason}
+          </div>
+        )}
+        {!loading && items.length === 0 && !data?.reason && (
+          <div style={{ padding: 12, background: 'var(--bg-light)', borderRadius: 8, color: 'var(--text-muted)', fontSize: 13 }}>
+            No alternatives found. Deck format legality + commander identity are being enforced — try loosening those constraints on the search panel.
+          </div>
+        )}
+        {items.length > 0 && (
+          <div style={{ display: 'grid', gap: 8 }}>
+            {items.map((h: any) => (
+              <div key={h.oracle_card_id} style={{
+                display: 'grid', gridTemplateColumns: '40px 1fr auto auto', gap: 10, alignItems: 'center',
+                padding: 8, background: 'var(--bg-light)', border: '1px solid var(--border)', borderRadius: 8,
+              }}>
+                <div style={{ width: 40, aspectRatio: '5/7', background: 'var(--surface)', borderRadius: 4, overflow: 'hidden' }}>
+                  {h.printing?.image_uri_small ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={h.printing.image_uri_small} alt={h.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                  ) : null}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{h.name}</div>
+                  {h.reasons?.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 3 }}>
+                      {h.reasons.slice(0, 3).map((r: string, i: number) => (
+                        <span key={i} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 999, background: 'var(--primary-soft)', color: 'var(--primary)' }}>{r}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div style={{ fontSize: 12, textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+                  {h.currentPrice ? `${h.currentPrice.currency === 'USD' ? '$' : '€'}${h.currentPrice.price.toFixed(2)}` : '—'}
+                </div>
+                <button type="button" onClick={() => onAdd(h.oracle_card_id)} style={{
+                  background: 'var(--primary)', color: '#fff', border: 'none',
+                  padding: '5px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                }}>+ Deck</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
