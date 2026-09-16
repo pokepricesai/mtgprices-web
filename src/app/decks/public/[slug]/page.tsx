@@ -14,8 +14,19 @@ import { loadPublicDeckBySlug } from '@/lib/mtg/public-deck'
 import PublicDeckClient from './PublicDeckClient'
 import { getFormatRule } from '@/lib/mtg/format-rules'
 
+// Privacy over caching. A page rendered while a deck was public
+// must NOT survive when the owner flips it to private. Next.js ISR
+// caches the rendered response by URL; database `is_public=true`
+// filtering happens at data-fetch time, so a stale cached page would
+// still serve to anon after the deck went private. Force a live
+// render on every request.
+//
+// If we ever want to cache these, the flip must invalidate — via
+// revalidatePath('/decks/public/[slug]', 'page') inside the PATCH
+// handler. Deferred until traffic justifies the extra complexity.
 export const dynamic = 'force-dynamic'
-export const revalidate = 60  // short cache; toggling private invalidates via route re-render
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
 
 type Params = { slug: string }
 

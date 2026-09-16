@@ -1,85 +1,98 @@
-# Purchase-link + affiliate audit (Phase 3D)
+# Purchase-link + affiliate audit (Phase 3D — post sign-off)
 
-## What we can construct today
+## Verified URL schemes
 
 | Provider    | URL scheme                                                    | Requires                                              | Ship-ready? |
 | ----------- | ------------------------------------------------------------- | ----------------------------------------------------- | ----------- |
 | Scryfall    | `https://scryfall.com/card/{scryfall_id}`                     | `mtg_printings.scryfall_id` (always present)          | ✅          |
-| TCGplayer   | `https://www.tcgplayer.com/product/{tcgplayer_product_id}`    | `mtg_external_identifiers` row `provider=tcgplayer`   | ✅ where identifier ingested |
-| Cardmarket  | `https://www.cardmarket.com/en/Magic/Products/Singles/{id}`   | `mtg_external_identifiers` row `provider=cardmarket`  | ✅ where identifier ingested |
-| Card Kingdom| —                                                             | No stored product ID / stable URL scheme              | ❌ omitted   |
+| TCGplayer   | `https://www.tcgplayer.com/product/{tcgplayer_product_id}`    | `mtg_external_identifiers` row with `provider='tcgplayer'` and `identifier_type='product_id'` | ✅ where identifier ingested |
+| Cardmarket  | `https://www.cardmarket.com/Magic/Products?idProduct=<id>`    | `mtg_external_identifiers` row with `provider='cardmarket'` and `identifier_type='product_id'` | ✅ where identifier ingested |
+| Card Kingdom| —                                                             | No stored product ID / no stable programmatic URL     | ❌ omitted   |
 | Manapool    | —                                                             | No stored product ID                                  | ❌ omitted   |
-| Cardhoarder | —                                                             | Digital only; product ID not stored                   | ❌ omitted   |
+| Cardhoarder | —                                                             | Digital only, product ID not stored                   | ❌ omitted   |
 
-The generator (`src/lib/mtg/purchase-links.ts`) emits ONLY the rows for
-which a URL can be built deterministically. Never guessed.
+The generator (`src/lib/mtg/purchase-links.ts`) emits ONLY the rows
+for which a URL can be built deterministically. Nothing is guessed.
 
-## Coverage note
+**Cardmarket URL note:** we use the documented `idProduct` redirect
+pattern. The alternative `/en/Magic/Products/Singles/{id}` path is
+NOT used because it requires the URL-name slug we do not have stored
+and would fail deterministic construction.
 
-Whether TCGplayer/Cardmarket product IDs are already present in
-`mtg_external_identifiers` depends on how Stage 1C ingestion has been
-run. Rows without identifiers simply won't include those provider
-links. This degrades gracefully — the UI shows whichever links do
-resolve.
+## Current identifier coverage in production
+
+Probed against production `mtg_external_identifiers` (2026-09-17):
+
+```
+total rows:       123,083
+provider=mtgjson: 123,083   (MTGJSON UUIDs — not marketplace product IDs)
+provider=tcgplayer:     0
+provider=cardmarket:    0
+provider=cardkingdom:   0
+```
+
+Stage 1D currently ingests only `provider='mtgjson' identifier_type='uuid'`
+rows. TCGplayer and Cardmarket product IDs are present in MTGJSON's
+per-card payload (`tcgplayerProductId`, `mcmId`) but are not currently
+fanned out into `mtg_external_identifiers`. Until that changes, the
+generator emits only Scryfall reference links.
+
+That fan-out is a Stage 1D concern and is out of scope for Phase 3D
+(per Luke's directive not to alter Stage 1D). Enabling it later is a
+one-time backfill; no app changes required.
 
 ## Affiliate / referral programmes — status
 
-I have NOT confirmed any active affiliate account for MTGPrices as of
-this audit. The generator supports the following env-var toggles so
-you can turn tracking on without a redeploy the moment a programme is
-registered:
+**No affiliate tracking is active.** URL construction is fully
+separated from affiliate decoration:
 
-| Env var                  | Effect when set                                                              |
-| ------------------------ | ---------------------------------------------------------------------------- |
-| `TCGPLAYER_PARTNER_ID`   | Appends `?partner=<id>` to every TCGplayer product URL                       |
-| `CARDMARKET_PARTNER_ID`  | Appends `?utm_source=<id>` to every Cardmarket product URL                   |
+- `buildPurchaseLinksForOracle` produces plain, verified marketplace
+  URLs.
+- Per-provider decorator functions (`decorateTcgplayer`,
+  `decorateCardmarket`) are wired but ARE NO-OPS today. They exist
+  purely so tracking can be added later by editing that one function,
+  with no change to the URL builder or the caller.
+- The env vars `TCGPLAYER_PARTNER_ID` and `CARDMARKET_PARTNER_ID` are
+  **not read anywhere** at present. Setting them does nothing until
+  we ship verified decorators. That is deliberate — the previous
+  design of "env var set ⇒ append ?partner=..." risked appending a
+  parameter whose actual name/semantics we hadn't confirmed with the
+  affiliate programme.
 
-**Both are unset in production.** No affiliate URLs are being emitted
-today. Setting them is a no-code operation once the programmes are
-approved.
+`PurchaseLink.affiliate` is therefore `false` on every emitted link
+today.
 
 ## Action items required from Luke
 
-Blocking affiliate tracking (non-blocking for Phase 3D itself — the
-platform ships without it):
+Blocking affiliate tracking (non-blocking for Phase 3D itself):
 
 1. **TCGplayer / Partnerize:** register mtgprices.io as a Partnerize
-   affiliate. The current published partner URL scheme is
-   `https://www.tcgplayer.com/product/<id>?partner=<partner-id>` — I
-   cannot verify the exact parameter name from public documentation
-   right now, so once the account is approved please confirm the
-   correct query-parameter format so I can adjust `purchase-links.ts`
-   before setting `TCGPLAYER_PARTNER_ID`.
-2. **Cardmarket:** apply for the Cardmarket affiliate programme.
-   Confirm whether deep links are supported and what the tracking
-   parameter is. Update the generator if the scheme differs from the
-   speculative `utm_source` fallback shipped today.
+   affiliate. When approved, share the confirmed tracking-parameter
+   name and semantics; `decorateTcgplayer` in `purchase-links.ts`
+   will then be updated to append it, and the env var will be read.
+   No redeploy of the platform is needed — only edit + release.
+2. **Cardmarket:** confirm whether Cardmarket runs a deep-link
+   affiliate programme and what the tracking parameter is. Same
+   update path as above.
 3. **Card Kingdom / Manapool / Cardhoarder:** these are omitted
-   because we do not have stored product IDs. Two options if we want
-   coverage:
-     a) Backfill `mtg_external_identifiers` from an ingest that maps
-        Scryfall → each provider's SKU database.
-     b) Fall back to Card Kingdom's card-search URL — this is a
-        card-specific *search* not a *product* link, so it's
-        acceptable but less direct. Currently omitted per Luke's
-        "never guess URLs" directive.
+   because we do not have stored product IDs. Add coverage by
+   backfilling `mtg_external_identifiers` from a data source that
+   maps Scryfall → each provider's SKU database. Guessing URLs is
+   NOT an option.
 
-## Provider-comparison guarantees (relevant to purchasing)
+## Provider-comparison guarantees
 
-- The provider-comparison rowset (`shopping.ts` → `providerRows`)
-  contains ONLY real `(provider, currency, price_type, market)`
-  combinations from `mtg_current_prices`.
-- Currencies are never blended. Rows are sorted with `currency` as
-  the outer key so USD and EUR appear in separate blocks; within a
-  currency, ascending price.
-- A "cheapest" label at the SUITE level is only applied within a
-  single currency.
+- `providerRows` on each `MissingLine` contains only real
+  `(provider, currency, price_type, market)` combinations from
+  `mtg_current_prices`.
+- Rows are sorted with `currency` as the outer key: USD and EUR
+  appear in separate blocks; within a currency, ascending price.
+- A "cheapest" label is only ever applied within a single currency.
 
 ## No affiliate = no problem
 
-If both `TCGPLAYER_PARTNER_ID` and `CARDMARKET_PARTNER_ID` are unset:
-
-- URLs still get emitted (users can click through to buy).
-- `PurchaseLink.affiliate === false` — the UI can label these as
-  "outbound reference link" if we want.
-- No revenue is collected. Nothing is misrepresented.
+If both `TCGPLAYER_PARTNER_ID` and `CARDMARKET_PARTNER_ID` are unset
+(current state), URLs still get emitted and users can click through
+to buy. `PurchaseLink.affiliate === false` — the UI is free to label
+these as "outbound reference link" if desired. No revenue is
+collected. Nothing is misrepresented.

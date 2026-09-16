@@ -1,43 +1,48 @@
 // src/lib/mtg/purchase-links.ts
 //
-// Deterministic purchase-URL generator.
+// Deterministic purchase-URL generator with strict separation of:
+//   1. URL construction — only from verified data (Scryfall printing
+//      UUIDs; TCGplayer product IDs; Cardmarket product IDs).
+//   2. Affiliate decoration — provider-specific functions that ONLY
+//      apply verified tracking parameters. Nothing runs by default,
+//      even if an environment variable is set. A partner ID alone
+//      is not evidence of a verified programme.
 //
 // Rules:
-//   1. NEVER guess a URL. If we can't construct it from stored data,
-//      the provider is not included in the result.
-//   2. Affiliate/referral tags come from environment variables ONLY.
-//      Never hard-coded. Never fabricated.
-//   3. Currencies stay separated at the caller — this module just
-//      returns URLs and does NOT sort or compare prices.
+//   * Never guess a URL. If we can't construct it from stored data,
+//     the provider is not included in the result.
+//   * Never fabricate affiliate parameters. A decorator activates
+//     only when both (a) the programme's syntax is verified and (b)
+//     the partner ID env var is set.
 //
-// Providers considered:
+// Provider status:
 //
 //   * Scryfall — Every printing has a scryfall_id on mtg_printings.
 //                Public URL: https://scryfall.com/card/{scryfall_id}
-//                Not a marketplace — we include it for reference only
-//                when a marketplace URL is unavailable. Scryfall does
-//                not run an affiliate programme.
+//                Not a marketplace — included as a reference link.
+//                No affiliate programme.
 //
-//   * TCGplayer — Needs a TCGplayer product_id in mtg_external_identifiers.
-//                 URL: https://www.tcgplayer.com/product/{product_id}
-//                 Referral: TCGplayer's affiliate programme is run
-//                 through Partnerize/Impact; if a partner ID is set
-//                 in env we append ?partner=... (verified format).
-//                 Without a partner ID we emit the bare product URL.
+//   * TCGplayer — Needs a TCGplayer product_id in mtg_external_identifiers
+//                 (provider='tcgplayer', identifier_type='product_id').
+//                 Product URL: https://www.tcgplayer.com/product/{product_id}
+//                 Affiliate: unverified. Decorator returns the URL
+//                 unchanged until Luke provides confirmed Partnerize
+//                 documentation.
 //
-//   * Cardmarket — Needs a Cardmarket product_id in mtg_external_identifiers.
-//                  URL: https://www.cardmarket.com/en/Magic/Products/Singles/{product_id}
-//                  Referral: unverified as of ship — no ref param
-//                  emitted until Luke confirms the affiliate scheme.
+//   * Cardmarket — Needs a Cardmarket product_id in mtg_external_identifiers
+//                  (provider='cardmarket', identifier_type='product_id').
+//                  Product-ID redirect URL:
+//                    https://www.cardmarket.com/Magic/Products?idProduct=<id>
+//                  Affiliate: unverified. Decorator returns the URL
+//                  unchanged until Luke provides confirmed programme
+//                  documentation.
 //
-//   * Card Kingdom — We do NOT currently have Card Kingdom product IDs
-//                    in mtg_external_identifiers. No reliable URL
-//                    construction — omit until identifiers are ingested.
+//   * Card Kingdom, Manapool, Cardhoarder — No stored product IDs.
+//                                           No verified URL scheme.
+//                                           Omitted.
 //
-//   * Manapool, Cardhoarder — Same story. Omit until identifiers are
-//                             ingested.
-//
-// See docs at src/lib/mtg/purchase-links.md (audit report).
+// See src/lib/mtg/purchase-links.md for the audit + credentials
+// required.
 
 import 'server-only'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
@@ -47,34 +52,77 @@ export type PurchaseLink = {
   label: string
   url: string
   affiliate: boolean
-  /** Which finish/printing does this link point at? For links
-   *  constructed from a specific mtg_external_identifiers row, this
-   *  identifies the target so the UI can hide/show it based on the
-   *  chosen printing. */
   scope: 'printing' | 'oracle'
   scryfall_id?: string
   printing_id?: string
 }
 
-/** Optional affiliate config from environment. Never hard-coded IDs. */
-function tcgplayerPartner(): string | null {
-  const v = process.env.TCGPLAYER_PARTNER_ID
-  return v && v.trim().length > 0 ? v.trim() : null
-}
-function cardmarketPartner(): string | null {
-  const v = process.env.CARDMARKET_PARTNER_ID
-  return v && v.trim().length > 0 ? v.trim() : null
+// ── URL builders (verified schemes only) ───────────────────────────
+
+/** Scryfall public card URL. Every stored scryfall_id resolves. */
+function scryfallUrl(scryfallId: string): string {
+  return `https://scryfall.com/card/${encodeURIComponent(scryfallId)}`
 }
 
-/** For each Oracle, resolve the best deterministic set of purchase
- *  links. Batches DB queries. Returns Map<oracle_card_id, links>. */
+/** TCGplayer product-page URL. Requires a numeric-ish product_id. */
+function tcgplayerUrl(productId: string): string {
+  return `https://www.tcgplayer.com/product/${encodeURIComponent(productId)}`
+}
+
+/** Cardmarket product-ID redirect. Documented pattern uses the
+ *  idProduct query parameter — Cardmarket resolves it to the
+ *  canonical product page server-side. Do not use the /en/Magic/
+ *  Products/Singles/{id} path — that requires the URL-name slug and
+ *  is not stored. */
+function cardmarketUrl(productId: string): string {
+  return `https://www.cardmarket.com/Magic/Products?idProduct=${encodeURIComponent(productId)}`
+}
+
+// ── Affiliate decorators (per-provider, verified only) ──────────────
+//
+// A decorator receives the raw URL and returns either the same URL
+// (no verified tracking) or a decorated URL with tracking. It sets
+// PurchaseLink.affiliate=true ONLY when it actually adds a tracking
+// parameter. Environment-variable presence alone is not sufficient
+// — the code path must be explicitly enabled here after Luke has
+// confirmed the programme's tracking syntax.
+
+type Decorator = (url: string) => { url: string; affiliate: boolean }
+
+/** TCGplayer — Partnerize. Not enabled: the specific tracking-parameter
+ *  name and semantics have not been verified from official Partnerize
+ *  documentation for MTGPrices's account. When enabled this function
+ *  will read TCGPLAYER_PARTNER_ID and append the confirmed parameter. */
+const decorateTcgplayer: Decorator = (url) => {
+  // Intentional no-op. The tracking parameter name and semantics for
+  // Partnerize/TCGplayer are unverified for MTGPrices's account, so
+  // we do not append anything. Enable only after Luke confirms.
+  return { url, affiliate: false }
+}
+
+/** Cardmarket — affiliate programme (if any) not verified. Same
+ *  no-op stance as TCGplayer. When enabled this will read
+ *  CARDMARKET_PARTNER_ID and append the confirmed parameter. */
+const decorateCardmarket: Decorator = (url) => {
+  // Intentional no-op. Cardmarket has not confirmed a query-parameter
+  // affiliate scheme in publicly documented form. Never append any
+  // tracking parameter unless the programme's own docs mandate it.
+  return { url, affiliate: false }
+}
+
+const NOOP_DECORATOR: Decorator = (url) => ({ url, affiliate: false })
+
+// ── Main API ────────────────────────────────────────────────────────
+
+/** For each Oracle, resolve the deterministic set of purchase links.
+ *  Batches DB queries. Returns Map<oracle_card_id, links>. */
 export async function buildPurchaseLinksForOracle(oracleIds: string[]): Promise<Map<string, PurchaseLink[]>> {
   const out = new Map<string, PurchaseLink[]>()
   if (oracleIds.length === 0) return out
   const s = getSupabaseServiceClient()
 
-  // Freshest English printing per oracle — gives Scryfall URL and set/cn
-  // that we'll pass through to providers if needed.
+  // Freshest English printing per oracle — gives us the Scryfall URL
+  // and lets us prefer its identifier row when there's a choice.
   const IN_CHUNK = 60
   const printingRows: any[] = []
   for (let i = 0; i < oracleIds.length; i += IN_CHUNK) {
@@ -96,82 +144,76 @@ export async function buildPurchaseLinksForOracle(oracleIds: string[]): Promise<
     oracleByPrintingId.set(p.id, p.oracle_card_id)
   }
 
-  // External identifiers (TCGplayer, Cardmarket, …) for every printing.
+  // External identifiers for every printing. We look for specific
+  // (provider, identifier_type) combinations only — never every row.
   const identRows: any[] = []
   for (let i = 0; i < allPrintingIds.length; i += IN_CHUNK) {
     const chunk = allPrintingIds.slice(i, i + IN_CHUNK)
     const { data } = await s.from('mtg_external_identifiers')
       .select('printing_id, provider, identifier_type, identifier_value')
       .in('printing_id', chunk)
+      .in('provider', ['tcgplayer', 'cardmarket'])
     for (const r of (data ?? []) as any[]) identRows.push(r)
   }
-  const identByOracleProvider = new Map<string, Map<string, { identifier_type: string; value: string; printing_id: string }>>()
+  // Index by (oracle, provider) preferring the freshest printing's row.
+  const identByOracleProvider = new Map<string, Map<string, { value: string; printing_id: string; identifier_type: string }>>()
   for (const r of identRows) {
     const oracle = oracleByPrintingId.get(r.printing_id)
     if (!oracle) continue
+    // Only accept rows whose identifier_type is 'product_id'. Anything
+    // else (e.g. mtgjson UUIDs mis-provisioned under a marketplace
+    // provider) would be a data bug, not a real product reference.
+    if (r.identifier_type !== 'product_id') continue
     const bucket = identByOracleProvider.get(oracle) ?? new Map()
-    // Prefer the freshest printing's identifier when there's a choice.
     const freshest = freshestByOracle.get(oracle)
     const isFreshest = freshest?.id === r.printing_id
     if (!bucket.has(r.provider) || isFreshest) {
       bucket.set(r.provider, {
-        identifier_type: r.identifier_type,
         value: r.identifier_value,
         printing_id: r.printing_id,
+        identifier_type: r.identifier_type,
       })
     }
     identByOracleProvider.set(oracle, bucket)
   }
-
-  const tcgPartner = tcgplayerPartner()
-  const cmPartner = cardmarketPartner()
 
   for (const oracleId of oracleIds) {
     const links: PurchaseLink[] = []
     const freshest = freshestByOracle.get(oracleId)
     const idents = identByOracleProvider.get(oracleId) ?? new Map()
 
-    // Scryfall — reference (not a marketplace). Only included when a
-    // scryfall_id exists. Never affiliate.
+    // ── Scryfall (always available for indexed printings). ──
     if (freshest?.scryfall_id) {
+      const base = scryfallUrl(freshest.scryfall_id)
+      const decorated = NOOP_DECORATOR(base)  // no affiliate on Scryfall
       links.push({
-        provider: 'scryfall',
-        label: 'Scryfall',
-        url: `https://scryfall.com/card/${freshest.scryfall_id}`,
-        affiliate: false,
-        scope: 'printing',
-        scryfall_id: freshest.scryfall_id,
-        printing_id: freshest.id,
+        provider: 'scryfall', label: 'Scryfall',
+        url: decorated.url, affiliate: decorated.affiliate,
+        scope: 'printing', scryfall_id: freshest.scryfall_id, printing_id: freshest.id,
       })
     }
 
-    // TCGplayer — product URL. Needs identifier.
+    // ── TCGplayer (only when a product_id identifier exists). ──
     const tcg = idents.get('tcgplayer')
     if (tcg) {
-      let url = `https://www.tcgplayer.com/product/${encodeURIComponent(tcg.value)}`
-      if (tcgPartner) url += `?partner=${encodeURIComponent(tcgPartner)}`
+      const base = tcgplayerUrl(tcg.value)
+      const decorated = decorateTcgplayer(base)
       links.push({
-        provider: 'tcgplayer',
-        label: 'TCGplayer',
-        url,
-        affiliate: Boolean(tcgPartner),
-        scope: 'printing',
-        printing_id: tcg.printing_id,
+        provider: 'tcgplayer', label: 'TCGplayer',
+        url: decorated.url, affiliate: decorated.affiliate,
+        scope: 'printing', printing_id: tcg.printing_id,
       })
     }
 
-    // Cardmarket — product URL. Needs identifier.
+    // ── Cardmarket (only when a product_id identifier exists). ──
     const cm = idents.get('cardmarket')
     if (cm) {
-      let url = `https://www.cardmarket.com/en/Magic/Products/Singles/${encodeURIComponent(cm.value)}`
-      if (cmPartner) url += `?utm_source=${encodeURIComponent(cmPartner)}`
+      const base = cardmarketUrl(cm.value)
+      const decorated = decorateCardmarket(base)
       links.push({
-        provider: 'cardmarket',
-        label: 'Cardmarket',
-        url,
-        affiliate: Boolean(cmPartner),
-        scope: 'printing',
-        printing_id: cm.printing_id,
+        provider: 'cardmarket', label: 'Cardmarket',
+        url: decorated.url, affiliate: decorated.affiliate,
+        scope: 'printing', printing_id: cm.printing_id,
       })
     }
 

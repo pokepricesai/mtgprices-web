@@ -47,10 +47,23 @@ test('shopping list price filter matches EXACT basis quadruple', () => {
   }
 })
 
-test('purchase URL: TCGplayer gated on identifier + partner env var', () => {
+test('purchase URL: TCGplayer product-URL shape verified, affiliate decoration is a no-op', () => {
   const source = readFileSync(join(process.cwd(), 'src/lib/mtg/purchase-links.ts'), 'utf8')
-  assert.match(source, /TCGPLAYER_PARTNER_ID/, 'partner id must come from env')
   assert.match(source, /tcgplayer\.com\/product/, 'canonical TCGplayer product URL')
+  // No hard-coded ?partner= parameter — decorator must remain no-op until verified.
+  assert.doesNotMatch(source, /\?partner=/, 'must not append hard-coded partner parameter')
+})
+
+test('purchase URL: Cardmarket uses idProduct redirect, not path with slug', () => {
+  const source = readFileSync(join(process.cwd(), 'src/lib/mtg/purchase-links.ts'), 'utf8')
+  assert.match(source, /cardmarket\.com\/Magic\/Products\?idProduct=/, 'Cardmarket must use idProduct redirect')
+  assert.doesNotMatch(source, /Magic\/Products\/Singles\//, 'must NOT use the /Singles/{id} path (needs URL slug)')
+  assert.doesNotMatch(source, /\?utm_source=/, 'must not append hard-coded utm_source')
+})
+
+test('purchase URL: gated on identifier_type = product_id (not mtgjson uuids)', () => {
+  const source = readFileSync(join(process.cwd(), 'src/lib/mtg/purchase-links.ts'), 'utf8')
+  assert.match(source, /identifier_type\s*!==?\s*['"]product_id['"]/, 'must filter for identifier_type = product_id')
 })
 
 test('CSV export: uses CRLF line terminator and RFC 4180 quoting', () => {
