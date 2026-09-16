@@ -21,6 +21,7 @@ type Props = {
   onSetPreferredFinish: (printingFinishId: string | null) => void
   onFindAlternatives?: () => void
   onFindCheaper?: () => void
+  onAskAiReplacement?: () => void
   onFilterByCapability?: (cap: import('@/lib/mtg/capabilities').CardCapability) => void
 }
 
@@ -101,6 +102,9 @@ export default function DeckCardRow(props: Props) {
           )}
           {props.onFindCheaper && (
             <button type="button" onClick={props.onFindCheaper} style={{ ...miniBtn, padding: '4px 10px' }}>Cheaper alternatives</button>
+          )}
+          {props.onAskAiReplacement && (
+            <button type="button" onClick={props.onAskAiReplacement} style={{ ...miniBtn, padding: '4px 10px', color: 'var(--primary)', borderColor: 'var(--primary)' }} title="AI ranks candidates from the deterministic search results">Ask AI ✨</button>
           )}
           {props.onFilterByCapability && card.capabilities.length > 0 && (
             <details style={{ position: 'relative' }}>

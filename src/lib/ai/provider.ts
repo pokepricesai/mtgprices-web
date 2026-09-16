@@ -57,15 +57,32 @@ export function estimateCostCents(model: string, tokensIn: number, tokensOut: nu
   return Math.round(usd * 100)
 }
 
-/** Prompt injection defence: strip anything that looks like an
- *  attempt to override the system role from user-provided card notes
- *  / imported deck descriptions. */
+/** Prompt-injection DEFENCE IN DEPTH. This is not the security
+ *  boundary. Real protection comes from:
+ *    1. server-controlled system prompts
+ *    2. strict tool schemas
+ *    3. authenticated ownership checks
+ *    4. the authorised Oracle-ID set (grounding contract)
+ *    5. Zod validation of structured responses
+ *    6. deterministic legality validation
+ *
+ *  This function only strips the two textual patterns that are
+ *  overwhelmingly injection attempts and vanishingly rare in
+ *  legitimate deck-building briefs:
+ *    - a line that starts with "### system" (or "instructions" / "tool")
+ *    - the exact phrase "ignore previous instructions"
+ *
+ *  An earlier iteration also stripped every "you are …" / "act as" /
+ *  "pretend to be" occurrence, which corrupted legitimate briefs
+ *  ("you are welcome to include split cards", "cards that act as
+ *  removal", "pretend to be a control player"). Removed. */
 export function sanitiseUserData(input: string, maxLength = 4000): string {
   const trimmed = input.slice(0, maxLength)
   return trimmed
-    .replace(/\n?\s*###?\s*(system|instructions?|tool)\s*[:\n]/gi, ' ')
-    .replace(/\n?\s*ignore\s+previous\s+instructions/gi, ' [redacted] ')
-    .replace(/\n?\s*(you are|act as|pretend to be)\s+/gi, ' ')
+    // Line-anchored heading attempts only.
+    .replace(/^\s*#{2,}\s*(system|instructions?|tool)\s*(:|$)/gim, '[redacted-header]')
+    // The literal jailbreak phrase.
+    .replace(/\bignore\s+(?:all\s+|the\s+|any\s+)?previous\s+instructions?\b/gi, '[redacted]')
 }
 
 /** True when the model provider is reachable — used to fail fast if

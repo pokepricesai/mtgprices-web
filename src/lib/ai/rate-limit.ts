@@ -7,11 +7,15 @@
 import 'server-only'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
 
+// Pre-launch defaults — conservative until we have real usage data.
+// Improve/Build are the expensive ops (~$0.05–$0.30 each on Sonnet 5).
+// Analyse/Replace are cheap (~$0.02). The dailyCents cap backstops
+// any misbehaving loop that keeps spending inside its ops budget.
 export const AI_LIMITS = {
   /** Max total operations per user per rolling 24h. */
-  dailyOps: Number(process.env.AI_DAILY_OPS_LIMIT ?? 20),
+  dailyOps: Number(process.env.AI_DAILY_OPS_LIMIT ?? 6),
   /** Absolute cap on estimated cents spent by any user per rolling 24h. */
-  dailyCents: Number(process.env.AI_DAILY_CENTS_LIMIT ?? 200), // $2.00
+  dailyCents: Number(process.env.AI_DAILY_CENTS_LIMIT ?? 50), // $0.50
 }
 
 export type QuotaResult = {

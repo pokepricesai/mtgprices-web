@@ -25,6 +25,14 @@ export type RunResult = {
   errorKind?: 'not_configured' | 'timeout' | 'provider_error' | 'unknown'
 }
 
+// Test-only seam. Unit tests replace runAi's underlying call with a
+// canned response. Production paths never touch this — no route or
+// UI calls the setter.
+let __mockRunner: ((input: any) => Promise<RunResult>) | null = null
+export function __setAiRunMock(fn: ((input: any) => Promise<RunResult>) | null) {
+  __mockRunner = fn
+}
+
 export async function runAi(input: {
   tier: RunTier
   system: string
@@ -41,6 +49,7 @@ export async function runAi(input: {
     latencyMs: 0, provider, model, estimatedCostCents: 0,
   }
 
+  if (__mockRunner) return __mockRunner(input)
   if (!aiConfigured()) return { ...zero, errorKind: 'not_configured' }
   const timeout = input.timeoutMs ?? 60_000
 

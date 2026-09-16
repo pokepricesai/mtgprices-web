@@ -44,7 +44,7 @@ export default function DeckBuilderClient({ initialContext }: Props) {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [nameDraft, setNameDraft] = useState(initialContext.deck.name)
   const [searchSeedCaps, setSearchSeedCaps] = useState<import('@/lib/mtg/capabilities').CardCapability[] | undefined>(undefined)
-  const [altSheet, setAltSheet] = useState<{ oracleId: string; name: string; mode: 'similar' | 'cheaper' } | null>(null)
+  const [altSheet, setAltSheet] = useState<{ oracleId: string; name: string; mode: 'similar' | 'cheaper' | 'ai' } | null>(null)
   const rule = getFormatRule(ctx.deck.format)
 
   function reload() {
@@ -230,6 +230,7 @@ export default function DeckBuilderClient({ initialContext }: Props) {
                         onSetPreferredFinish={(pf) => setPreferredFinish(e.deck_card_id, pf)}
                         onFindAlternatives={() => setAltSheet({ oracleId: e.oracle_card_id, name: e.name, mode: 'similar' })}
                         onFindCheaper={() => setAltSheet({ oracleId: e.oracle_card_id, name: e.name, mode: 'cheaper' })}
+                        onAskAiReplacement={() => setAltSheet({ oracleId: e.oracle_card_id, name: e.name, mode: 'ai' })}
                         onFilterByCapability={(cap) => setSearchSeedCaps([cap])}
                         currentZone={zone}
                         format={ctx.deck.format}
@@ -309,21 +310,42 @@ function CopyDeckButton({ deckId }: { deckId: string }) {
 }
 
 function AlternativesSheet({ deckId, oracleId, cardName, mode, onClose, onAdd }: {
-  deckId: string; oracleId: string; cardName: string; mode: 'similar' | 'cheaper';
+  deckId: string; oracleId: string; cardName: string; mode: 'similar' | 'cheaper' | 'ai';
   onClose: () => void; onAdd: (oracleId: string) => void
 }) {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
   useMemo(() => {
-    setLoading(true)
-    const q = mode === 'cheaper' ? '&cheaper=1' : ''
-    fetch(`/api/decks/${deckId}/alternatives?oracle=${oracleId}${q}`)
-      .then((r) => r.json())
-      .then((d) => { setData(d); setLoading(false) })
-      .catch(() => setLoading(false))
+    setLoading(true); setError(null)
+    if (mode === 'ai') {
+      fetch(`/api/decks/${deckId}/ai/replace`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oracle_card_id: oracleId, mode: 'similar' }),
+      })
+        .then(async (r) => {
+          if (!r.ok) {
+            const j = await r.json().catch(() => ({}))
+            setError(j.error === 'rate_limited' ? 'AI quota reached — try again tomorrow.' : (j.error ?? 'AI failed'))
+            setData(null)
+            return
+          }
+          const j = await r.json()
+          setData(j)
+        })
+        .catch(() => setError('AI failed'))
+        .finally(() => setLoading(false))
+    } else {
+      const q = mode === 'cheaper' ? '&cheaper=1' : ''
+      fetch(`/api/decks/${deckId}/alternatives?oracle=${oracleId}${q}`)
+        .then((r) => r.json())
+        .then((d) => { setData(d); setLoading(false) })
+        .catch(() => setLoading(false))
+    }
   }, [deckId, oracleId, mode])
 
-  const items = mode === 'cheaper' ? (data?.alternatives ?? []) : (data?.alternatives ?? [])
+  const items = mode === 'ai' ? (data?.candidates ?? []) : (data?.alternatives ?? [])
 
   return (
     <div onClick={onClose} role="dialog" aria-modal="true" style={{
@@ -338,11 +360,24 @@ function AlternativesSheet({ deckId, oracleId, cardName, mode, onClose, onAdd }:
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
           <div>
-            <div className="label-mono" style={{ marginBottom: 4 }}>{mode === 'cheaper' ? 'Cheaper alternatives' : 'Find alternatives'}</div>
+            <div className="label-mono" style={{ marginBottom: 4 }}>
+              {mode === 'cheaper' ? 'Cheaper alternatives · deterministic'
+                : mode === 'ai' ? 'AI-ranked alternatives ✨'
+                : 'Find alternatives · deterministic'}
+            </div>
             <h3 style={{ margin: 0, fontSize: 18 }}>for {cardName}</h3>
           </div>
           <button type="button" onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text-muted)' }} aria-label="Close">✕</button>
         </div>
+
+        {mode === 'ai' && (
+          <div style={{ padding: '6px 10px', background: 'var(--accent-soft)', color: 'var(--amber)', border: '1px solid rgba(160,129,63,0.28)', borderRadius: 8, fontSize: 11, marginBottom: 10 }}>
+            AI ranks candidates from real search results. All cards below came from deterministic tool calls; the ranking is AI interpretation.
+          </div>
+        )}
+        {error && (
+          <div style={{ padding: 10, background: 'rgba(180,65,70,0.10)', border: '1px solid rgba(180,65,70,0.28)', borderRadius: 8, color: 'var(--red)', fontSize: 12, marginBottom: 10 }}>{error}</div>
+        )}
 
         {loading && <div style={{ color: 'var(--text-muted)' }}>Loading…</div>}
         {!loading && mode === 'cheaper' && data?.reason && (
@@ -363,23 +398,29 @@ function AlternativesSheet({ deckId, oracleId, cardName, mode, onClose, onAdd }:
                 padding: 8, background: 'var(--bg-light)', border: '1px solid var(--border)', borderRadius: 8,
               }}>
                 <div style={{ width: 40, aspectRatio: '5/7', background: 'var(--surface)', borderRadius: 4, overflow: 'hidden' }}>
-                  {h.printing?.image_uri_small ? (
+                  {(mode === 'ai' ? h.card?.printing?.image_uri_small : h.printing?.image_uri_small) ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={h.printing.image_uri_small} alt={h.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                    <img src={mode === 'ai' ? h.card.printing.image_uri_small : h.printing.image_uri_small} alt={mode === 'ai' ? h.card?.name : h.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
                   ) : null}
                 </div>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{h.name}</div>
-                  {h.reasons?.length > 0 && (
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{mode === 'ai' ? h.card?.name : h.name}</div>
+                  {mode === 'ai' && h.reason && (
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.4 }}>{h.reason}</div>
+                  )}
+                  {mode !== 'ai' && h.reasons?.length > 0 && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 3 }}>
                       {h.reasons.slice(0, 3).map((r: string, i: number) => (
                         <span key={i} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 999, background: 'var(--primary-soft)', color: 'var(--primary)' }}>{r}</span>
                       ))}
                     </div>
                   )}
+                  {mode === 'ai' && h.confidence && (
+                    <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 999, background: 'var(--accent-soft)', color: 'var(--amber)', marginTop: 4, display: 'inline-block' }}>AI · {h.confidence}</span>
+                  )}
                 </div>
                 <div style={{ fontSize: 12, textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
-                  {h.currentPrice ? `${h.currentPrice.currency === 'USD' ? '$' : '€'}${h.currentPrice.price.toFixed(2)}` : '—'}
+                  {mode !== 'ai' && h.currentPrice ? `${h.currentPrice.currency === 'USD' ? '$' : '€'}${h.currentPrice.price.toFixed(2)}` : '—'}
                 </div>
                 <button type="button" onClick={() => onAdd(h.oracle_card_id)} style={{
                   background: 'var(--primary)', color: '#fff', border: 'none',
