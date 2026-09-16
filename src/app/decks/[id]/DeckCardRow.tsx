@@ -8,12 +8,15 @@ import type { DeckZone } from '@/lib/mtg/deck-rules'
 import { buildCardSlug } from '@/lib/mtg/slug'
 import { currencySymbol, type ValuationBasis } from '@/lib/mtg/valuation.data'
 import { getFormatRule } from '@/lib/mtg/format-rules'
+import PrintingPicker from './PrintingPicker'
 
 type Props = {
   card: DeckCardContext
   currentZone: DeckZone
   format: string
   pricingBasis: ValuationBasis
+  deckId: string
+  deckCardId: string
   onIncrement: () => void
   onDecrement: () => void
   onRemove: () => void
@@ -28,6 +31,7 @@ type Props = {
 export default function DeckCardRow(props: Props) {
   const { card, currentZone, pricingBasis } = props
   const [expanded, setExpanded] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
   const rule = getFormatRule(props.format)
   const linkedSetCode = card.preferredPrinting?.set_code || card.owned.printings[0]?.set_code || null
   const linkedCollector = card.preferredPrinting?.collector_number || card.owned.printings[0]?.collector_number || null
@@ -140,25 +144,22 @@ export default function DeckCardRow(props: Props) {
               <option value="maybeboard">Maybeboard</option>
             </select>
           </label>
-          {card.owned.printings.length > 0 && (
-            <label style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-              Preferred printing:
-              <select
-                value={card.preferredPrinting?.printing_finish_id ?? ''}
-                onChange={(e) => props.onSetPreferredFinish(e.target.value || null)}
-                style={{ ...pickerStyle, marginLeft: 6 }}
-              >
-                <option value="">Any</option>
-                {card.owned.printings.map((p) => (
-                  <option key={p.printing_finish_id} value={p.printing_finish_id}>
-                    {p.set_code.toUpperCase()} #{p.collector_number} · {p.finish} (own {p.quantity})
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            style={{ ...miniBtn, padding: '4px 10px' }}
+            title="Pick from owned or other printings"
+          >Choose printing…</button>
           <button type="button" onClick={props.onRemove} style={{ ...miniBtn, color: 'var(--red)', padding: '4px 10px' }}>Remove</button>
         </div>
+      )}
+      {pickerOpen && (
+        <PrintingPicker
+          deckId={props.deckId}
+          deckCardId={props.deckCardId}
+          onClose={() => setPickerOpen(false)}
+          onPicked={(finishId) => { props.onSetPreferredFinish(finishId); setPickerOpen(false) }}
+        />
       )}
     </div>
   )

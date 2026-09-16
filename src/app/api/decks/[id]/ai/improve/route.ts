@@ -12,6 +12,7 @@ import { runAi, extractJson } from '@/lib/ai/run'
 import { checkQuota, logUsage } from '@/lib/ai/rate-limit'
 import { aiConfigured, sanitiseUserData } from '@/lib/ai/provider'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
+import { buildShoppingPreview } from '@/lib/mtg/shopping-preview'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -106,6 +107,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
+  // Deterministic shopping-preview across all cards to be ADDED —
+  // shows the user the missing-card cost of accepting every suggestion.
+  const addEntries = verified.value.suggestions.map((sug) => {
+    const card = cardById.get(sug.add_oracle_card_id) ?? null
+    return { oracle_card_id: sug.add_oracle_card_id, quantity: sug.quantity, name: card?.name }
+  })
+  const shopping = addEntries.length > 0 ? await buildShoppingPreview(addEntries).catch(() => null) : null
+
   return NextResponse.json({
     prompt_version: PROMPT_VERSION,
     summary: verified.value.summary,
@@ -115,6 +124,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       remove_card: sug.remove_oracle_card_id ? cardById.get(sug.remove_oracle_card_id) ?? null : null,
     })),
     rejected: verified.rejected,
+    shopping,
     usage: {
       tokens_in: result.tokensIn,
       tokens_out: result.tokensOut,

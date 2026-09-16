@@ -68,6 +68,8 @@ export type DeckContext = {
     name: string
     format: FormatKey
     description: string | null
+    is_public: boolean
+    slug: string | null
     createdAt: string
     updatedAt: string
   }
@@ -410,6 +412,8 @@ export async function buildDeckContext(deck: DeckRow, cards: DeckCardRow[]): Pro
       name: deck.name,
       format: deck.format,
       description: deck.description,
+      is_public: (deck as any).is_public ?? false,
+      slug: (deck as any).slug ?? null,
       createdAt: deck.created_at,
       updatedAt: deck.updated_at,
     },

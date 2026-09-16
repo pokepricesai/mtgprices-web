@@ -85,7 +85,10 @@ export async function createDeck(input: {
   return data as DeckRow
 }
 
-export async function updateDeck(id: string, patch: Partial<Pick<DeckRow, 'name' | 'description' | 'format'>>): Promise<DeckRow | null> {
+export async function updateDeck(
+  id: string,
+  patch: Partial<Pick<DeckRow, 'name' | 'description' | 'format' | 'is_public' | 'slug'>>,
+): Promise<DeckRow | null> {
   const supabase = await getSupabaseServerClient()
   const { data, error } = await supabase.from('mtg_decks').update(patch).eq('id', id).select().single()
   if (error) { console.error('updateDeck err:', error); return null }

@@ -26,6 +26,8 @@ import DeckStatsPanel from './DeckStatsPanel'
 import DeckValidationPanel from './DeckValidationPanel'
 import DeckCardRow from './DeckCardRow'
 import DeckAIPanel from './DeckAIPanel'
+import DeckSharePanel from './DeckSharePanel'
+import DeckShoppingPanel from './DeckShoppingPanel'
 
 const ZONE_TITLES: Record<DeckZone, string> = {
   commander: 'Commander',
@@ -182,6 +184,15 @@ export default function DeckBuilderClient({ initialContext }: Props) {
             <DeckStatsPanel ctx={ctx} onFilterByCapability={(cap) => setSearchSeedCaps([cap])} />
           </div>
 
+          {/* Sharing + Shopping (Phase 3D) */}
+          <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
+            <DeckSharePanel
+              deckId={ctx.deck.id}
+              initial={{ is_public: ctx.deck.is_public, slug: ctx.deck.slug, name: ctx.deck.name }}
+            />
+            <DeckShoppingPanel deckId={ctx.deck.id} />
+          </div>
+
           {/* AI panel */}
           <DeckAIPanel deckId={ctx.deck.id} />
 
@@ -222,6 +233,8 @@ export default function DeckBuilderClient({ initialContext }: Props) {
                       <DeckCardRow
                         key={e.deck_card_id}
                         card={e}
+                        deckId={ctx.deck.id}
+                        deckCardId={e.deck_card_id}
                         pricingBasis={ctx.pricing.basis}
                         onIncrement={() => changeQty(e.deck_card_id, +1)}
                         onDecrement={() => changeQty(e.deck_card_id, -1)}

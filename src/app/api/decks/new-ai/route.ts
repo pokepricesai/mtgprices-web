@@ -11,6 +11,7 @@ import { checkQuota, logUsage } from '@/lib/ai/rate-limit'
 import { aiConfigured, sanitiseUserData } from '@/lib/ai/provider'
 import { getFormatRule } from '@/lib/mtg/format-rules'
 import type { FormatKey } from '@/lib/mtg/formats.data'
+import { buildShoppingPreview } from '@/lib/mtg/shopping-preview'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -80,6 +81,12 @@ export async function POST(req: NextRequest) {
     }, { status: 422 })
   }
 
+  // Deterministic shopping-preview — AI never sources price data.
+  const entries: Array<{ oracle_card_id: string; quantity: number; name?: string }> = []
+  for (const c of pipeline.proposed.commanders) entries.push({ oracle_card_id: c.oracle_card_id, quantity: 1, name: c.card?.name })
+  for (const m of pipeline.proposed.main) entries.push({ oracle_card_id: m.oracle_card_id, quantity: m.quantity, name: m.card?.name })
+  const shopping = await buildShoppingPreview(entries).catch(() => null)
+
   return NextResponse.json({
     prompt_version: PROMPT_VERSION,
     proposed: pipeline.proposed,
@@ -87,5 +94,6 @@ export async function POST(req: NextRequest) {
     usage: pipeline.usage,
     pool: pipeline.pool,
     repair_applied: pipeline.repairApplied,
+    shopping,
   })
 }
