@@ -10,15 +10,21 @@ import HandLab from './HandLab'
 import Simulate from './Simulate'
 import ManaAnalysis from './ManaAnalysis'
 import Playtest from './Playtest'
+import RulesAwareSim from './RulesAwareSim'
 
-type Section = 'hands' | 'sim' | 'mana' | 'playtest'
+type Section = 'hands' | 'sim' | 'mana' | 'playtest' | 'rules'
 
-const NAV: Array<{ key: Section; label: string; description: string }> = [
+const RULES_ENABLED = process.env.NEXT_PUBLIC_RULES_ENGINE_ENABLED === 'true'
+
+const NAV_BASE: Array<{ key: Section; label: string; description: string }> = [
   { key: 'hands', label: 'Opening Hands', description: 'Draw, mulligan, keep — feel your opener' },
   { key: 'sim', label: 'Simulate', description: '100 / 1,000 / 10,000-game statistics' },
   { key: 'mana', label: 'Mana', description: 'Colour sources vs mana-cost pressure' },
   { key: 'playtest', label: 'Playtest', description: 'Manual goldfish sandbox' },
 ]
+const NAV: typeof NAV_BASE = RULES_ENABLED
+  ? [...NAV_BASE, { key: 'rules', label: 'Rules-aware', description: 'Real MTG rules engine (Phase 4B preview)' }]
+  : NAV_BASE
 
 export default function TestDeckClient({ deck, library }: { deck: ClientDeckMeta; library: ClientSimLibrary }) {
   const [section, setSection] = useState<Section>('hands')
@@ -63,6 +69,7 @@ export default function TestDeckClient({ deck, library }: { deck: ClientDeckMeta
       {section === 'sim' && <Simulate deck={deck} library={library} cardIndex={cardIndex} />}
       {section === 'mana' && <ManaAnalysis library={library} />}
       {section === 'playtest' && <Playtest deck={deck} library={library} cardIndex={cardIndex} />}
+      {section === 'rules' && RULES_ENABLED && <RulesAwareSim deck={deck} />}
     </div>
   )
 }

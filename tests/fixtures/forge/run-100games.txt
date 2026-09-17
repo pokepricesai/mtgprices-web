@@ -1,0 +1,946 @@
+=== 100-game constructed run ===
+Picked up JAVA_TOOL_OPTIONS: -Xmx4096m -Dfile.encoding=UTF-8 -Dio.netty.tryReflectionSetAccessible=true -Dsentry.dsn=
+Error handling registered!
+10:32:05 [INFO ] GuiBase: ##########################################
+10:32:05 [INFO ] GuiBase: APP: Forge v.2.0.14-SNAPSHOT-08.08
+10:32:05 [INFO ] GuiBase: Java: 17.0.20.1 (Eclipse Adoptium)
+10:32:05 [INFO ] GuiBase: OS: Linux 6.17.0-1022-azure amd64
+10:32:05 [INFO ] GuiBase: RAM: 4096 MB max, 4 CPUs
+10:32:05 [INFO ] GuiBase: ##########################################
+Language 'en-US' loaded successfully.
+(ThreadUtil first call): Running with priority 5
+Read cards: 33617 archived files in 1 ms (25 parts) using thread pool
+Upcoming set Star Trek (TRK) dated in the future. All `upcoming` cards will be added to this set with unknown rarity.
+The card A-Alrund's Epiphany was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Baba Lysaga, Night Witch was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Divide by Zero was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Esika's Chariot was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Faceless Haven was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Fires of Invention was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Goldspan Dragon was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Hullbreaker Horror was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Kumano Faces Kakkazan was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Luminarch Aspirant was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Monster Manual was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Omnath, Locus of Creation was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-The Meathook Massacre was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Unholy Heat was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Blinding Radiance was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Goblin Bruiser was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Ogre Painbringer was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Titanic Pelagosaur was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Treetop Recluse was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+Upcoming set Star Trek (TRK) dated in the future. All `upcoming` cards will be added to this set with unknown rarity.
+Read cards: 836 files in 0 ms (8 parts) using thread pool
+Simulation mode
+Ai(1)-Phase4B Burn 60 vs Ai(2)-Phase4B Green Stompy 60 - 100 games of Constructed seed 424242
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 1 Ai(2)-Phase4B Green Stompy 60: 0 
+
+Game Result: Game 1 ended in 2035 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Fireblast Did not have activator set in SpellAbilityRestriction.canPlay()
+Fireblast Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 8
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 1 Ai(2)-Phase4B Green Stompy 60: 1 
+
+Game Result: Game 2 ended in 3088 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 8
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 1 Ai(2)-Phase4B Green Stompy 60: 2 
+
+Game Result: Game 3 ended in 1572 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Fireblast Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 2 Ai(2)-Phase4B Green Stompy 60: 2 
+
+Game Result: Game 4 ended in 1052 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Fireblast Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 3 Ai(2)-Phase4B Green Stompy 60: 2 
+
+Game Result: Game 5 ended in 1913 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 3 Ai(2)-Phase4B Green Stompy 60: 3 
+
+Game Result: Game 6 ended in 1099 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Monastery Swiftspear Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 4 Ai(2)-Phase4B Green Stompy 60: 3 
+
+Game Result: Game 7 ended in 653 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 5 Ai(2)-Phase4B Green Stompy 60: 3 
+
+Game Result: Game 8 ended in 644 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 6 Ai(2)-Phase4B Green Stompy 60: 3 
+
+Game Result: Game 9 ended in 854 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 4
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 7 Ai(2)-Phase4B Green Stompy 60: 3 
+
+Game Result: Game 10 ended in 570 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 8 Ai(2)-Phase4B Green Stompy 60: 3 
+
+Game Result: Game 11 ended in 1289 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 9 Ai(2)-Phase4B Green Stompy 60: 3 
+
+Game Result: Game 12 ended in 654 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 9 Ai(2)-Phase4B Green Stompy 60: 4 
+
+Game Result: Game 13 ended in 1114 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 10 Ai(2)-Phase4B Green Stompy 60: 4 
+
+Game Result: Game 14 ended in 1256 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Eidolon of the Great Revel Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 10 Ai(2)-Phase4B Green Stompy 60: 5 
+
+Game Result: Game 15 ended in 982 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Fireblast Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 11 Ai(2)-Phase4B Green Stompy 60: 5 
+
+Game Result: Game 16 ended in 740 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 11 Ai(2)-Phase4B Green Stompy 60: 6 
+
+Game Result: Game 17 ended in 921 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Lightning Bolt Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 12 Ai(2)-Phase4B Green Stompy 60: 6 
+
+Game Result: Game 18 ended in 735 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 13 Ai(2)-Phase4B Green Stompy 60: 6 
+
+Game Result: Game 19 ended in 903 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 14 Ai(2)-Phase4B Green Stompy 60: 6 
+
+Game Result: Game 20 ended in 617 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 15 Ai(2)-Phase4B Green Stompy 60: 6 
+
+Game Result: Game 21 ended in 841 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 16 Ai(2)-Phase4B Green Stompy 60: 6 
+
+Game Result: Game 22 ended in 588 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 17 Ai(2)-Phase4B Green Stompy 60: 6 
+
+Game Result: Game 23 ended in 561 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Eidolon of the Great Revel Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 17 Ai(2)-Phase4B Green Stompy 60: 7 
+
+Game Result: Game 24 ended in 792 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Monastery Swiftspear Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 18 Ai(2)-Phase4B Green Stompy 60: 7 
+
+Game Result: Game 25 ended in 750 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 4
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 19 Ai(2)-Phase4B Green Stompy 60: 7 
+
+Game Result: Game 26 ended in 572 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 20 Ai(2)-Phase4B Green Stompy 60: 7 
+
+Game Result: Game 27 ended in 608 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Fireblast Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 9
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 20 Ai(2)-Phase4B Green Stompy 60: 8 
+
+Game Result: Game 28 ended in 1520 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 21 Ai(2)-Phase4B Green Stompy 60: 8 
+
+Game Result: Game 29 ended in 621 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 22 Ai(2)-Phase4B Green Stompy 60: 8 
+
+Game Result: Game 30 ended in 580 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 12
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 23 Ai(2)-Phase4B Green Stompy 60: 8 
+
+Game Result: Game 31 ended in 1704 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 23 Ai(2)-Phase4B Green Stompy 60: 9 
+
+Game Result: Game 32 ended in 892 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 24 Ai(2)-Phase4B Green Stompy 60: 9 
+
+Game Result: Game 33 ended in 571 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 24 Ai(2)-Phase4B Green Stompy 60: 10 
+
+Game Result: Game 34 ended in 966 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 8
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 24 Ai(2)-Phase4B Green Stompy 60: 11 
+
+Game Result: Game 35 ended in 763 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 24 Ai(2)-Phase4B Green Stompy 60: 12 
+
+Game Result: Game 36 ended in 712 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 4
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 25 Ai(2)-Phase4B Green Stompy 60: 12 
+
+Game Result: Game 37 ended in 462 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Goblin Guide Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Goblin Guide Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 4
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 26 Ai(2)-Phase4B Green Stompy 60: 12 
+
+Game Result: Game 38 ended in 423 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 9
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 27 Ai(2)-Phase4B Green Stompy 60: 12 
+
+Game Result: Game 39 ended in 1224 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 28 Ai(2)-Phase4B Green Stompy 60: 12 
+
+Game Result: Game 40 ended in 445 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 29 Ai(2)-Phase4B Green Stompy 60: 12 
+
+Game Result: Game 41 ended in 445 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Shock Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 9
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 29 Ai(2)-Phase4B Green Stompy 60: 13 
+
+Game Result: Game 42 ended in 1018 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 30 Ai(2)-Phase4B Green Stompy 60: 13 
+
+Game Result: Game 43 ended in 692 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Monastery Swiftspear Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 31 Ai(2)-Phase4B Green Stompy 60: 13 
+
+Game Result: Game 44 ended in 986 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Fireblast Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 8
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 31 Ai(2)-Phase4B Green Stompy 60: 14 
+
+Game Result: Game 45 ended in 957 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Shock Did not have activator set in SpellAbilityRestriction.canPlay()
+Fireblast Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 32 Ai(2)-Phase4B Green Stompy 60: 14 
+
+Game Result: Game 46 ended in 1180 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Lightning Bolt Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 33 Ai(2)-Phase4B Green Stompy 60: 14 
+
+Game Result: Game 47 ended in 1003 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 34 Ai(2)-Phase4B Green Stompy 60: 14 
+
+Game Result: Game 48 ended in 752 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 34 Ai(2)-Phase4B Green Stompy 60: 15 
+
+Game Result: Game 49 ended in 1240 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Fireblast Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 9
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 35 Ai(2)-Phase4B Green Stompy 60: 15 
+
+Game Result: Game 50 ended in 1164 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 8
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 35 Ai(2)-Phase4B Green Stompy 60: 16 
+
+Game Result: Game 51 ended in 850 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 35 Ai(2)-Phase4B Green Stompy 60: 17 
+
+Game Result: Game 52 ended in 765 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Fireblast Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 36 Ai(2)-Phase4B Green Stompy 60: 17 
+
+Game Result: Game 53 ended in 624 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Shock Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 37 Ai(2)-Phase4B Green Stompy 60: 17 
+
+Game Result: Game 54 ended in 901 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 38 Ai(2)-Phase4B Green Stompy 60: 17 
+
+Game Result: Game 55 ended in 476 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 39 Ai(2)-Phase4B Green Stompy 60: 17 
+
+Game Result: Game 56 ended in 894 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Lightning Bolt Did not have activator set in SpellAbilityRestriction.canPlay()
+Fireblast Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 40 Ai(2)-Phase4B Green Stompy 60: 17 
+
+Game Result: Game 57 ended in 751 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 41 Ai(2)-Phase4B Green Stompy 60: 17 
+
+Game Result: Game 58 ended in 658 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Fireblast Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 41 Ai(2)-Phase4B Green Stompy 60: 18 
+
+Game Result: Game 59 ended in 775 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 12
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 41 Ai(2)-Phase4B Green Stompy 60: 19 
+
+Game Result: Game 60 ended in 1279 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 42 Ai(2)-Phase4B Green Stompy 60: 19 
+
+Game Result: Game 61 ended in 461 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Lightning Bolt Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 4
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 43 Ai(2)-Phase4B Green Stompy 60: 19 
+
+Game Result: Game 62 ended in 449 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Monastery Swiftspear Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 9
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 44 Ai(2)-Phase4B Green Stompy 60: 19 
+
+Game Result: Game 63 ended in 1407 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Fireblast Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 45 Ai(2)-Phase4B Green Stompy 60: 19 
+
+Game Result: Game 64 ended in 600 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 8
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 46 Ai(2)-Phase4B Green Stompy 60: 19 
+
+Game Result: Game 65 ended in 1111 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 47 Ai(2)-Phase4B Green Stompy 60: 19 
+
+Game Result: Game 66 ended in 567 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 48 Ai(2)-Phase4B Green Stompy 60: 19 
+
+Game Result: Game 67 ended in 739 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 48 Ai(2)-Phase4B Green Stompy 60: 20 
+
+Game Result: Game 68 ended in 923 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 49 Ai(2)-Phase4B Green Stompy 60: 20 
+
+Game Result: Game 69 ended in 733 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Goblin Guide Did not have activator set in SpellAbilityRestriction.canPlay()
+Goblin Guide Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 50 Ai(2)-Phase4B Green Stompy 60: 20 
+
+Game Result: Game 70 ended in 1072 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 51 Ai(2)-Phase4B Green Stompy 60: 20 
+
+Game Result: Game 71 ended in 513 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Eidolon of the Great Revel Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 52 Ai(2)-Phase4B Green Stompy 60: 20 
+
+Game Result: Game 72 ended in 372 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Goblin Guide Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 4
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 53 Ai(2)-Phase4B Green Stompy 60: 20 
+
+Game Result: Game 73 ended in 459 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Eidolon of the Great Revel Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 54 Ai(2)-Phase4B Green Stompy 60: 20 
+
+Game Result: Game 74 ended in 648 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 4
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 55 Ai(2)-Phase4B Green Stompy 60: 20 
+
+Game Result: Game 75 ended in 629 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 56 Ai(2)-Phase4B Green Stompy 60: 20 
+
+Game Result: Game 76 ended in 693 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 4
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 57 Ai(2)-Phase4B Green Stompy 60: 20 
+
+Game Result: Game 77 ended in 486 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 57 Ai(2)-Phase4B Green Stompy 60: 21 
+
+Game Result: Game 78 ended in 851 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Monastery Swiftspear Did not have activator set in SpellAbilityRestriction.canPlay()
+Shock Did not have activator set in SpellAbilityRestriction.canPlay()
+Eidolon of the Great Revel Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 58 Ai(2)-Phase4B Green Stompy 60: 21 
+
+Game Result: Game 79 ended in 570 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Shock Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 11
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 59 Ai(2)-Phase4B Green Stompy 60: 21 
+
+Game Result: Game 80 ended in 1151 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 60 Ai(2)-Phase4B Green Stompy 60: 21 
+
+Game Result: Game 81 ended in 629 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 8
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 60 Ai(2)-Phase4B Green Stompy 60: 22 
+
+Game Result: Game 82 ended in 950 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 61 Ai(2)-Phase4B Green Stompy 60: 22 
+
+Game Result: Game 83 ended in 433 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Lightning Bolt Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 62 Ai(2)-Phase4B Green Stompy 60: 22 
+
+Game Result: Game 84 ended in 536 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 63 Ai(2)-Phase4B Green Stompy 60: 22 
+
+Game Result: Game 85 ended in 913 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 63 Ai(2)-Phase4B Green Stompy 60: 23 
+
+Game Result: Game 86 ended in 594 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Shock Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 64 Ai(2)-Phase4B Green Stompy 60: 23 
+
+Game Result: Game 87 ended in 460 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Shock Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 65 Ai(2)-Phase4B Green Stompy 60: 23 
+
+Game Result: Game 88 ended in 523 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 66 Ai(2)-Phase4B Green Stompy 60: 23 
+
+Game Result: Game 89 ended in 557 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Fireblast Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 8
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 66 Ai(2)-Phase4B Green Stompy 60: 24 
+
+Game Result: Game 90 ended in 2384 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 67 Ai(2)-Phase4B Green Stompy 60: 24 
+
+Game Result: Game 91 ended in 793 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 68 Ai(2)-Phase4B Green Stompy 60: 24 
+
+Game Result: Game 92 ended in 824 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Monastery Swiftspear Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 6
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 69 Ai(2)-Phase4B Green Stompy 60: 24 
+
+Game Result: Game 93 ended in 856 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 69 Ai(2)-Phase4B Green Stompy 60: 25 
+
+Game Result: Game 94 ended in 1741 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 9
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 70 Ai(2)-Phase4B Green Stompy 60: 25 
+
+Game Result: Game 95 ended in 733 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 7
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 71 Ai(2)-Phase4B Green Stompy 60: 25 
+
+Game Result: Game 96 ended in 787 ms. Ai(1)-Phase4B Burn 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 10
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 71 Ai(2)-Phase4B Green Stompy 60: 26 
+
+Game Result: Game 97 ended in 1009 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 8
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 71 Ai(2)-Phase4B Green Stompy 60: 27 
+
+Game Result: Game 98 ended in 834 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Lightning Bolt Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Game Outcome: Turn 8
+Game Outcome: Ai(1)-Phase4B Burn 60 has lost because life total reached 0
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has won because all opponents have lost
+Match Result: Ai(1)-Phase4B Burn 60: 71 Ai(2)-Phase4B Green Stompy 60: 28 
+
+Game Result: Game 99 ended in 1375 ms. Ai(2)-Phase4B Green Stompy 60 has won!
+
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 72 Ai(2)-Phase4B Green Stompy 60: 28 
+
+Game Result: Game 100 ended in 551 ms. Ai(1)-Phase4B Burn 60 has won!
+

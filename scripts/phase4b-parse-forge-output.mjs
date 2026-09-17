@@ -87,17 +87,25 @@ function parseGame(buf, gameIndex, seatNames) {
     }
   }
 
-  // Turns: count "Turn: <name>'s turn N" — the highest N wins. Fall
-  // back to counting distinct turn-transition markers.
+  // Turns: prefer "Game Outcome: Turn N" (present even under -q).
+  // Fall back to "Turn: Turn N (name)" lines and take the maximum.
   let maxTurn = 0
+  for (const line of buf) {
+    let m = line.match(/^Game Outcome:\s+Turn\s+(\d+)/i)
+    if (m) { maxTurn = Math.max(maxTurn, Number(m[1])); continue }
+    m = line.match(/^Turn:\s+Turn\s+(\d+)/i)
+    if (m) maxTurn = Math.max(maxTurn, Number(m[1]))
+  }
+  // Mulligans: count Mulligan lines per player (only present in non-quiet mode).
   let mullP1 = 0, mullP2 = 0
   for (const line of buf) {
-    const t = line.match(/^Turn:\s+.+?turn\s+(\d+)/i)
-    if (t) maxTurn = Math.max(maxTurn, Number(t[1]))
-    if (/^Mulligan:/i.test(line)) {
-      if (p1 && line.includes(p1)) mullP1++
-      else if (p2 && line.includes(p2)) mullP2++
-    }
+    if (!/^Mulligan:/i.test(line)) continue
+    // "Mulligan: <name> mulligans"  vs  "Mulligan: <name> has kept ..."
+    if (/has kept/i.test(line)) continue
+    if (line.includes('Ai(1)')) mullP1++
+    else if (line.includes('Ai(2)')) mullP2++
+    else if (p1 && line.includes(p1)) mullP1++
+    else if (p2 && line.includes(p2)) mullP2++
   }
 
   return {

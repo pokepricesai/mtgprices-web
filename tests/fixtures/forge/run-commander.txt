@@ -1,0 +1,797 @@
+=== Commander single game ===
+Picked up JAVA_TOOL_OPTIONS: -Xmx4096m -Dfile.encoding=UTF-8 -Dio.netty.tryReflectionSetAccessible=true -Dsentry.dsn=
+Error handling registered!
+10:34:09 [INFO ] GuiBase: ##########################################
+10:34:09 [INFO ] GuiBase: APP: Forge v.2.0.14-SNAPSHOT-08.08
+10:34:09 [INFO ] GuiBase: Java: 17.0.20.1 (Eclipse Adoptium)
+10:34:09 [INFO ] GuiBase: OS: Linux 6.17.0-1022-azure amd64
+10:34:09 [INFO ] GuiBase: RAM: 4096 MB max, 4 CPUs
+10:34:09 [INFO ] GuiBase: ##########################################
+Language 'en-US' loaded successfully.
+(ThreadUtil first call): Running with priority 5
+Read cards: 33617 archived files in 1 ms (25 parts) using thread pool
+Upcoming set Star Trek (TRK) dated in the future. All `upcoming` cards will be added to this set with unknown rarity.
+The card A-Alrund's Epiphany was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Baba Lysaga, Night Witch was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Divide by Zero was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Esika's Chariot was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Faceless Haven was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Fires of Invention was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Goldspan Dragon was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Hullbreaker Horror was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Kumano Faces Kakkazan was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Luminarch Aspirant was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Monster Manual was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Omnath, Locus of Creation was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-The Meathook Massacre was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Unholy Heat was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Blinding Radiance was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Goblin Bruiser was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Ogre Painbringer was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Titanic Pelagosaur was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Treetop Recluse was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+Upcoming set Star Trek (TRK) dated in the future. All `upcoming` cards will be added to this set with unknown rarity.
+Read cards: 836 files in 0 ms (8 parts) using thread pool
+Simulation mode
+Ai(1)-Phase4B Krenko Goblins 99 vs Ai(2)-Phase4B Krenko Goblins 99 - one game of Commander seed 424242
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Mountain Did not have activator set in SpellAbilityRestriction.canPlay()
+Warning: default (ie. inherited from base class) implementation of confirmAction is used by Krenko, Mob Boss for forge.ai.ability.PermanentCreatureAi. Consider declaring an overloaded method
+Warning: default (ie. inherited from base class) implementation of confirmAction is used by Krenko, Mob Boss for forge.ai.ability.PermanentCreatureAi. Consider declaring an overloaded method
+Warning: default (ie. inherited from base class) implementation of confirmAction is used by Krenko, Mob Boss for forge.ai.ability.PermanentCreatureAi. Consider declaring an overloaded method
+Warning: default (ie. inherited from base class) implementation of confirmAction is used by Krenko, Mob Boss for forge.ai.ability.PermanentCreatureAi. Consider declaring an overloaded method
+Warning: default (ie. inherited from base class) implementation of confirmAction is used by Krenko, Mob Boss for forge.ai.ability.PermanentCreatureAi. Consider declaring an overloaded method
+Mulligan: Ai(1)-Phase4B Krenko Goblins 99 has kept a hand of 7 cards
+Mulligan: Ai(2)-Phase4B Krenko Goblins 99 has kept a hand of 7 cards
+Turn: Turn 1 (Ai(1)-Phase4B Krenko Goblins 99)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, precombat
+Land: Ai(1)-Phase4B Krenko Goblins 99 played Mountain (72)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Combat Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 2 (Ai(2)-Phase4B Krenko Goblins 99)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, precombat
+Land: Ai(2)-Phase4B Krenko Goblins 99 played Mountain (167)
+Mana: Mountain (167) - {T}: Add {R}.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 cast Goblin Guide
+Resolve Stack: Goblin Guide - Creature 2 / 2
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 assigned Goblin Guide (107) to attack Ai(1)-Phase4B Krenko Goblins 99.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 triggered Goblin Guide
+Resolve Stack: Whenever Goblin Guide attacks, defending player reveals the top card of their library. If it's a land card, that player puts it into their hand. [Attacker: Goblin Guide (107)]
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 didn't block Goblin Guide (107).
+Phase: Ai(2)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Goblin Guide (107) deals 2 combat damage to Ai(1)-Phase4B Krenko Goblins 99.
+Life: Life: Ai(1)-Phase4B Krenko Goblins 99 40 > 38
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 3 (Ai(1)-Phase4B Krenko Goblins 99)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, precombat
+Land: Ai(1)-Phase4B Krenko Goblins 99 played Mountain (47)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Combat Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 4 (Ai(2)-Phase4B Krenko Goblins 99)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, precombat
+Land: Ai(2)-Phase4B Krenko Goblins 99 played Mountain (149)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 assigned Goblin Guide (107) to attack Ai(1)-Phase4B Krenko Goblins 99.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 triggered Goblin Guide
+Resolve Stack: Whenever Goblin Guide attacks, defending player reveals the top card of their library. If it's a land card, that player puts it into their hand. [Attacker: Goblin Guide (107)]
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 didn't block Goblin Guide (107).
+Phase: Ai(2)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Goblin Guide (107) deals 2 combat damage to Ai(1)-Phase4B Krenko Goblins 99.
+Life: Life: Ai(1)-Phase4B Krenko Goblins 99 38 > 36
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 5 (Ai(1)-Phase4B Krenko Goblins 99)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, precombat
+Land: Ai(1)-Phase4B Krenko Goblins 99 played Mountain (55)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Combat Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 6 (Ai(2)-Phase4B Krenko Goblins 99)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, precombat
+Land: Ai(2)-Phase4B Krenko Goblins 99 played Mountain (154)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 assigned Goblin Guide (107) to attack Ai(1)-Phase4B Krenko Goblins 99.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 triggered Goblin Guide
+Resolve Stack: Whenever Goblin Guide attacks, defending player reveals the top card of their library. If it's a land card, that player puts it into their hand. [Attacker: Goblin Guide (107)]
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 didn't block Goblin Guide (107).
+Phase: Ai(2)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Goblin Guide (107) deals 2 combat damage to Ai(1)-Phase4B Krenko Goblins 99.
+Life: Life: Ai(1)-Phase4B Krenko Goblins 99 36 > 34
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Mana: Mountain (167) - {T}: Add {R}.
+Mana: Mountain (149) - {T}: Add {R}.
+Mana: Mountain (154) - {T}: Add {R}.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 cast Goblin Matron
+Resolve Stack: Goblin Matron - Creature 1 / 1
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 triggered Goblin Matron
+Resolve Stack: When Goblin Matron enters, you may search your library for a Goblin card, reveal that card, put it into your hand, then shuffle. [Zone Changer: Goblin Matron (197)]
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 7 (Ai(1)-Phase4B Krenko Goblins 99)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, precombat
+Land: Ai(1)-Phase4B Krenko Goblins 99 played Mountain (34)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Combat Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Mana: Mountain (72) - {T}: Add {R}.
+Mana: Mountain (47) - {T}: Add {R}.
+Mana: Mountain (55) - {T}: Add {R}.
+Mana: Mountain (34) - {T}: Add {R}.
+Add To Stack: Ai(1)-Phase4B Krenko Goblins 99 cast Krenko, Mob Boss
+Resolve Stack: Krenko, Mob Boss - Creature 3 / 3
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Cleanup step
+Discard: Ai(1)-Phase4B Krenko Goblins 99 discards Mountain (59).
+Turn: Turn 8 (Ai(2)-Phase4B Krenko Goblins 99)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, precombat
+Land: Ai(2)-Phase4B Krenko Goblins 99 played Mountain (183)
+Mana: Mountain (167) - {T}: Add {R}.
+Mana: Mountain (149) - {T}: Add {R}.
+Mana: Mountain (154) - {T}: Add {R}.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 cast Goblin Warchief
+Resolve Stack: Goblin Warchief - Creature 2 / 2
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Combat Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 9 (Ai(1)-Phase4B Krenko Goblins 99)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, precombat
+Land: Ai(1)-Phase4B Krenko Goblins 99 played Mountain (37)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Combat Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Mana: Mountain (72) - {T}: Add {R}.
+Mana: Mountain (47) - {T}: Add {R}.
+Add To Stack: Ai(1)-Phase4B Krenko Goblins 99 cast Eidolon of the Great Revel
+Resolve Stack: Eidolon of the Great Revel - Creature 2 / 2
+Mana: Mountain (183) - {T}: Add {R}.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 cast Shock targeting [Eidolon of the Great Revel (99)]
+Add To Stack: Ai(1)-Phase4B Krenko Goblins 99 triggered Eidolon of the Great Revel
+Damage: Eidolon of the Great Revel (99) deals 2 non-combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Life: Life: Ai(2)-Phase4B Krenko Goblins 99 40 > 38
+Resolve Stack: Whenever a player casts a spell with mana value 3 or less, Eidolon of the Great Revel deals 2 damage to that player. [Card: Shock (196), Activator: Ai(2)-Phase4B Krenko Goblins 99, SpellAbility: Shock deals 2 damage to any target.]
+Damage: Shock (196) deals 2 damage to Eidolon of the Great Revel (99).
+Resolve Stack: Shock (196) - Shock (196) deals 2 damage to Eidolon of the Great Revel (99).
+Zone Change: Eidolon of the Great Revel (99) was put into Graveyard from Battlefield.
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 10 (Ai(2)-Phase4B Krenko Goblins 99)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, precombat
+Mana: Mountain (167) - {T}: Add {R}.
+Mana: Mountain (149) - {T}: Add {R}.
+Mana: Mountain (154) - {T}: Add {R}.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 cast Krenko, Mob Boss
+Resolve Stack: Krenko, Mob Boss - Creature 3 / 3
+Land: Ai(2)-Phase4B Krenko Goblins 99 played Mountain (158)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 assigned Krenko, Mob Boss (201) to attack Ai(1)-Phase4B Krenko Goblins 99.
+Add To Stack: Ai(1)-Phase4B Krenko Goblins 99 activated Krenko, Mob Boss
+Resolve Stack: Krenko, Mob Boss (100) - Ai(1)-Phase4B Krenko Goblins 99 creates two 1/1 red Goblin creature tokens.
+Zone Change: Mountain (72) was put into Graveyard from Battlefield.
+Zone Change: Mountain (47) was put into Graveyard from Battlefield.
+Add To Stack: Ai(1)-Phase4B Krenko Goblins 99 cast Fireblast targeting [Krenko, Mob Boss (201)]
+Damage: Fireblast (94) deals 4 damage to Krenko, Mob Boss (201).
+Resolve Stack: Fireblast (94) - Fireblast (94) deals 4 damage to Krenko, Mob Boss (201).
+Zone Change: Krenko, Mob Boss (201) was put into Graveyard from Battlefield.
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Combat Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 11 (Ai(1)-Phase4B Krenko Goblins 99)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Combat Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(1)-Phase4B Krenko Goblins 99 played Mountain (82)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 12 (Ai(2)-Phase4B Krenko Goblins 99)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, precombat
+Mana: Mountain (167) - {T}: Add {R}.
+Mana: Mountain (149) - {T}: Add {R}.
+Mana: Mountain (154) - {T}: Add {R}.
+Mana: Mountain (183) - {T}: Add {R}.
+Mana: Mountain (158) - {T}: Add {R}.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 cast Krenko, Mob Boss
+Resolve Stack: Krenko, Mob Boss - Creature 3 / 3
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 assigned Krenko, Mob Boss (201) to attack Ai(1)-Phase4B Krenko Goblins 99.
+Add To Stack: Ai(1)-Phase4B Krenko Goblins 99 activated Krenko, Mob Boss
+Resolve Stack: Krenko, Mob Boss (100) - Ai(1)-Phase4B Krenko Goblins 99 creates four 1/1 red Goblin creature tokens.
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 didn't block Krenko, Mob Boss (201).
+Phase: Ai(2)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Krenko, Mob Boss (201) deals 3 combat damage to Ai(1)-Phase4B Krenko Goblins 99.
+Life: Life: Ai(1)-Phase4B Krenko Goblins 99 34 > 31
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(2)-Phase4B Krenko Goblins 99 played Mountain (114)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 13 (Ai(1)-Phase4B Krenko Goblins 99)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 assigned Krenko, Mob Boss (100) to attack Ai(2)-Phase4B Krenko Goblins 99.
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 didn't block Krenko, Mob Boss (100).
+Phase: Ai(1)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Krenko, Mob Boss (100) deals 3 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Life: Life: Ai(2)-Phase4B Krenko Goblins 99 38 > 35
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(1)-Phase4B Krenko Goblins 99 played Mountain (90)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 14 (Ai(2)-Phase4B Krenko Goblins 99)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 assigned Goblin Guide (107), Krenko, Mob Boss (201) and Goblin Warchief (104) to attack Ai(1)-Phase4B Krenko Goblins 99.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 triggered Goblin Guide
+Resolve Stack: Whenever Goblin Guide attacks, defending player reveals the top card of their library. If it's a land card, that player puts it into their hand. [Attacker: Goblin Guide (107)]
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 didn't block Goblin Guide (107).
+Ai(1)-Phase4B Krenko Goblins 99 didn't block Krenko, Mob Boss (201).
+Ai(1)-Phase4B Krenko Goblins 99 assigned Goblin Token (243) and Goblin Token (224) to block Goblin Warchief (104).
+Phase: Ai(2)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Goblin Guide (107) deals 2 combat damage to Ai(1)-Phase4B Krenko Goblins 99.
+Damage: Krenko, Mob Boss (201) deals 3 combat damage to Ai(1)-Phase4B Krenko Goblins 99.
+Damage: Goblin Warchief (104) deals 1 damage to Goblin Token (224).
+Damage: Goblin Warchief (104) deals 1 damage to Goblin Token (243).
+Damage: Goblin Token (243) deals 1 damage to Goblin Warchief (104).
+Damage: Goblin Token (224) deals 1 damage to Goblin Warchief (104).
+Life: Life: Ai(1)-Phase4B Krenko Goblins 99 31 > 26
+Zone Change: Goblin Warchief (104) was put into Graveyard from Battlefield.
+Zone Change: Goblin Token (224) was put into Graveyard from Battlefield.
+Zone Change: Goblin Token (243) was put into Graveyard from Battlefield.
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(2)-Phase4B Krenko Goblins 99 played Mountain (164)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 15 (Ai(1)-Phase4B Krenko Goblins 99)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, precombat
+Mana: Mountain (55) - {T}: Add {R}.
+Mana: Mountain (34) - {T}: Add {R}.
+Add To Stack: Ai(1)-Phase4B Krenko Goblins 99 cast Incinerate targeting [Krenko, Mob Boss (201)]
+Damage: Incinerate (92) deals 3 damage to Krenko, Mob Boss (201).
+Resolve Stack: Incinerate (92) - Incinerate (92) deals 3 damage to Krenko, Mob Boss (201).  
+Zone Change: Krenko, Mob Boss (201) was put into Graveyard from Battlefield.
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 assigned Krenko, Mob Boss (100) to attack Ai(2)-Phase4B Krenko Goblins 99.
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 didn't block Krenko, Mob Boss (100).
+Phase: Ai(1)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Krenko, Mob Boss (100) deals 3 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Life: Life: Ai(2)-Phase4B Krenko Goblins 99 35 > 32
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(1)-Phase4B Krenko Goblins 99 played Mountain (81)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 16 (Ai(2)-Phase4B Krenko Goblins 99)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 assigned Goblin Guide (107) to attack Ai(1)-Phase4B Krenko Goblins 99.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 triggered Goblin Guide
+Resolve Stack: Whenever Goblin Guide attacks, defending player reveals the top card of their library. If it's a land card, that player puts it into their hand. [Attacker: Goblin Guide (107)]
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 didn't block Goblin Guide (107).
+Phase: Ai(2)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Goblin Guide (107) deals 2 combat damage to Ai(1)-Phase4B Krenko Goblins 99.
+Life: Life: Ai(1)-Phase4B Krenko Goblins 99 26 > 24
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(2)-Phase4B Krenko Goblins 99 played Mountain (153)
+Mana: Mountain (167) - {T}: Add {R}.
+Mana: Mountain (149) - {T}: Add {R}.
+Mana: Mountain (154) - {T}: Add {R}.
+Mana: Mountain (183) - {T}: Add {R}.
+Mana: Mountain (158) - {T}: Add {R}.
+Mana: Mountain (114) - {T}: Add {R}.
+Mana: Mountain (164) - {T}: Add {R}.
+Mana: Mountain (153) - {T}: Add {R}.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 cast Krenko, Mob Boss
+Resolve Stack: Krenko, Mob Boss - Creature 3 / 3
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 17 (Ai(1)-Phase4B Krenko Goblins 99)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Combat Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(1)-Phase4B Krenko Goblins 99 played Mountain (15)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 18 (Ai(2)-Phase4B Krenko Goblins 99)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 assigned Krenko, Mob Boss (201) to attack Ai(1)-Phase4B Krenko Goblins 99.
+Add To Stack: Ai(1)-Phase4B Krenko Goblins 99 activated Krenko, Mob Boss
+Resolve Stack: Krenko, Mob Boss (100) - Ai(1)-Phase4B Krenko Goblins 99 creates four 1/1 red Goblin creature tokens.
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 didn't block Krenko, Mob Boss (201).
+Phase: Ai(2)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Krenko, Mob Boss (201) deals 3 combat damage to Ai(1)-Phase4B Krenko Goblins 99.
+Life: Life: Ai(1)-Phase4B Krenko Goblins 99 24 > 21
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(2)-Phase4B Krenko Goblins 99 played Mountain (165)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 19 (Ai(1)-Phase4B Krenko Goblins 99)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, precombat
+Mana: Mountain (55) - {T}: Add {R}.
+Mana: Mountain (34) - {T}: Add {R}.
+Mana: Mountain (37) - {T}: Add {R}.
+Add To Stack: Ai(1)-Phase4B Krenko Goblins 99 cast Reckless Bushwhacker
+Resolve Stack: Reckless Bushwhacker - Creature 2 / 1
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 assigned Krenko, Mob Boss (100) to attack Ai(2)-Phase4B Krenko Goblins 99.
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 didn't block Krenko, Mob Boss (100).
+Phase: Ai(1)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Krenko, Mob Boss (100) deals 3 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Life: Life: Ai(2)-Phase4B Krenko Goblins 99 32 > 29
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(1)-Phase4B Krenko Goblins 99 played Mountain (13)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 20 (Ai(2)-Phase4B Krenko Goblins 99)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 assigned Krenko, Mob Boss (201) to attack Ai(1)-Phase4B Krenko Goblins 99.
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 didn't block Krenko, Mob Boss (201).
+Phase: Ai(2)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Krenko, Mob Boss (201) deals 3 combat damage to Ai(1)-Phase4B Krenko Goblins 99.
+Life: Life: Ai(1)-Phase4B Krenko Goblins 99 21 > 18
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(2)-Phase4B Krenko Goblins 99 played Mountain (144)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 21 (Ai(1)-Phase4B Krenko Goblins 99)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 assigned Krenko, Mob Boss (100) to attack Ai(2)-Phase4B Krenko Goblins 99.
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 didn't block Krenko, Mob Boss (100).
+Phase: Ai(1)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Krenko, Mob Boss (100) deals 3 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Life: Life: Ai(2)-Phase4B Krenko Goblins 99 29 > 26
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(1)-Phase4B Krenko Goblins 99 played Mountain (20)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 22 (Ai(2)-Phase4B Krenko Goblins 99)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Draw step
+Mana: Mountain (167) - {T}: Add {R}.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 cast Lightning Bolt targeting [Krenko, Mob Boss (100)]
+Damage: Lightning Bolt (105) deals 3 damage to Krenko, Mob Boss (100).
+Resolve Stack: Lightning Bolt (105) - Lightning Bolt (105) deals 3 damage to Krenko, Mob Boss (100).
+Zone Change: Krenko, Mob Boss (100) was put into Graveyard from Battlefield.
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 assigned Krenko, Mob Boss (201) to attack Ai(1)-Phase4B Krenko Goblins 99.
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 didn't block Krenko, Mob Boss (201).
+Phase: Ai(2)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Krenko, Mob Boss (201) deals 3 combat damage to Ai(1)-Phase4B Krenko Goblins 99.
+Life: Life: Ai(1)-Phase4B Krenko Goblins 99 18 > 15
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(2)-Phase4B Krenko Goblins 99 played Mountain (129)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 23 (Ai(1)-Phase4B Krenko Goblins 99)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Combat Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(1)-Phase4B Krenko Goblins 99 played Mountain (19)
+Mana: Mountain (55) - {T}: Add {R}.
+Mana: Mountain (34) - {T}: Add {R}.
+Mana: Mountain (37) - {T}: Add {R}.
+Mana: Mountain (82) - {T}: Add {R}.
+Mana: Mountain (90) - {T}: Add {R}.
+Mana: Mountain (81) - {T}: Add {R}.
+Add To Stack: Ai(1)-Phase4B Krenko Goblins 99 cast Krenko, Mob Boss
+Resolve Stack: Krenko, Mob Boss - Creature 3 / 3
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 24 (Ai(2)-Phase4B Krenko Goblins 99)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Combat Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(2)-Phase4B Krenko Goblins 99 played Mountain (125)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 25 (Ai(1)-Phase4B Krenko Goblins 99)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Draw step
+Mana: Mountain (55) - {T}: Add {R}.
+Add To Stack: Ai(1)-Phase4B Krenko Goblins 99 cast Lightning Bolt targeting [Krenko, Mob Boss (201)]
+Damage: Lightning Bolt (4) deals 3 damage to Krenko, Mob Boss (201).
+Resolve Stack: Lightning Bolt (4) - Lightning Bolt (4) deals 3 damage to Krenko, Mob Boss (201).
+Zone Change: Krenko, Mob Boss (201) was put into Graveyard from Battlefield.
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 assigned Krenko, Mob Boss (100) and Reckless Bushwhacker (91) to attack Ai(2)-Phase4B Krenko Goblins 99.
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 didn't block Krenko, Mob Boss (100).
+Ai(2)-Phase4B Krenko Goblins 99 didn't block Reckless Bushwhacker (91).
+Phase: Ai(1)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Krenko, Mob Boss (100) deals 3 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Reckless Bushwhacker (91) deals 2 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Life: Life: Ai(2)-Phase4B Krenko Goblins 99 26 > 21
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(1)-Phase4B Krenko Goblins 99 played Mountain (64)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 26 (Ai(2)-Phase4B Krenko Goblins 99)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 assigned Goblin Guide (107) to attack Ai(1)-Phase4B Krenko Goblins 99.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 triggered Goblin Guide
+Resolve Stack: Whenever Goblin Guide attacks, defending player reveals the top card of their library. If it's a land card, that player puts it into their hand. [Attacker: Goblin Guide (107)]
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 didn't block Goblin Guide (107).
+Phase: Ai(2)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Goblin Guide (107) deals 2 combat damage to Ai(1)-Phase4B Krenko Goblins 99.
+Life: Life: Ai(1)-Phase4B Krenko Goblins 99 15 > 13
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(2)-Phase4B Krenko Goblins 99 played Mountain (157)
+Mana: Mountain (167) - {T}: Add {R}.
+Mana: Mountain (149) - {T}: Add {R}.
+Mana: Mountain (154) - {T}: Add {R}.
+Mana: Mountain (183) - {T}: Add {R}.
+Mana: Mountain (158) - {T}: Add {R}.
+Mana: Mountain (114) - {T}: Add {R}.
+Mana: Mountain (164) - {T}: Add {R}.
+Mana: Mountain (153) - {T}: Add {R}.
+Mana: Mountain (165) - {T}: Add {R}.
+Mana: Mountain (144) - {T}: Add {R}.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 cast Krenko, Mob Boss
+Resolve Stack: Krenko, Mob Boss - Creature 3 / 3
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 27 (Ai(1)-Phase4B Krenko Goblins 99)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Combat Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(1)-Phase4B Krenko Goblins 99 played Mountain (58)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 28 (Ai(2)-Phase4B Krenko Goblins 99)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Add To Stack: Ai(1)-Phase4B Krenko Goblins 99 activated Krenko, Mob Boss
+Resolve Stack: Krenko, Mob Boss (100) - Ai(1)-Phase4B Krenko Goblins 99 creates ten 1/1 red Goblin creature tokens.
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Combat Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(2)-Phase4B Krenko Goblins 99 played Mountain (174)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 29 (Ai(1)-Phase4B Krenko Goblins 99)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, precombat
+Mana: Mountain (55) - {T}: Add {R}.
+Mana: Mountain (34) - {T}: Add {R}.
+Mana: Mountain (37) - {T}: Add {R}.
+Add To Stack: Ai(1)-Phase4B Krenko Goblins 99 cast Goblin Chieftain
+Resolve Stack: Goblin Chieftain - Creature 2 / 2
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 assigned Krenko, Mob Boss (100), Reckless Bushwhacker (91), Goblin Token (244), Goblin Token (278), Goblin Token (279), Goblin Token (334), Goblin Token (335), Goblin Token (336), Goblin Token (337), Goblin Token (338) and Goblin Chieftain (7) to attack Ai(2)-Phase4B Krenko Goblins 99.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 activated Krenko, Mob Boss
+Resolve Stack: Krenko, Mob Boss (201) - Ai(2)-Phase4B Krenko Goblins 99 creates six 1/1 red Goblin creature tokens.
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 assigned Goblin Token (358) to block Krenko, Mob Boss (100).
+Ai(2)-Phase4B Krenko Goblins 99 assigned Goblin Guide (107) to block Reckless Bushwhacker (91).
+Ai(2)-Phase4B Krenko Goblins 99 didn't block Goblin Token (244).
+Ai(2)-Phase4B Krenko Goblins 99 didn't block Goblin Token (278).
+Ai(2)-Phase4B Krenko Goblins 99 didn't block Goblin Token (279).
+Ai(2)-Phase4B Krenko Goblins 99 didn't block Goblin Token (334).
+Ai(2)-Phase4B Krenko Goblins 99 didn't block Goblin Token (335).
+Ai(2)-Phase4B Krenko Goblins 99 didn't block Goblin Token (336).
+Ai(2)-Phase4B Krenko Goblins 99 didn't block Goblin Token (337).
+Ai(2)-Phase4B Krenko Goblins 99 didn't block Goblin Token (338).
+Ai(2)-Phase4B Krenko Goblins 99 assigned Goblin Token (357) and Goblin Token (356) to block Goblin Chieftain (7).
+Phase: Ai(1)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Krenko, Mob Boss (100) deals 4 damage to Goblin Token (358).
+Damage: Reckless Bushwhacker (91) deals 3 damage to Goblin Guide (107).
+Damage: Goblin Token (244) deals 2 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Goblin Token (278) deals 2 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Goblin Token (279) deals 2 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Goblin Token (334) deals 2 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Goblin Token (335) deals 2 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Goblin Token (336) deals 2 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Goblin Token (337) deals 2 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Goblin Token (338) deals 2 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Goblin Chieftain (7) deals 1 damage to Goblin Token (356).
+Damage: Goblin Chieftain (7) deals 1 damage to Goblin Token (357).
+Damage: Goblin Token (357) deals 1 damage to Goblin Chieftain (7).
+Damage: Goblin Token (356) deals 1 damage to Goblin Chieftain (7).
+Damage: Goblin Guide (107) deals 2 damage to Reckless Bushwhacker (91).
+Damage: Goblin Token (358) deals 1 damage to Krenko, Mob Boss (100).
+Life: Life: Ai(2)-Phase4B Krenko Goblins 99 21 > 5
+Zone Change: Reckless Bushwhacker (91) was put into Graveyard from Battlefield.
+Zone Change: Goblin Chieftain (7) was put into Graveyard from Battlefield.
+Zone Change: Goblin Guide (107) was put into Graveyard from Battlefield.
+Zone Change: Goblin Token (356) was put into Graveyard from Battlefield.
+Zone Change: Goblin Token (357) was put into Graveyard from Battlefield.
+Zone Change: Goblin Token (358) was put into Graveyard from Battlefield.
+Mana: Mountain (82) - {T}: Add {R}.
+Mana: Mountain (90) - {T}: Add {R}.
+Add To Stack: Ai(1)-Phase4B Krenko Goblins 99 cast Searing Blaze targeting [Ai(2)-Phase4B Krenko Goblins 99] [Goblin Matron (197)]
+Damage: Searing Blaze (93) deals 1 non-combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Searing Blaze (93) deals 1 damage to Goblin Matron (197).
+Life: Life: Ai(2)-Phase4B Krenko Goblins 99 5 > 4
+Resolve Stack: Searing Blaze (93) - Searing Blaze (93) deals 1 damage to Ai(2)-Phase4B Krenko Goblins 99. Searing Blaze (93) deals 1 damage to Goblin Matron (197). 
+Zone Change: Goblin Matron (197) was put into Graveyard from Battlefield.
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(1)-Phase4B Krenko Goblins 99 played Mountain (78)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 30 (Ai(2)-Phase4B Krenko Goblins 99)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Draw step
+Mana: Mountain (167) - {T}: Add {R}.
+Mana: Mountain (149) - {T}: Add {R}.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 cast Incinerate targeting [Krenko, Mob Boss (100)]
+Damage: Incinerate (193) deals 3 damage to Krenko, Mob Boss (100).
+Resolve Stack: Incinerate (193) - Incinerate (193) deals 3 damage to Krenko, Mob Boss (100).  
+Zone Change: Krenko, Mob Boss (100) was put into Graveyard from Battlefield.
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Combat Damage Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End of Combat Step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Main phase, postcombat
+Land: Ai(2)-Phase4B Krenko Goblins 99 played Mountain (120)
+Phase: Ai(2)-Phase4B Krenko Goblins 99's End step
+Phase: Ai(2)-Phase4B Krenko Goblins 99's Cleanup step
+Turn: Turn 31 (Ai(1)-Phase4B Krenko Goblins 99)
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Untap step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Upkeep step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Draw step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Main phase, precombat
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Attackers Step
+Combat: Ai(1)-Phase4B Krenko Goblins 99 assigned Goblin Token (244), Goblin Token (278), Goblin Token (279), Goblin Token (334), Goblin Token (335), Goblin Token (336), Goblin Token (337) and Goblin Token (338) to attack Ai(2)-Phase4B Krenko Goblins 99.
+Add To Stack: Ai(2)-Phase4B Krenko Goblins 99 activated Krenko, Mob Boss
+Resolve Stack: Krenko, Mob Boss (201) - Ai(2)-Phase4B Krenko Goblins 99 creates two 1/1 red Goblin creature tokens.
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Declare Blockers Step
+Combat: Ai(2)-Phase4B Krenko Goblins 99 assigned Goblin Token (376) to block Goblin Token (244).
+Ai(2)-Phase4B Krenko Goblins 99 didn't block Goblin Token (278).
+Ai(2)-Phase4B Krenko Goblins 99 didn't block Goblin Token (279).
+Ai(2)-Phase4B Krenko Goblins 99 didn't block Goblin Token (334).
+Ai(2)-Phase4B Krenko Goblins 99 didn't block Goblin Token (335).
+Ai(2)-Phase4B Krenko Goblins 99 didn't block Goblin Token (336).
+Ai(2)-Phase4B Krenko Goblins 99 didn't block Goblin Token (337).
+Ai(2)-Phase4B Krenko Goblins 99 didn't block Goblin Token (338).
+Phase: Ai(1)-Phase4B Krenko Goblins 99's First Strike Damage Step
+Phase: Ai(1)-Phase4B Krenko Goblins 99's Combat Damage Step
+Damage: Goblin Token (244) deals 1 damage to Goblin Token (376).
+Damage: Goblin Token (278) deals 1 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Goblin Token (279) deals 1 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Goblin Token (334) deals 1 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Goblin Token (335) deals 1 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Goblin Token (336) deals 1 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Goblin Token (337) deals 1 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Goblin Token (338) deals 1 combat damage to Ai(2)-Phase4B Krenko Goblins 99.
+Damage: Goblin Token (376) deals 1 damage to Goblin Token (244).
+Life: Life: Ai(2)-Phase4B Krenko Goblins 99 4 > -3
+Player Control: Ai(1)-Phase4B Krenko Goblins 99 has restored control over themself
+Player Control: Ai(2)-Phase4B Krenko Goblins 99 has restored control over themself
+Game Outcome: Turn 16
+Game Outcome: Ai(1)-Phase4B Krenko Goblins 99 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Krenko Goblins 99 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Krenko Goblins 99: 1 Ai(2)-Phase4B Krenko Goblins 99: 0 
+
+Game Result: Game 1 ended in 8304 ms. Ai(1)-Phase4B Krenko Goblins 99 has won!
+

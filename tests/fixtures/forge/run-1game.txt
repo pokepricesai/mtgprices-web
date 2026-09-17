@@ -1,0 +1,256 @@
+=== 1-game constructed run ===
+Picked up JAVA_TOOL_OPTIONS: -Xmx4096m -Dfile.encoding=UTF-8 -Dio.netty.tryReflectionSetAccessible=true -Dsentry.dsn=
+Error handling registered!
+10:31:31 [INFO ] GuiBase: ##########################################
+10:31:31 [INFO ] GuiBase: APP: Forge v.2.0.14-SNAPSHOT-08.08
+10:31:31 [INFO ] GuiBase: Java: 17.0.20.1 (Eclipse Adoptium)
+10:31:31 [INFO ] GuiBase: OS: Linux 6.17.0-1022-azure amd64
+10:31:31 [INFO ] GuiBase: RAM: 4096 MB max, 4 CPUs
+10:31:31 [INFO ] GuiBase: ##########################################
+Language 'en-US' loaded successfully.
+(ThreadUtil first call): Running with priority 5
+Read cards: 33617 archived files in 1 ms (25 parts) using thread pool
+Upcoming set Star Trek (TRK) dated in the future. All `upcoming` cards will be added to this set with unknown rarity.
+The card A-Alrund's Epiphany was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Baba Lysaga, Night Witch was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Divide by Zero was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Esika's Chariot was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Faceless Haven was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Fires of Invention was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Goldspan Dragon was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Hullbreaker Horror was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Kumano Faces Kakkazan was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Luminarch Aspirant was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Monster Manual was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Omnath, Locus of Creation was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-The Meathook Massacre was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Unholy Heat was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Blinding Radiance was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Goblin Bruiser was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Ogre Painbringer was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Titanic Pelagosaur was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Treetop Recluse was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+Upcoming set Star Trek (TRK) dated in the future. All `upcoming` cards will be added to this set with unknown rarity.
+Read cards: 836 files in 0 ms (8 parts) using thread pool
+Simulation mode
+Ai(1)-Phase4B Burn 60 vs Ai(2)-Phase4B Green Stompy 60 - one game of Constructed seed 424242
+Mulligan: Ai(1)-Phase4B Burn 60 has kept a hand of 7 cards
+Mulligan: Ai(2)-Phase4B Green Stompy 60 has kept a hand of 7 cards
+Turn: Turn 1 (Ai(1)-Phase4B Burn 60)
+Phase: Ai(1)-Phase4B Burn 60's Untap step
+Phase: Ai(1)-Phase4B Burn 60's Upkeep step
+Phase: Ai(1)-Phase4B Burn 60's Draw step
+Phase: Ai(1)-Phase4B Burn 60's Main phase, precombat
+Land: Ai(1)-Phase4B Burn 60 played Mountain (38)
+Mana: Mountain (38) - {T}: Add {R}.
+Add To Stack: Ai(1)-Phase4B Burn 60 cast Monastery Swiftspear
+Resolve Stack: Monastery Swiftspear - Creature 1 / 2
+Phase: Ai(1)-Phase4B Burn 60's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Burn 60's Declare Attackers Step
+Combat: Ai(1)-Phase4B Burn 60 assigned Monastery Swiftspear (3) to attack Ai(2)-Phase4B Green Stompy 60.
+Phase: Ai(1)-Phase4B Burn 60's Declare Blockers Step
+Combat: Ai(2)-Phase4B Green Stompy 60 didn't block Monastery Swiftspear (3).
+Phase: Ai(1)-Phase4B Burn 60's First Strike Damage Step
+Phase: Ai(1)-Phase4B Burn 60's Combat Damage Step
+Damage: Monastery Swiftspear (3) deals 1 combat damage to Ai(2)-Phase4B Green Stompy 60.
+Life: Life: Ai(2)-Phase4B Green Stompy 60 20 > 19
+Phase: Ai(1)-Phase4B Burn 60's End of Combat Step
+Phase: Ai(1)-Phase4B Burn 60's Main phase, postcombat
+Phase: Ai(1)-Phase4B Burn 60's End step
+Phase: Ai(1)-Phase4B Burn 60's Cleanup step
+Turn: Turn 2 (Ai(2)-Phase4B Green Stompy 60)
+Phase: Ai(2)-Phase4B Green Stompy 60's Untap step
+Phase: Ai(2)-Phase4B Green Stompy 60's Upkeep step
+Phase: Ai(2)-Phase4B Green Stompy 60's Draw step
+Phase: Ai(2)-Phase4B Green Stompy 60's Main phase, precombat
+Land: Ai(2)-Phase4B Green Stompy 60 played Forest (81)
+Phase: Ai(2)-Phase4B Green Stompy 60's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Green Stompy 60's Declare Attackers Step
+Phase: Ai(2)-Phase4B Green Stompy 60's Declare Blockers Step
+Phase: Ai(2)-Phase4B Green Stompy 60's First Strike Damage Step
+Phase: Ai(2)-Phase4B Green Stompy 60's Combat Damage Step
+Phase: Ai(2)-Phase4B Green Stompy 60's End of Combat Step
+Phase: Ai(2)-Phase4B Green Stompy 60's Main phase, postcombat
+Phase: Ai(2)-Phase4B Green Stompy 60's End step
+Phase: Ai(2)-Phase4B Green Stompy 60's Cleanup step
+Turn: Turn 3 (Ai(1)-Phase4B Burn 60)
+Phase: Ai(1)-Phase4B Burn 60's Untap step
+Phase: Ai(1)-Phase4B Burn 60's Upkeep step
+Phase: Ai(1)-Phase4B Burn 60's Draw step
+Phase: Ai(1)-Phase4B Burn 60's Main phase, precombat
+Land: Ai(1)-Phase4B Burn 60 played Mountain (42)
+Phase: Ai(1)-Phase4B Burn 60's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Burn 60's Declare Attackers Step
+Combat: Ai(1)-Phase4B Burn 60 assigned Monastery Swiftspear (3) to attack Ai(2)-Phase4B Green Stompy 60.
+Phase: Ai(1)-Phase4B Burn 60's Declare Blockers Step
+Combat: Ai(2)-Phase4B Green Stompy 60 didn't block Monastery Swiftspear (3).
+Phase: Ai(1)-Phase4B Burn 60's First Strike Damage Step
+Phase: Ai(1)-Phase4B Burn 60's Combat Damage Step
+Damage: Monastery Swiftspear (3) deals 1 combat damage to Ai(2)-Phase4B Green Stompy 60.
+Life: Life: Ai(2)-Phase4B Green Stompy 60 19 > 18
+Phase: Ai(1)-Phase4B Burn 60's End of Combat Step
+Phase: Ai(1)-Phase4B Burn 60's Main phase, postcombat
+Mana: Mountain (38) - {T}: Add {R}.
+Mana: Mountain (42) - {T}: Add {R}.
+Add To Stack: Ai(1)-Phase4B Burn 60 cast Eidolon of the Great Revel
+Resolve Stack: Eidolon of the Great Revel - Creature 2 / 2
+Phase: Ai(1)-Phase4B Burn 60's End step
+Phase: Ai(1)-Phase4B Burn 60's Cleanup step
+Turn: Turn 4 (Ai(2)-Phase4B Green Stompy 60)
+Phase: Ai(2)-Phase4B Green Stompy 60's Untap step
+Phase: Ai(2)-Phase4B Green Stompy 60's Upkeep step
+Phase: Ai(2)-Phase4B Green Stompy 60's Draw step
+Phase: Ai(2)-Phase4B Green Stompy 60's Main phase, precombat
+Land: Ai(2)-Phase4B Green Stompy 60 played Forest (73)
+Mana: Forest (81) - {T}: Add {G}.
+Mana: Forest (73) - {T}: Add {G}.
+Add To Stack: Ai(2)-Phase4B Green Stompy 60 cast Rampant Growth
+Add To Stack: Ai(1)-Phase4B Burn 60 triggered Eidolon of the Great Revel
+Damage: Eidolon of the Great Revel (60) deals 2 non-combat damage to Ai(2)-Phase4B Green Stompy 60.
+Life: Life: Ai(2)-Phase4B Green Stompy 60 18 > 16
+Resolve Stack: Whenever a player casts a spell with mana value 3 or less, Eidolon of the Great Revel deals 2 damage to that player. [Card: Rampant Growth (109), Activator: Ai(2)-Phase4B Green Stompy 60, SpellAbility: Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.]
+Resolve Stack: Rampant Growth (109) - Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.
+Phase: Ai(2)-Phase4B Green Stompy 60's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Green Stompy 60's Declare Attackers Step
+Phase: Ai(2)-Phase4B Green Stompy 60's Declare Blockers Step
+Phase: Ai(2)-Phase4B Green Stompy 60's First Strike Damage Step
+Phase: Ai(2)-Phase4B Green Stompy 60's Combat Damage Step
+Phase: Ai(2)-Phase4B Green Stompy 60's End of Combat Step
+Phase: Ai(2)-Phase4B Green Stompy 60's Main phase, postcombat
+Phase: Ai(2)-Phase4B Green Stompy 60's End step
+Phase: Ai(2)-Phase4B Green Stompy 60's Cleanup step
+Turn: Turn 5 (Ai(1)-Phase4B Burn 60)
+Phase: Ai(1)-Phase4B Burn 60's Untap step
+Phase: Ai(1)-Phase4B Burn 60's Upkeep step
+Phase: Ai(1)-Phase4B Burn 60's Draw step
+Phase: Ai(1)-Phase4B Burn 60's Main phase, precombat
+Land: Ai(1)-Phase4B Burn 60 played Mountain (41)
+Phase: Ai(1)-Phase4B Burn 60's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Burn 60's Declare Attackers Step
+Combat: Ai(1)-Phase4B Burn 60 assigned Eidolon of the Great Revel (60) and Monastery Swiftspear (3) to attack Ai(2)-Phase4B Green Stompy 60.
+Phase: Ai(1)-Phase4B Burn 60's Declare Blockers Step
+Combat: Ai(2)-Phase4B Green Stompy 60 didn't block Eidolon of the Great Revel (60).
+Ai(2)-Phase4B Green Stompy 60 didn't block Monastery Swiftspear (3).
+Phase: Ai(1)-Phase4B Burn 60's First Strike Damage Step
+Phase: Ai(1)-Phase4B Burn 60's Combat Damage Step
+Damage: Eidolon of the Great Revel (60) deals 2 combat damage to Ai(2)-Phase4B Green Stompy 60.
+Damage: Monastery Swiftspear (3) deals 1 combat damage to Ai(2)-Phase4B Green Stompy 60.
+Life: Life: Ai(2)-Phase4B Green Stompy 60 16 > 13
+Phase: Ai(1)-Phase4B Burn 60's End of Combat Step
+Phase: Ai(1)-Phase4B Burn 60's Main phase, postcombat
+Phase: Ai(1)-Phase4B Burn 60's End step
+Phase: Ai(1)-Phase4B Burn 60's Cleanup step
+Turn: Turn 6 (Ai(2)-Phase4B Green Stompy 60)
+Phase: Ai(2)-Phase4B Green Stompy 60's Untap step
+Phase: Ai(2)-Phase4B Green Stompy 60's Upkeep step
+Phase: Ai(2)-Phase4B Green Stompy 60's Draw step
+Phase: Ai(2)-Phase4B Green Stompy 60's Main phase, precombat
+Land: Ai(2)-Phase4B Green Stompy 60 played Forest (75)
+Mana: Forest (81) - {T}: Add {G}.
+Mana: Forest (73) - {T}: Add {G}.
+Add To Stack: Ai(2)-Phase4B Green Stompy 60 cast Rampant Growth
+Add To Stack: Ai(1)-Phase4B Burn 60 triggered Eidolon of the Great Revel
+Damage: Eidolon of the Great Revel (60) deals 2 non-combat damage to Ai(2)-Phase4B Green Stompy 60.
+Life: Life: Ai(2)-Phase4B Green Stompy 60 13 > 11
+Resolve Stack: Whenever a player casts a spell with mana value 3 or less, Eidolon of the Great Revel deals 2 damage to that player. [Card: Rampant Growth (111), Activator: Ai(2)-Phase4B Green Stompy 60, SpellAbility: Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.]
+Resolve Stack: Rampant Growth (111) - Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.
+Phase: Ai(2)-Phase4B Green Stompy 60's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Green Stompy 60's Declare Attackers Step
+Phase: Ai(2)-Phase4B Green Stompy 60's Declare Blockers Step
+Phase: Ai(2)-Phase4B Green Stompy 60's First Strike Damage Step
+Phase: Ai(2)-Phase4B Green Stompy 60's Combat Damage Step
+Phase: Ai(2)-Phase4B Green Stompy 60's End of Combat Step
+Phase: Ai(2)-Phase4B Green Stompy 60's Main phase, postcombat
+Mana: Forest (83) - {T}: Add {G}.
+Add To Stack: Ai(2)-Phase4B Green Stompy 60 cast Elvish Mystic
+Add To Stack: Ai(1)-Phase4B Burn 60 triggered Eidolon of the Great Revel
+Damage: Eidolon of the Great Revel (60) deals 2 non-combat damage to Ai(2)-Phase4B Green Stompy 60.
+Life: Life: Ai(2)-Phase4B Green Stompy 60 11 > 9
+Resolve Stack: Whenever a player casts a spell with mana value 3 or less, Eidolon of the Great Revel deals 2 damage to that player. [Card: Elvish Mystic (116), Activator: Ai(2)-Phase4B Green Stompy 60, SpellAbility: Elvish Mystic - Creature 1 / 1]
+Resolve Stack: Elvish Mystic - Creature 1 / 1
+Phase: Ai(2)-Phase4B Green Stompy 60's End step
+Phase: Ai(2)-Phase4B Green Stompy 60's Cleanup step
+Turn: Turn 7 (Ai(1)-Phase4B Burn 60)
+Phase: Ai(1)-Phase4B Burn 60's Untap step
+Phase: Ai(1)-Phase4B Burn 60's Upkeep step
+Phase: Ai(1)-Phase4B Burn 60's Draw step
+Phase: Ai(1)-Phase4B Burn 60's Main phase, precombat
+Phase: Ai(1)-Phase4B Burn 60's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Burn 60's Declare Attackers Step
+Combat: Ai(1)-Phase4B Burn 60 assigned Eidolon of the Great Revel (60) and Monastery Swiftspear (3) to attack Ai(2)-Phase4B Green Stompy 60.
+Phase: Ai(1)-Phase4B Burn 60's Declare Blockers Step
+Combat: Ai(2)-Phase4B Green Stompy 60 didn't block Eidolon of the Great Revel (60).
+Ai(2)-Phase4B Green Stompy 60 didn't block Monastery Swiftspear (3).
+Phase: Ai(1)-Phase4B Burn 60's First Strike Damage Step
+Phase: Ai(1)-Phase4B Burn 60's Combat Damage Step
+Damage: Eidolon of the Great Revel (60) deals 2 combat damage to Ai(2)-Phase4B Green Stompy 60.
+Damage: Monastery Swiftspear (3) deals 1 combat damage to Ai(2)-Phase4B Green Stompy 60.
+Life: Life: Ai(2)-Phase4B Green Stompy 60 9 > 6
+Phase: Ai(1)-Phase4B Burn 60's End of Combat Step
+Phase: Ai(1)-Phase4B Burn 60's Main phase, postcombat
+Land: Ai(1)-Phase4B Burn 60 played Mountain (49)
+Mana: Mountain (38) - {T}: Add {R}.
+Mana: Mountain (42) - {T}: Add {R}.
+Add To Stack: Ai(1)-Phase4B Burn 60 cast Searing Blaze targeting [Ai(2)-Phase4B Green Stompy 60] [Elvish Mystic (116)]
+Add To Stack: Ai(1)-Phase4B Burn 60 triggered Eidolon of the Great Revel
+Add To Stack: Ai(1)-Phase4B Burn 60 triggered Monastery Swiftspear
+Resolve Stack: Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.) [Card: Searing Blaze (12), Activator: Ai(1)-Phase4B Burn 60, SpellAbility: Searing Blaze deals 1 damage to target player or planeswalker and 1 damage to target creature that player or that planeswalker's controller controls. Landfall — If you had a land enter the battlefield under your control this turn, Searing Blaze deals 3 damage to that player or planeswalker and 3 damage to that creature instead.  ]
+Damage: Eidolon of the Great Revel (60) deals 2 non-combat damage to Ai(1)-Phase4B Burn 60.
+Life: Life: Ai(1)-Phase4B Burn 60 20 > 18
+Resolve Stack: Whenever a player casts a spell with mana value 3 or less, Eidolon of the Great Revel deals 2 damage to that player. [Card: Searing Blaze (12), Activator: Ai(1)-Phase4B Burn 60, SpellAbility: Searing Blaze deals 1 damage to target player or planeswalker and 1 damage to target creature that player or that planeswalker's controller controls. Landfall — If you had a land enter the battlefield under your control this turn, Searing Blaze deals 3 damage to that player or planeswalker and 3 damage to that creature instead.  ]
+Damage: Searing Blaze (12) deals 3 non-combat damage to Ai(2)-Phase4B Green Stompy 60.
+Damage: Searing Blaze (12) deals 3 damage to Elvish Mystic (116).
+Life: Life: Ai(2)-Phase4B Green Stompy 60 6 > 3
+Resolve Stack: Searing Blaze (12) - Searing Blaze (12) deals 3 damage to Ai(2)-Phase4B Green Stompy 60. Searing Blaze (12) deals 3 damage to Elvish Mystic (116). 
+Zone Change: Elvish Mystic (116) was put into Graveyard from Battlefield.
+Phase: Ai(1)-Phase4B Burn 60's End step
+Phase: Ai(1)-Phase4B Burn 60's Cleanup step
+Turn: Turn 8 (Ai(2)-Phase4B Green Stompy 60)
+Phase: Ai(2)-Phase4B Green Stompy 60's Untap step
+Phase: Ai(2)-Phase4B Green Stompy 60's Upkeep step
+Phase: Ai(2)-Phase4B Green Stompy 60's Draw step
+Phase: Ai(2)-Phase4B Green Stompy 60's Main phase, precombat
+Land: Ai(2)-Phase4B Green Stompy 60 played Forest (82)
+Phase: Ai(2)-Phase4B Green Stompy 60's Beginning of Combat Step
+Phase: Ai(2)-Phase4B Green Stompy 60's Declare Attackers Step
+Phase: Ai(2)-Phase4B Green Stompy 60's Declare Blockers Step
+Phase: Ai(2)-Phase4B Green Stompy 60's First Strike Damage Step
+Phase: Ai(2)-Phase4B Green Stompy 60's Combat Damage Step
+Phase: Ai(2)-Phase4B Green Stompy 60's End of Combat Step
+Phase: Ai(2)-Phase4B Green Stompy 60's Main phase, postcombat
+Mana: Forest (81) - {T}: Add {G}.
+Mana: Forest (73) - {T}: Add {G}.
+Mana: Forest (83) - {T}: Add {G}.
+Add To Stack: Ai(2)-Phase4B Green Stompy 60 cast Cultivate
+Add To Stack: Ai(1)-Phase4B Burn 60 triggered Eidolon of the Great Revel
+Damage: Eidolon of the Great Revel (60) deals 2 non-combat damage to Ai(2)-Phase4B Green Stompy 60.
+Life: Life: Ai(2)-Phase4B Green Stompy 60 3 > 1
+Resolve Stack: Whenever a player casts a spell with mana value 3 or less, Eidolon of the Great Revel deals 2 damage to that player. [Card: Cultivate (119), Activator: Ai(2)-Phase4B Green Stompy 60, SpellAbility: Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle.   ]
+Resolve Stack: Cultivate (119) - Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle.   
+Phase: Ai(2)-Phase4B Green Stompy 60's End step
+Phase: Ai(2)-Phase4B Green Stompy 60's Cleanup step
+Turn: Turn 9 (Ai(1)-Phase4B Burn 60)
+Phase: Ai(1)-Phase4B Burn 60's Untap step
+Phase: Ai(1)-Phase4B Burn 60's Upkeep step
+Phase: Ai(1)-Phase4B Burn 60's Draw step
+Phase: Ai(1)-Phase4B Burn 60's Main phase, precombat
+Phase: Ai(1)-Phase4B Burn 60's Beginning of Combat Step
+Phase: Ai(1)-Phase4B Burn 60's Declare Attackers Step
+Combat: Ai(1)-Phase4B Burn 60 assigned Eidolon of the Great Revel (60) and Monastery Swiftspear (3) to attack Ai(2)-Phase4B Green Stompy 60.
+Phase: Ai(1)-Phase4B Burn 60's Declare Blockers Step
+Combat: Ai(2)-Phase4B Green Stompy 60 didn't block Eidolon of the Great Revel (60).
+Ai(2)-Phase4B Green Stompy 60 didn't block Monastery Swiftspear (3).
+Phase: Ai(1)-Phase4B Burn 60's First Strike Damage Step
+Phase: Ai(1)-Phase4B Burn 60's Combat Damage Step
+Damage: Eidolon of the Great Revel (60) deals 2 combat damage to Ai(2)-Phase4B Green Stompy 60.
+Damage: Monastery Swiftspear (3) deals 1 combat damage to Ai(2)-Phase4B Green Stompy 60.
+Life: Life: Ai(2)-Phase4B Green Stompy 60 1 > -2
+Player Control: Ai(1)-Phase4B Burn 60 has restored control over themself
+Player Control: Ai(2)-Phase4B Green Stompy 60 has restored control over themself
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-Phase4B Burn 60 has won because all opponents have lost
+Game Outcome: Ai(2)-Phase4B Green Stompy 60 has lost because life total reached 0
+Match Result: Ai(1)-Phase4B Burn 60: 1 Ai(2)-Phase4B Green Stompy 60: 0 
+
+Game Result: Game 1 ended in 2439 ms. Ai(1)-Phase4B Burn 60 has won!
+
