@@ -46,10 +46,9 @@ jobs:
           java -version
           node --version
           uname -a
-          cat /proc/cpuinfo | grep "model name" | head -1
+          grep "model name" /proc/cpuinfo | head -1
           free -h
           df -h /tmp
-          # /usr/bin/time -v (GNU) supports -v for verbose stats.
           /usr/bin/time --version
 
       - name: Download pinned Forge release
@@ -66,8 +65,7 @@ jobs:
         run: |
           echo "Installer file size:"
           du -sh forge-poc/dist/*.tar.bz2
-          echo "Installer file size (bytes):"
-          stat --printf="%s\n" forge-poc/dist/*.tar.bz2
+          stat --printf="Installer bytes: %s\n" forge-poc/dist/*.tar.bz2
 
       - name: Extract Forge
         run: |
@@ -75,31 +73,46 @@ jobs:
           tar -xjf "forge-installer-${FORGE_TAG#forge-}.tar.bz2"
           echo "Extracted size:"
           du -sh .
-          ls -la
+          ls -la | head -20
           echo "Main jar size:"
           du -sh forge-gui-desktop-*-jar-with-dependencies.jar
+          echo "Cardsfolder present in jar?"
+          unzip -l forge-gui-desktop-*-jar-with-dependencies.jar | grep -c cardsfolder || true
 
       - name: Generate .dck fixtures
-        run: node scripts/phase4b-generate-test-dcks.mjs
-
-      - name: Verify Simulation Mode help + argument parsing
         run: |
-          cd forge-poc/dist
-          # This forces the JVM to initialise and print the help message
-          # to confirm the CLI works. It exits ~1s after JVM start.
+          node scripts/phase4b-generate-test-dcks.mjs
+          echo "----- burn deck -----"
+          cat forge-poc/decks/phase4b_burn_60.dck
+          echo "----- stompy deck -----"
+          cat forge-poc/decks/phase4b_green_stompy_60.dck | head -20
+
+      - name: Forge help probe (verify CLI works at all)
+        # Run "sim" with no args → argumentHelp() should print syntax
+        # and exit 0. This isolates JVM/init issues from arg-parsing.
+        # continue-on-error so we always upload artifacts.
+        continue-on-error: true
+        run: |
           set +e
-          /usr/bin/time -v java -jar forge-gui-desktop-*-jar-with-dependencies.jar sim 2>&1 | tee ../help-output.txt || true
+          cd forge-poc/dist
+          echo "=== forge sim (no args → help) ===" | tee "$GITHUB_WORKSPACE/forge-poc/logs/help.txt"
+          mkdir -p "$GITHUB_WORKSPACE/forge-poc/logs"
+          /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/help.time.txt" \
+            java -jar forge-gui-desktop-*-jar-with-dependencies.jar sim 2>&1 \
+            | tee -a "$GITHUB_WORKSPACE/forge-poc/logs/help.txt"
           echo ""
-          echo "---parsed help---"
-          grep -E "^Syntax|^\ts?im" ../help-output.txt || echo "(help text not matched — may still be fine, see raw output)"
+          echo "---"
+          echo "help.time.txt:"
+          cat "$GITHUB_WORKSPACE/forge-poc/logs/help.time.txt"
 
       - name: Run — 1 Modern game (Burn vs Green Stompy)
-        id: run1
+        continue-on-error: true
         run: |
+          set +e
+          mkdir -p "$GITHUB_WORKSPACE/forge-poc/logs"
           cd forge-poc/dist
-          mkdir -p ../logs
-          echo "=== 1-game constructed run ===" | tee ../logs/run-1game.txt
-          /usr/bin/time -v \
+          echo "=== 1-game constructed run ===" | tee "$GITHUB_WORKSPACE/forge-poc/logs/run-1game.txt"
+          /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/run-1game.time.txt" \
             java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
               -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_burn_60.dck" \
@@ -108,18 +121,18 @@ jobs:
               -s "$SEED" \
               -c 60 \
               -n 1 \
-              >> ../logs/run-1game.txt 2>&1 &
-          FORGE_PID=$!
-          wait $FORGE_PID
-          FORGE_EXIT=$?
-          echo "forge exit: $FORGE_EXIT"
-          tail -40 ../logs/run-1game.txt
+              2>&1 | tee -a "$GITHUB_WORKSPACE/forge-poc/logs/run-1game.txt"
+          echo ""
+          echo "--- time report ---"
+          cat "$GITHUB_WORKSPACE/forge-poc/logs/run-1game.time.txt" || true
 
-      - name: Run — 10 Modern games (Burn vs Green Stompy)
+      - name: Run — 10 Modern games
+        continue-on-error: true
         run: |
+          set +e
           cd forge-poc/dist
-          echo "=== 10-game constructed run ===" | tee ../logs/run-10games.txt
-          /usr/bin/time -v \
+          echo "=== 10-game constructed run ===" | tee "$GITHUB_WORKSPACE/forge-poc/logs/run-10games.txt"
+          /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/run-10games.time.txt" \
             java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
               -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_burn_60.dck" \
@@ -129,15 +142,17 @@ jobs:
               -c 60 \
               -n 10 \
               -q \
-              >> ../logs/run-10games.txt 2>&1
-          echo "10-game tail:"
-          tail -30 ../logs/run-10games.txt
+              2>&1 | tee -a "$GITHUB_WORKSPACE/forge-poc/logs/run-10games.txt"
+          echo "--- time report ---"
+          cat "$GITHUB_WORKSPACE/forge-poc/logs/run-10games.time.txt" || true
 
-      - name: Run — 100 Modern games (Burn vs Green Stompy)
+      - name: Run — 100 Modern games
+        continue-on-error: true
         run: |
+          set +e
           cd forge-poc/dist
-          echo "=== 100-game constructed run ===" | tee ../logs/run-100games.txt
-          /usr/bin/time -v \
+          echo "=== 100-game constructed run ===" | tee "$GITHUB_WORKSPACE/forge-poc/logs/run-100games.txt"
+          /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/run-100games.time.txt" \
             java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
               -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_burn_60.dck" \
@@ -147,17 +162,19 @@ jobs:
               -c 60 \
               -n 100 \
               -q \
-              >> ../logs/run-100games.txt 2>&1 || true
-          echo "100-game tail:"
-          tail -30 ../logs/run-100games.txt
+              2>&1 | tee -a "$GITHUB_WORKSPACE/forge-poc/logs/run-100games.txt"
+          echo "--- time report ---"
+          cat "$GITHUB_WORKSPACE/forge-poc/logs/run-100games.time.txt" || true
 
-      - name: Run — deterministic replay probe (seed X twice → identical result)
-        id: replay
+      - name: Run — deterministic replay probe
+        continue-on-error: true
         run: |
+          set +e
           cd forge-poc/dist
-          echo "=== deterministic replay ===" > ../logs/replay.txt
+          echo "=== deterministic replay (seed 314159, n=3, twice) ===" \
+            | tee "$GITHUB_WORKSPACE/forge-poc/logs/replay.txt"
           for run in a b; do
-            echo "--- run $run ---" >> ../logs/replay.txt
+            echo "--- run $run ---" | tee -a "$GITHUB_WORKSPACE/forge-poc/logs/replay.txt"
             java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
               -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_burn_60.dck" \
@@ -167,17 +184,19 @@ jobs:
               -c 60 \
               -n 3 \
               -q \
-              >> ../logs/replay.txt 2>&1 || true
+              2>&1 | tee -a "$GITHUB_WORKSPACE/forge-poc/logs/replay.txt"
           done
           echo "---"
-          echo "Comparing the two runs (Game Result lines only):"
-          grep "^Game Result:" ../logs/replay.txt || echo "(no Game Result lines matched)"
+          echo "Game Result lines:"
+          grep "^Game Result:" "$GITHUB_WORKSPACE/forge-poc/logs/replay.txt" || echo "(no Game Result lines matched)"
 
       - name: Run — Commander (Krenko mirror)
+        continue-on-error: true
         run: |
+          set +e
           cd forge-poc/dist
-          echo "=== Commander single game ===" | tee ../logs/run-commander.txt
-          /usr/bin/time -v \
+          echo "=== Commander single game ===" | tee "$GITHUB_WORKSPACE/forge-poc/logs/run-commander.txt"
+          /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/run-commander.time.txt" \
             java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
               -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_krenko_goblins_99.dck" \
@@ -186,41 +205,55 @@ jobs:
               -s "$SEED" \
               -c 120 \
               -n 1 \
-              >> ../logs/run-commander.txt 2>&1 || echo "commander run may have thrown — see log"
-          tail -60 ../logs/run-commander.txt
+              2>&1 | tee -a "$GITHUB_WORKSPACE/forge-poc/logs/run-commander.txt"
+          echo "--- time report ---"
+          cat "$GITHUB_WORKSPACE/forge-poc/logs/run-commander.time.txt" || true
 
       - name: Parse outputs
+        continue-on-error: true
         run: |
-          echo "=== parser: 1 game ==="
-          node scripts/phase4b-parse-forge-output.mjs forge-poc/logs/run-1game.txt --json > forge-poc/parsed-1game.json || echo "parse 1 failed"
-          jq '.aggregate' forge-poc/parsed-1game.json 2>&1 || cat forge-poc/parsed-1game.json
-          echo ""
-          echo "=== parser: 10 games ==="
-          node scripts/phase4b-parse-forge-output.mjs forge-poc/logs/run-10games.txt --json > forge-poc/parsed-10games.json || echo "parse 10 failed"
-          jq '.aggregate' forge-poc/parsed-10games.json 2>&1 || cat forge-poc/parsed-10games.json
-          echo ""
-          echo "=== parser: 100 games ==="
-          node scripts/phase4b-parse-forge-output.mjs forge-poc/logs/run-100games.txt --json > forge-poc/parsed-100games.json || echo "parse 100 failed"
-          jq '.aggregate' forge-poc/parsed-100games.json 2>&1 || cat forge-poc/parsed-100games.json
-          echo ""
-          echo "=== parser: commander ==="
-          node scripts/phase4b-parse-forge-output.mjs forge-poc/logs/run-commander.txt --json > forge-poc/parsed-commander.json || echo "parse cmdr failed"
-          jq '.aggregate' forge-poc/parsed-commander.json 2>&1 || cat forge-poc/parsed-commander.json
+          set +e
+          for f in run-1game run-10games run-100games run-commander replay; do
+            path="forge-poc/logs/${f}.txt"
+            if [ ! -f "$path" ]; then echo "skip $f — no log"; continue; fi
+            echo "=== parser: $f ==="
+            node scripts/phase4b-parse-forge-output.mjs "$path" --json > "forge-poc/parsed-${f}.json" 2>&1 || echo "(parser failed)"
+            if command -v jq >/dev/null; then
+              jq '.aggregate' "forge-poc/parsed-${f}.json" 2>&1 || cat "forge-poc/parsed-${f}.json"
+            else
+              head -40 "forge-poc/parsed-${f}.json"
+            fi
+            echo ""
+          done
 
       - name: Summary
         if: always()
         run: |
-          echo "=== Phase 4B Forge POC — summary ===" | tee forge-poc/summary.txt
-          echo "Forge release: $FORGE_TAG" | tee -a forge-poc/summary.txt
-          echo "Seed: $SEED" | tee -a forge-poc/summary.txt
-          echo "Runner: $(uname -a)" | tee -a forge-poc/summary.txt
-          echo "Java: $(java -version 2>&1 | head -1)" | tee -a forge-poc/summary.txt
-          echo ""
-          echo "== Installer size ==" | tee -a forge-poc/summary.txt
-          du -sh forge-poc/dist/*.tar.bz2 2>/dev/null | tee -a forge-poc/summary.txt
-          echo "" | tee -a forge-poc/summary.txt
-          echo "== Extracted size ==" | tee -a forge-poc/summary.txt
-          du -sh forge-poc/dist 2>/dev/null | tee -a forge-poc/summary.txt
+          {
+            echo "=== Phase 4B Forge POC — summary ==="
+            echo "Forge release: $FORGE_TAG"
+            echo "Seed: $SEED"
+            echo "Runner: $(uname -a)"
+            echo "Java: $(java -version 2>&1 | head -1)"
+            echo ""
+            echo "== Installer size =="
+            du -sh forge-poc/dist/*.tar.bz2 2>/dev/null || echo "(none)"
+            echo "== Extracted size =="
+            du -sh forge-poc/dist 2>/dev/null || echo "(none)"
+            echo ""
+            echo "== File sizes =="
+            ls -lh forge-poc/dist/*.jar 2>/dev/null || true
+            echo ""
+            echo "== Log line counts =="
+            for f in forge-poc/logs/*.txt; do
+              [ -f "$f" ] && wc -l "$f"
+            done
+            echo ""
+            echo "== Time reports =="
+            for f in forge-poc/logs/*.time.txt; do
+              [ -f "$f" ] && { echo "--- $f ---"; grep -E "Elapsed|Maximum resident|User time|System time|Exit" "$f"; }
+            done
+          } | tee forge-poc/summary.txt
 
       - name: Upload logs + parsed results
         if: always()
