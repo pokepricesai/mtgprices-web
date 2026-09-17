@@ -101,6 +101,18 @@ jobs:
           echo "----- stompy deck -----"
           cat forge-poc/decks/phase4b_green_stompy_60.dck | head -20
 
+      - name: Stage fixtures into ~/.forge/decks (Forge prepends baseDir to any .dck path)
+        # Forge SimulateMatch's deckFromCommandLineParameter does
+        # `new File(baseDir + deckname)` unconditionally when the arg
+        # ends in .<3 chars>. Absolute paths break. Copy fixtures into
+        # the expected directories and pass BARE FILENAMES.
+        run: |
+          mkdir -p ~/.forge/decks/constructed ~/.forge/decks/commander
+          cp forge-poc/decks/phase4b_burn_60.dck ~/.forge/decks/constructed/
+          cp forge-poc/decks/phase4b_green_stompy_60.dck ~/.forge/decks/constructed/
+          cp forge-poc/decks/phase4b_krenko_goblins_99.dck ~/.forge/decks/commander/
+          ls -l ~/.forge/decks/constructed/ ~/.forge/decks/commander/
+
       - name: Diagnostic — try shipped forge.sh + inspect main class
         continue-on-error: true
         run: |
@@ -142,8 +154,8 @@ jobs:
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/run-1game.time.txt" \
             xvfb-run -a java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
-              -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_burn_60.dck" \
-              -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_green_stompy_60.dck" \
+              -d "phase4b_burn_60.dck" \
+              -d "phase4b_green_stompy_60.dck" \
               -f Constructed \
               -s "$SEED" \
               -c 60 \
@@ -162,8 +174,8 @@ jobs:
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/run-10games.time.txt" \
             xvfb-run -a java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
-              -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_burn_60.dck" \
-              -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_green_stompy_60.dck" \
+              -d "phase4b_burn_60.dck" \
+              -d "phase4b_green_stompy_60.dck" \
               -f Constructed \
               -s "$SEED" \
               -c 60 \
@@ -182,8 +194,8 @@ jobs:
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/run-100games.time.txt" \
             xvfb-run -a java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
-              -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_burn_60.dck" \
-              -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_green_stompy_60.dck" \
+              -d "phase4b_burn_60.dck" \
+              -d "phase4b_green_stompy_60.dck" \
               -f Constructed \
               -s "$SEED" \
               -c 60 \
@@ -204,8 +216,8 @@ jobs:
             echo "--- run $run ---" | tee -a "$GITHUB_WORKSPACE/forge-poc/logs/replay.txt"
             xvfb-run -a java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
-              -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_burn_60.dck" \
-              -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_green_stompy_60.dck" \
+              -d "phase4b_burn_60.dck" \
+              -d "phase4b_green_stompy_60.dck" \
               -f Constructed \
               -s 314159 \
               -c 60 \
@@ -226,8 +238,8 @@ jobs:
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/run-commander.time.txt" \
             xvfb-run -a java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
-              -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_krenko_goblins_99.dck" \
-              -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_krenko_goblins_99.dck" \
+              -d "phase4b_krenko_goblins_99.dck" \
+              -d "phase4b_krenko_goblins_99.dck" \
               -f Commander \
               -s "$SEED" \
               -c 120 \
