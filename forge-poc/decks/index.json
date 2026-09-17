@@ -1,0 +1,17 @@
+[
+  {
+    "deck": "Phase4B Burn 60",
+    "path": "forge-poc\\decks\\phase4b_burn_60.dck",
+    "format": "modern"
+  },
+  {
+    "deck": "Phase4B Green Stompy 60",
+    "path": "forge-poc\\decks\\phase4b_green_stompy_60.dck",
+    "format": "modern"
+  },
+  {
+    "deck": "Phase4B Krenko Goblins 99",
+    "path": "forge-poc\\decks\\phase4b_krenko_goblins_99.dck",
+    "format": "commander"
+  }
+]
