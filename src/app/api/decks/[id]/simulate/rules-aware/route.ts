@@ -16,6 +16,8 @@ import { getCurrentUser } from '@/lib/supabase/server'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
 import { getDeckById, getDeckCards } from '@/lib/mtg/decks'
 import { findUnsupportedCards, FORGE_RELEASE } from '@/lib/mtg/simulation/forge-coverage'
+import { publishSimulationJob } from '@/lib/mtg/simulation/queue-producer'
+import { waitUntil } from '@vercel/functions'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -134,7 +136,35 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }).select().single()
   if (error || !job) return NextResponse.json({ error: 'enqueue_failed', reason: error?.message }, { status: 500 })
 
-  return NextResponse.json({ job }, { status: 202 })
+  // Publish a durable trigger. Vercel Queue is the preferred path
+  // (retries + at-least-once delivery). If the queue send fails
+  // (SDK error, project not yet queue-enabled), fall back to
+  // waitUntil() which fires-and-forgets the worker HTTP call within
+  // the Function's lifetime. In both cases the atomic-claim RPC on
+  // the worker side is idempotent so duplicate delivery is safe.
+  const queueResult = await publishSimulationJob(job.id)
+  if (queueResult.ok !== true) {
+    console.warn('rules-aware queue publish failed, using waitUntil fallback:', (queueResult as any).error)
+    const workerUrl = process.env.RULES_WORKER_URL
+    const workerSecret = process.env.WORKER_TRIGGER_SECRET
+    if (workerUrl && workerSecret) {
+      waitUntil(
+        fetch(`${workerUrl.replace(/\/$/, '')}/consume`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-worker-secret': workerSecret },
+          body: JSON.stringify({ job_id: job.id }),
+          signal: AbortSignal.timeout(250_000),
+        }).catch((err) => console.error('waitUntil fetch to worker failed:', err?.message))
+      )
+    } else {
+      console.error('waitUntil fallback disabled — RULES_WORKER_URL or WORKER_TRIGGER_SECRET not set')
+    }
+  }
+
+  return NextResponse.json({
+    job,
+    transport: queueResult.ok ? { via: 'queue', messageId: queueResult.messageId } : { via: 'wait_until_fallback' },
+  }, { status: 202 })
 }
 
 async function printingsFor(oracleIds: string[]): Promise<Map<string, any>> {

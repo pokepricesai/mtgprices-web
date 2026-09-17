@@ -109,32 +109,7 @@ test('toForgeDck: burn deck ships as expected — matches on-disk fixture', asyn
   assert.match(dck, /24 Mountain\|M11/)
 })
 
-// ── Adapter contract ───────────────────────────────────────────────
-
-test('ForgeRulesEngineAdapter: reports itself as forge + supportsCommander', async () => {
-  const { ForgeRulesEngineAdapter } = await import('../../src/lib/mtg/simulation/forge-adapter')
-  const a = new ForgeRulesEngineAdapter({ endpoint: 'http://localhost:9999', version: 'forge-2.0.14' })
-  const caps = await a.capabilities()
-  assert.strictEqual(caps.engine, 'forge')
-  assert.strictEqual(caps.supportsCommander, true)
-  assert.strictEqual(caps.supportsDeterministicSeed, true)
-  assert.strictEqual(caps.supportsInteractive, false)
-})
-
-test('ForgeRulesEngineAdapter: startMatch fails cleanly when endpoint unset', async () => {
-  const { ForgeRulesEngineAdapter } = await import('../../src/lib/mtg/simulation/forge-adapter')
-  // Explicit empty endpoint — must not throw, must not attempt network.
-  const a = new ForgeRulesEngineAdapter({ endpoint: '', version: 'forge-2.0.14' })
-  const r = await a.startMatch({
-    seed: 1,
-    match: {
-      format: 'modern',
-      seats: [
-        { deck: { name: 'A', format: 'modern', commanders: [], main: [] } },
-        { deck: { name: 'B', format: 'modern', commanders: [], main: [] } },
-      ],
-    },
-  })
-  assert.strictEqual(r.status, 'error')
-  assert.strictEqual(r.games.length, 0)
-})
+// The legacy ForgeRulesEngineAdapter HTTP class was removed in
+// Phase 4B.3 — Vercel Queues + the Forge container Function replace
+// it. The RulesEngineAdapter contract lives on as a type-only
+// interface for future engines.

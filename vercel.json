@@ -17,5 +17,17 @@
       "path": "/api/cron/publish-scheduled",
       "schedule": "*/10 * * * *"
     }
+  ],
+  "functions": {
+    "src/app/api/queue/forge-sim/route.ts": {
+      "maxDuration": 700
+    }
+  },
+  "experimentalTriggers": [
+    {
+      "type": "queue/v2beta",
+      "topic": "forge-sim",
+      "functionPath": "src/app/api/queue/forge-sim/route.ts"
+    }
   ]
 }
