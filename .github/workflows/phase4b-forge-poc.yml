@@ -154,8 +154,7 @@ jobs:
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/run-1game.time.txt" \
             xvfb-run -a java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
-              -d "phase4b_burn_60.dck" \
-              -d "phase4b_green_stompy_60.dck" \
+              -d "phase4b_burn_60.dck" "phase4b_green_stompy_60.dck" \
               -f Constructed \
               -s "$SEED" \
               -c 60 \
@@ -174,8 +173,7 @@ jobs:
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/run-10games.time.txt" \
             xvfb-run -a java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
-              -d "phase4b_burn_60.dck" \
-              -d "phase4b_green_stompy_60.dck" \
+              -d "phase4b_burn_60.dck" "phase4b_green_stompy_60.dck" \
               -f Constructed \
               -s "$SEED" \
               -c 60 \
@@ -194,8 +192,7 @@ jobs:
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/run-100games.time.txt" \
             xvfb-run -a java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
-              -d "phase4b_burn_60.dck" \
-              -d "phase4b_green_stompy_60.dck" \
+              -d "phase4b_burn_60.dck" "phase4b_green_stompy_60.dck" \
               -f Constructed \
               -s "$SEED" \
               -c 60 \
@@ -216,8 +213,7 @@ jobs:
             echo "--- run $run ---" | tee -a "$GITHUB_WORKSPACE/forge-poc/logs/replay.txt"
             xvfb-run -a java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
-              -d "phase4b_burn_60.dck" \
-              -d "phase4b_green_stompy_60.dck" \
+              -d "phase4b_burn_60.dck" "phase4b_green_stompy_60.dck" \
               -f Constructed \
               -s 314159 \
               -c 60 \
@@ -238,8 +234,7 @@ jobs:
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/run-commander.time.txt" \
             xvfb-run -a java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
-              -d "phase4b_krenko_goblins_99.dck" \
-              -d "phase4b_krenko_goblins_99.dck" \
+              -d "phase4b_krenko_goblins_99.dck" "phase4b_krenko_goblins_99.dck" \
               -f Commander \
               -s "$SEED" \
               -c 120 \
