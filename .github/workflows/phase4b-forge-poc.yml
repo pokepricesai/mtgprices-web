@@ -24,11 +24,12 @@ jobs:
     env:
       FORGE_TAG: ${{ inputs.forge_tag }}
       SEED: ${{ inputs.seed }}
-      # Force headless BEFORE any AWT class loads. Forge's Main.java
-      # tries to set this itself but Sentry's static init can race.
+      # Forge 2.0.14 GuiDesktop.<clinit> calls getDefaultScreenDevice()
+      # unconditionally — throws HeadlessException even with
+      # -Djava.awt.headless=true. Work around by running under Xvfb.
+      # -Dsentry.dsn= disables Sentry (no external network required).
       JAVA_TOOL_OPTIONS: >-
         -Xmx4096m
-        -Djava.awt.headless=true
         -Dfile.encoding=UTF-8
         -Dio.netty.tryReflectionSetAccessible=true
         -Dsentry.dsn=
@@ -47,6 +48,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Install Xvfb (Forge 2.0.14 GuiDesktop needs a display)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends xvfb
+          xvfb-run --help >/dev/null 2>&1 && echo "xvfb-run OK"
 
       - name: Environment probe
         run: |
@@ -118,7 +125,7 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/forge-poc/logs"
           echo "=== forge sim (no args → help) ===" | tee "$GITHUB_WORKSPACE/forge-poc/logs/help.txt"
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/help.time.txt" \
-            java -Djava.awt.headless=true -jar forge-gui-desktop-*-jar-with-dependencies.jar sim 2>&1 \
+            xvfb-run -a java -jar forge-gui-desktop-*-jar-with-dependencies.jar sim 2>&1 \
             | tee -a "$GITHUB_WORKSPACE/forge-poc/logs/help.txt"
           echo ""
           echo "---"
@@ -133,7 +140,7 @@ jobs:
           cd forge-poc/dist
           echo "=== 1-game constructed run ===" | tee "$GITHUB_WORKSPACE/forge-poc/logs/run-1game.txt"
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/run-1game.time.txt" \
-            java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
+            xvfb-run -a java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
               -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_burn_60.dck" \
               -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_green_stompy_60.dck" \
@@ -153,7 +160,7 @@ jobs:
           cd forge-poc/dist
           echo "=== 10-game constructed run ===" | tee "$GITHUB_WORKSPACE/forge-poc/logs/run-10games.txt"
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/run-10games.time.txt" \
-            java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
+            xvfb-run -a java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
               -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_burn_60.dck" \
               -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_green_stompy_60.dck" \
@@ -173,7 +180,7 @@ jobs:
           cd forge-poc/dist
           echo "=== 100-game constructed run ===" | tee "$GITHUB_WORKSPACE/forge-poc/logs/run-100games.txt"
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/run-100games.time.txt" \
-            java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
+            xvfb-run -a java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
               -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_burn_60.dck" \
               -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_green_stompy_60.dck" \
@@ -195,7 +202,7 @@ jobs:
             | tee "$GITHUB_WORKSPACE/forge-poc/logs/replay.txt"
           for run in a b; do
             echo "--- run $run ---" | tee -a "$GITHUB_WORKSPACE/forge-poc/logs/replay.txt"
-            java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
+            xvfb-run -a java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
               -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_burn_60.dck" \
               -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_green_stompy_60.dck" \
@@ -217,7 +224,7 @@ jobs:
           cd forge-poc/dist
           echo "=== Commander single game ===" | tee "$GITHUB_WORKSPACE/forge-poc/logs/run-commander.txt"
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/run-commander.time.txt" \
-            java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
+            xvfb-run -a java -jar forge-gui-desktop-*-jar-with-dependencies.jar \
               sim \
               -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_krenko_goblins_99.dck" \
               -d "$GITHUB_WORKSPACE/forge-poc/decks/phase4b_krenko_goblins_99.dck" \
