@@ -24,7 +24,14 @@ jobs:
     env:
       FORGE_TAG: ${{ inputs.forge_tag }}
       SEED: ${{ inputs.seed }}
-      JAVA_TOOL_OPTIONS: -Xmx4096m -Dfile.encoding=UTF-8 -Dio.netty.tryReflectionSetAccessible=true
+      # Force headless BEFORE any AWT class loads. Forge's Main.java
+      # tries to set this itself but Sentry's static init can race.
+      JAVA_TOOL_OPTIONS: >-
+        -Xmx4096m
+        -Djava.awt.headless=true
+        -Dfile.encoding=UTF-8
+        -Dio.netty.tryReflectionSetAccessible=true
+        -Dsentry.dsn=
 
     steps:
       - name: Checkout repo
@@ -87,18 +94,31 @@ jobs:
           echo "----- stompy deck -----"
           cat forge-poc/decks/phase4b_green_stompy_60.dck | head -20
 
+      - name: Diagnostic — try shipped forge.sh + inspect main class
+        continue-on-error: true
+        run: |
+          set +e
+          mkdir -p "$GITHUB_WORKSPACE/forge-poc/logs"
+          cd forge-poc/dist
+          echo "=== shipped forge.sh (no args) ===" > "$GITHUB_WORKSPACE/forge-poc/logs/diag.txt"
+          bash forge.sh 2>&1 | head -30 | tee -a "$GITHUB_WORKSPACE/forge-poc/logs/diag.txt" &
+          FSPID=$!
+          sleep 6 && { kill $FSPID 2>/dev/null; kill -9 $FSPID 2>/dev/null; } || true
+          echo "---"
+          echo "=== unzip -p META-INF/MANIFEST.MF ===" >> "$GITHUB_WORKSPACE/forge-poc/logs/diag.txt"
+          unzip -p forge-gui-desktop-*-jar-with-dependencies.jar META-INF/MANIFEST.MF | head -6 | tee -a "$GITHUB_WORKSPACE/forge-poc/logs/diag.txt"
+
       - name: Forge help probe (verify CLI works at all)
         # Run "sim" with no args → argumentHelp() should print syntax
         # and exit 0. This isolates JVM/init issues from arg-parsing.
-        # continue-on-error so we always upload artifacts.
         continue-on-error: true
         run: |
           set +e
           cd forge-poc/dist
-          echo "=== forge sim (no args → help) ===" | tee "$GITHUB_WORKSPACE/forge-poc/logs/help.txt"
           mkdir -p "$GITHUB_WORKSPACE/forge-poc/logs"
+          echo "=== forge sim (no args → help) ===" | tee "$GITHUB_WORKSPACE/forge-poc/logs/help.txt"
           /usr/bin/time -v -o "$GITHUB_WORKSPACE/forge-poc/logs/help.time.txt" \
-            java -jar forge-gui-desktop-*-jar-with-dependencies.jar sim 2>&1 \
+            java -Djava.awt.headless=true -jar forge-gui-desktop-*-jar-with-dependencies.jar sim 2>&1 \
             | tee -a "$GITHUB_WORKSPACE/forge-poc/logs/help.txt"
           echo ""
           echo "---"
