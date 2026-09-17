@@ -167,6 +167,15 @@ export default function DeckBuilderClient({ initialContext }: Props) {
             {saveState === 'error' && 'Save failed'}
             {saveState === 'idle' && `updated ${ctx.deck.updatedAt.slice(0, 10)}`}
           </span>
+          <Link
+            href={`/decks/${ctx.deck.id}/test`}
+            style={{
+              padding: '8px 14px', fontSize: 13, fontWeight: 700,
+              background: 'var(--primary)', color: '#fff',
+              border: 'none', borderRadius: 8, textDecoration: 'none',
+              marginLeft: 'auto',
+            }}
+          >Test deck →</Link>
         </div>
       </div>
 
