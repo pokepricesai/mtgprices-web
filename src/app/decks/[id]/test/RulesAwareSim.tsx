@@ -38,6 +38,8 @@ export default function RulesAwareSim({ deck }: { deck: ClientDeckMeta }) {
   const [seed, setSeed] = useState('')
   const [job, setJob] = useState<Job | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [unsupported, setUnsupported] = useState<Array<{ oracle_card_id: string; name: string }> | null>(null)
+  const [forgeRelease, setForgeRelease] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
@@ -62,7 +64,7 @@ export default function RulesAwareSim({ deck }: { deck: ClientDeckMeta }) {
   }, [job])
 
   async function submit() {
-    setError(null); setBusy(true); setJob(null)
+    setError(null); setUnsupported(null); setForgeRelease(null); setBusy(true); setJob(null)
     try {
       const body = {
         opponent_deck_id: opponentId,
@@ -75,6 +77,11 @@ export default function RulesAwareSim({ deck }: { deck: ClientDeckMeta }) {
       })
       if (!res.ok) {
         const j = await res.json().catch(() => ({}))
+        if (j.error === 'unsupported_cards' && Array.isArray(j.unsupported_cards)) {
+          setUnsupported(j.unsupported_cards)
+          setForgeRelease(j.forge_release ?? null)
+          return
+        }
         setError(j.error === 'rate_limited' ? 'Daily rules-aware quota reached.'
                 : j.error === 'rules_engine_disabled' ? 'Rules-aware simulation is not yet available in this environment.'
                 : (j.reason ?? j.error ?? 'submit failed'))
@@ -139,6 +146,18 @@ export default function RulesAwareSim({ deck }: { deck: ClientDeckMeta }) {
       >{busy ? 'Submitting…' : 'Run rules-aware simulation'}</button>
 
       {error && <div style={{ marginTop: 10, fontSize: 12, color: 'var(--red)' }}>{error}</div>}
+
+      {unsupported && unsupported.length > 0 && (
+        <div style={{ marginTop: 10, padding: 12, background: 'var(--red-soft, rgba(184,60,60,0.10))', border: '1px solid rgba(184,60,60,0.28)', borderRadius: 8, fontSize: 13, color: 'var(--red)' }}>
+          <b>{forgeRelease ?? 'Forge'} does not currently support {unsupported.length} card{unsupported.length === 1 ? '' : 's'} in these decks:</b>
+          <ul style={{ margin: '6px 0 0 20px', padding: 0 }}>
+            {unsupported.map((c) => <li key={c.oracle_card_id}>{c.name}</li>)}
+          </ul>
+          <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)' }}>
+            Very recently released cards and Un-set jokes are the usual cause. We do not silently drop cards — remove them from both decks or wait for a Forge release that adds them.
+          </div>
+        </div>
+      )}
 
       {job && (
         <div style={{ marginTop: 16, padding: 12, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10 }}>
