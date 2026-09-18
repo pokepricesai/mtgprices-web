@@ -28,7 +28,7 @@ export default function CapabilityChips({ caps, linkable = true }: Props) {
           fontWeight: 600,
           background: isType ? 'var(--surface)' : 'var(--primary-soft)',
           color: isType ? 'var(--text)' : 'var(--primary)',
-          border: `1px solid ${isType ? 'var(--border)' : 'rgba(104,65,230,0.35)'}`,
+          border: `1px solid ${isType ? 'var(--border)' : 'rgba(35,95,174,0.35)'}`,
           whiteSpace: 'nowrap',
           display: 'inline-block',
           textDecoration: 'none',

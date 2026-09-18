@@ -14,10 +14,10 @@ type Props = {
 const RARITY_COLOR: Record<string, string> = {
   common: '#9AA3B2',
   uncommon: '#c0c8d0',
-  rare: '#C9A55C',
+  rare: '#E8A94B',
   mythic: '#e07d3a',
-  special: '#7C5CE7',
-  bonus: '#7C5CE7',
+  special: '#235FAE',
+  bonus: '#235FAE',
 }
 
 function fmtUSD(v: number | undefined): string {

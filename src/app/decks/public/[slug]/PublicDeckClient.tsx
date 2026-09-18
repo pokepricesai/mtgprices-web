@@ -140,7 +140,7 @@ export default function PublicDeckClient({ payload }: Props) {
             <div style={panelLabel}>Capabilities</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
               {capEntries.map(([cap, n]) => (
-                <span key={cap} style={{ ...chip, background: 'var(--primary-soft)', color: 'var(--primary)', border: '1px solid rgba(104,65,230,0.25)' }}>
+                <span key={cap} style={{ ...chip, background: 'var(--primary-soft)', color: 'var(--primary)', border: '1px solid rgba(35,95,174,0.25)' }}>
                   {CAPABILITY_LABELS[cap as CardCapability] ?? cap} <b style={{ marginLeft: 4, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{n}</b>
                 </span>
               ))}

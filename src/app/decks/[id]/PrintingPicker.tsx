@@ -124,7 +124,7 @@ function PickCard({ o, current, onPick, currencyPrefix }: {
       style={{
         display: 'grid', gridTemplateColumns: '48px 1fr auto', gap: 10, alignItems: 'center',
         padding: '8px 10px', textAlign: 'left', cursor: 'pointer',
-        background: selected ? 'var(--primary-soft, rgba(104,65,230,0.10))' : 'var(--bg-light)',
+        background: selected ? 'var(--primary-soft, rgba(35,95,174,0.10))' : 'var(--bg-light)',
         border: `1px solid ${selected ? 'var(--primary)' : 'var(--border)'}`,
         borderRadius: 8,
       }}

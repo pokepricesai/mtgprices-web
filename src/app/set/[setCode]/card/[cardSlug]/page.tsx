@@ -38,11 +38,11 @@ const PROVIDER_LABEL: Record<string, string> = {
 }
 
 const PROVIDER_COLOUR: Record<string, string> = {
-  tcgplayer: '#A0813F',
-  cardkingdom: '#6841E6',
-  cardmarket: '#3E7DBF',
-  manapool: '#2B8659',
-  cardhoarder: '#C1571F',
+  tcgplayer: '#A8681C',    // gold — new brand
+  cardkingdom: '#235FAE',  // arcane blue — new brand
+  cardmarket: '#3E7BC9',
+  manapool: '#2A8459',
+  cardhoarder: '#C4441B',
 }
 
 const RARITY_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
@@ -108,7 +108,7 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
       key: `${s.provider}_${s.market}_${s.currency}_${s.price_type}`,
       label: PROVIDER_LABEL[s.provider] ?? s.provider,
       provider: s.provider,
-      color: PROVIDER_COLOUR[s.provider] ?? '#17203A',
+      color: PROVIDER_COLOUR[s.provider] ?? '#14213D',
       points: s.points.map((p) => ({ date: p.observed_on, value: Number(p.price) })),
     }))
     .filter((s) => s.points.length > 0)

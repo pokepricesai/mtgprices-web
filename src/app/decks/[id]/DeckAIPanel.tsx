@@ -317,7 +317,7 @@ function Modal({ onClose, title, children }: { onClose: () => void; title: strin
 
 function AiTag({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ padding: '6px 10px', background: 'var(--accent-soft)', color: 'var(--amber)', border: '1px solid rgba(160,129,63,0.28)', borderRadius: 8, fontSize: 11, marginBottom: 4 }}>{children}</div>
+    <div style={{ padding: '6px 10px', background: 'var(--accent-soft)', color: 'var(--amber)', border: '1px solid rgba(232,169,75,0.28)', borderRadius: 8, fontSize: 11, marginBottom: 4 }}>{children}</div>
   )
 }
 

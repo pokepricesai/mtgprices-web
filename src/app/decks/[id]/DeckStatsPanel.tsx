@@ -71,12 +71,12 @@ export default function DeckStatsPanel({ ctx, onFilterByCapability }: { ctx: Dec
                   type="button"
                   onClick={() => onFilterByCapability(cap as CardCapability)}
                   title={`Find more ${(CAPABILITY_LABELS[cap as CardCapability] ?? cap).toLowerCase()} in this deck's search`}
-                  style={{ ...chip, background: 'var(--primary-soft)', color: 'var(--primary)', border: '1px solid rgba(104,65,230,0.25)', cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ ...chip, background: 'var(--primary-soft)', color: 'var(--primary)', border: '1px solid rgba(35,95,174,0.25)', cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   {CAPABILITY_LABELS[cap as CardCapability] ?? cap} <b style={{ marginLeft: 4, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{n}</b>
                 </button>
               ) : (
-                <span key={cap} style={{ ...chip, background: 'var(--primary-soft)', color: 'var(--primary)', border: '1px solid rgba(104,65,230,0.25)' }}>
+                <span key={cap} style={{ ...chip, background: 'var(--primary-soft)', color: 'var(--primary)', border: '1px solid rgba(35,95,174,0.25)' }}>
                   {CAPABILITY_LABELS[cap as CardCapability] ?? cap} <b style={{ marginLeft: 4, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{n}</b>
                 </span>
               )

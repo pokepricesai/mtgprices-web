@@ -112,18 +112,18 @@ export default function CardPriceChart({
       <div style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={wide} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
-            <CartesianGrid stroke="#E4E1D9" strokeDasharray="3 3" />
+            <CartesianGrid stroke="#E4DAC1" strokeDasharray="3 3" />
             <XAxis
               dataKey="date"
-              stroke="#6B7280"
-              tick={{ fill: '#6B7280', fontSize: 11 }}
+              stroke="#5E6B85"
+              tick={{ fill: '#5E6B85', fontSize: 11 }}
               minTickGap={24}
               tickFormatter={(d: string) => d.slice(5)}
             />
-            <YAxis stroke="#6B7280" tick={{ fill: '#6B7280', fontSize: 11 }} tickFormatter={(v) => formatUSD(Number(v))} />
+            <YAxis stroke="#5E6B85" tick={{ fill: '#5E6B85', fontSize: 11 }} tickFormatter={(v) => formatUSD(Number(v))} />
             <Tooltip
-              contentStyle={{ background: '#FFFFFF', border: '1px solid #E4E1D9', borderRadius: 8, fontSize: 12, boxShadow: '0 6px 20px rgba(23,32,58,0.10)' }}
-              labelStyle={{ color: '#17203A' }}
+              contentStyle={{ background: '#FFFFFF', border: '1px solid #E4DAC1', borderRadius: 8, fontSize: 12, boxShadow: '0 6px 20px rgba(20,33,61,0.10)' }}
+              labelStyle={{ color: '#14213D' }}
               formatter={(v: any) => formatUSD(Number(v))}
             />
             {series

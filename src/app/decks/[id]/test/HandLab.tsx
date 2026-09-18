@@ -138,7 +138,7 @@ export default function HandLab({ deck, library, cardIndex }: {
       </div>
 
       {isChooseBottom && (
-        <div style={{ padding: 10, background: 'var(--amber-soft, rgba(160,129,63,0.10))', color: 'var(--amber, #a0813f)', border: '1px solid rgba(160,129,63,0.28)', borderRadius: 8, fontSize: 13, marginBottom: 10 }}>
+        <div style={{ padding: 10, background: 'var(--amber-soft, rgba(232,169,75,0.10))', color: 'var(--amber, #a0813f)', border: '1px solid rgba(232,169,75,0.28)', borderRadius: 8, fontSize: 13, marginBottom: 10 }}>
           London mulligan — pick {state.mulligans} card{state.mulligans === 1 ? '' : 's'} to put on the bottom of your library.
         </div>
       )}

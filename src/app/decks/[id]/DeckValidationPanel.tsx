@@ -69,7 +69,7 @@ export default function DeckValidationPanel({ validation, totals, pricing, rule 
           {validation.warnings.map((w, idx) => (
             <div key={idx} style={{
               padding: '6px 10px', fontSize: 12, lineHeight: 1.5,
-              background: 'var(--accent-soft)', border: '1px solid rgba(160,129,63,0.28)',
+              background: 'var(--accent-soft)', border: '1px solid rgba(232,169,75,0.28)',
               borderRadius: 6, color: 'var(--amber)',
             }}><strong>{w.kind.replace(/_/g, ' ')}:</strong> {w.message}</div>
           ))}

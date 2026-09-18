@@ -1,72 +1,73 @@
 'use client'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import Image from 'next/image'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser'
 
-// Site navigation. Reflects the three-audience IA (Collect / Play /
-// Community + eventual AI). Live routes only appear as real links.
-// Future areas are shown as "soon" chips in the mobile menu so visitors
-// can see where the product is heading without hitting dead links.
+// Site navigation. Primary bar exposes the six product surfaces users
+// live in most: Cards, Sets, Formats, Card Finder, Decks, plus a Tools
+// dropdown that also holds the newer/less-frequent tools (Test Deck,
+// Collection). The right-hand cluster is search + account.
+//
+// Test Deck lives inside Tools because the workflow is Deck → open →
+// Test, so we haven't wanted a dead top-level link. If it becomes a
+// primary entry, promote it.
 
-type NavItem = {
-  label: string
-  href?: string    // omit when coming-soon
-  soon?: boolean
-}
-type NavGroup = { title: string; items: NavItem[] }
+type NavItem = { label: string; href: string; soon?: boolean }
 
-const NAV_GROUPS: NavGroup[] = [
+const PRIMARY_LINKS: NavItem[] = [
+  { label: 'Cards',       href: '/cards/search' },
+  { label: 'Sets',        href: '/browse' },
+  { label: 'Formats',     href: '/formats' },
+  { label: 'Card Finder', href: '/card-finder' },
+  { label: 'Decks',       href: '/decks' },
+]
+
+const TOOLS_LINKS: NavItem[] = [
+  { label: 'Card Finder',      href: '/card-finder' },
+  { label: 'Deck Builder',     href: '/decks/new' },
+  { label: 'Test Your Deck',   href: '/decks' },
+  { label: 'My Collection',    href: '/collection' },
+]
+
+const MOBILE_GROUPS: { title: string; items: NavItem[] }[] = [
+  {
+    title: 'Cards & Sets',
+    items: [
+      { label: 'Search cards', href: '/cards/search' },
+      { label: 'Browse sets',  href: '/browse' },
+      { label: 'Card Finder',  href: '/card-finder' },
+      { label: 'Formats',      href: '/formats' },
+    ],
+  },
+  {
+    title: 'Decks',
+    items: [
+      { label: 'My Decks',       href: '/decks' },
+      { label: 'New deck',       href: '/decks/new' },
+      { label: 'Test Your Deck', href: '/decks' },
+    ],
+  },
   {
     title: 'Collect',
     items: [
-      { label: 'Card Finder', href: '/card-finder?mode=collecting' },
-      { label: 'Cards', href: '/cards/search' },
-      { label: 'Sets', href: '/browse' },
-      { label: 'My Collection', href: '/collection' },
+      { label: 'My Collection',    href: '/collection' },
+      { label: 'Import collection', href: '/collection/import' },
     ],
   },
-  {
-    title: 'Play',
-    items: [
-      { label: 'My Decks', href: '/decks' },
-      { label: 'Card Finder', href: '/card-finder?mode=play' },
-      { label: 'Formats', href: '/formats' },
-      { label: 'Test Your Deck', soon: true },
-    ],
-  },
-  {
-    title: 'AI',
-    items: [
-      { label: 'MTG assistant', soon: true },
-    ],
-  },
-  {
-    title: 'Community',
-    items: [
-      { label: 'Events', soon: true },
-      { label: 'Vendors', soon: true },
-      { label: 'Creators', soon: true },
-    ],
-  },
-]
-
-const DESKTOP_LINKS: { label: string; href: string }[] = [
-  { label: 'Card Finder', href: '/card-finder' },
-  { label: 'Decks', href: '/decks' },
-  { label: 'Collection', href: '/collection' },
-  { label: 'Sets', href: '/browse' },
-  { label: 'Formats', href: '/formats' },
 ]
 
 export default function Navbar() {
   const router = useRouter()
-  const pathname = usePathname()
+  const pathname = usePathname() ?? '/'
   const [menuOpen, setMenuOpen] = useState(false)
+  const [toolsOpen, setToolsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [signedIn, setSignedIn] = useState<boolean | null>(null)
+  const toolsRef = useRef<HTMLDivElement | null>(null)
 
-  useEffect(() => { setMenuOpen(false) }, [pathname])
+  useEffect(() => { setMenuOpen(false); setToolsOpen(false) }, [pathname])
 
   useEffect(() => {
     let cancelled = false
@@ -82,11 +83,27 @@ export default function Navbar() {
     return () => { cancelled = true }
   }, [])
 
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (!toolsRef.current) return
+      if (!toolsRef.current.contains(e.target as Node)) setToolsOpen(false)
+    }
+    if (toolsOpen) {
+      document.addEventListener('mousedown', onDown)
+      return () => document.removeEventListener('mousedown', onDown)
+    }
+  }, [toolsOpen])
+
   function submitSearch(e: React.FormEvent) {
     e.preventDefault()
     const q = query.trim()
     if (!q) return
     router.push(`/cards/search?q=${encodeURIComponent(q)}`)
+  }
+
+  function isActive(href: string) {
+    if (href === '/') return pathname === '/'
+    return pathname === href || pathname.startsWith(href + '/') || pathname.startsWith(href + '?')
   }
 
   return (
@@ -95,7 +112,7 @@ export default function Navbar() {
         background: 'var(--surface)',
         borderBottom: '1px solid var(--border)',
         padding: '0 20px',
-        height: 60,
+        height: 64,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -103,61 +120,95 @@ export default function Navbar() {
         top: 0,
         zIndex: 100,
         gap: 14,
+        boxShadow: '0 1px 0 rgba(232,169,75,0.15), 0 2px 8px rgba(20,33,61,0.03)',
       }}
     >
+      {/* Logo lockup */}
       <Link
         href="/"
+        aria-label="MTGPrices home"
         style={{
-          fontFamily: "'Outfit', sans-serif",
-          fontWeight: 800,
-          fontSize: 18,
-          letterSpacing: '-0.02em',
-          color: 'var(--text)',
-          textDecoration: 'none',
-          display: 'flex',
-          alignItems: 'baseline',
-          gap: 6,
+          display: 'flex', alignItems: 'center', gap: 10,
+          textDecoration: 'none', flexShrink: 0,
+          height: 44,
         }}
       >
-        <span>MTGPrices</span>
-        <span
-          style={{
-            color: 'var(--accent)',
-            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-            transform: 'translateY(-2px)',
-          }}
-        >
-          .io
-        </span>
+        <Image
+          src="/logo.png"
+          alt="MTGPrices"
+          width={180}
+          height={54}
+          priority
+          style={{ height: 40, width: 'auto' }}
+        />
       </Link>
 
       {/* Desktop nav */}
-      <div className="desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-        {DESKTOP_LINKS.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(item.href + '/')
-          return (
-            <Link
-              key={item.label}
-              href={item.href}
-              aria-current={active ? 'page' : undefined}
+      <div className="desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+        {PRIMARY_LINKS.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={isActive(item.href) ? 'page' : undefined}
+            className={`nav-link${isActive(item.href) ? ' active' : ''}`}
+          >
+            {item.label}
+          </Link>
+        ))}
+
+        {/* Tools dropdown */}
+        <div ref={toolsRef} style={{ position: 'relative' }}>
+          <button
+            type="button"
+            onClick={() => setToolsOpen((v) => !v)}
+            aria-haspopup="menu"
+            aria-expanded={toolsOpen}
+            className={`nav-link${toolsOpen ? ' active' : ''}`}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: toolsOpen ? 'var(--accent-soft)' : 'transparent',
+              border: 'none', cursor: 'pointer', font: 'inherit',
+              color: toolsOpen ? 'var(--gold-600)' : 'var(--text)',
+            }}
+          >
+            Tools
+            <span aria-hidden style={{ fontSize: 10, opacity: 0.7 }}>▾</span>
+          </button>
+          {toolsOpen && (
+            <div
+              role="menu"
               style={{
-                color: active ? 'var(--accent)' : 'var(--text)',
-                textDecoration: 'none',
-                fontSize: 13,
-                fontWeight: 600,
-                padding: '6px 12px',
-                borderRadius: 8,
-                letterSpacing: '0.02em',
+                position: 'absolute', top: 'calc(100% + 6px)', left: 0,
+                minWidth: 220, background: 'var(--surface)',
+                border: '1px solid var(--border)', borderRadius: 12,
+                boxShadow: 'var(--shadow-md)', padding: 6,
+                zIndex: 101,
               }}
             >
-              {item.label}
-            </Link>
-          )
-        })}
+              {TOOLS_LINKS.map((it) => (
+                <Link
+                  key={it.href}
+                  href={it.href}
+                  role="menuitem"
+                  onClick={() => setToolsOpen(false)}
+                  style={{
+                    display: 'block', padding: '10px 12px',
+                    borderRadius: 8, fontSize: 14, fontWeight: 600,
+                    color: 'var(--text)', textDecoration: 'none',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = 'var(--accent-soft)'
+                    ;(e.currentTarget as HTMLElement).style.color = 'var(--gold-600)'
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = 'transparent'
+                    ;(e.currentTarget as HTMLElement).style.color = 'var(--text)'
+                  }}
+                >{it.label}</Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Search */}
@@ -173,7 +224,7 @@ export default function Navbar() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search MTG cards…"
+            placeholder="Search cards, sets, types…"
             aria-label="Search MTG cards"
             style={{
               width: '100%', padding: '9px 12px 9px 34px', borderRadius: 10,
@@ -185,18 +236,31 @@ export default function Navbar() {
         </div>
       </form>
 
-      {/* Account chip — desktop */}
-      <Link
-        href={signedIn ? '/account' : `/login?next=${encodeURIComponent(pathname ?? '/')}`}
-        className="nav-account"
-        style={{
-          padding: '6px 12px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-          background: signedIn ? 'var(--primary-soft)' : 'transparent',
-          color: signedIn ? 'var(--primary)' : 'var(--text)',
-          border: `1px solid ${signedIn ? 'rgba(104,65,230,0.25)' : 'var(--border)'}`,
-          textDecoration: 'none', flexShrink: 0,
-        }}
-      >{signedIn ? 'Account' : 'Sign in'}</Link>
+      {/* Account cluster */}
+      <div className="nav-account-cluster" style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+        <Link
+          href="/collection"
+          className="nav-collection"
+          aria-label="Collection"
+          style={{
+            padding: '7px 12px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+            background: isActive('/collection') ? 'var(--accent-soft)' : 'transparent',
+            color: isActive('/collection') ? 'var(--gold-600)' : 'var(--text)',
+            border: `1px solid ${isActive('/collection') ? 'var(--accent-border)' : 'var(--border)'}`,
+            textDecoration: 'none',
+          }}
+        >Collection</Link>
+        <Link
+          href={signedIn ? '/account' : `/login?next=${encodeURIComponent(pathname)}`}
+          className="btn btn-sm"
+          style={{
+            background: signedIn ? 'var(--primary-soft)' : 'linear-gradient(135deg, var(--arcane-400), var(--arcane-500))',
+            color: signedIn ? 'var(--primary-strong)' : '#FFFFFF',
+            border: signedIn ? '1px solid var(--primary-border)' : '1px solid var(--arcane-500)',
+            boxShadow: signedIn ? 'none' : '0 2px 4px rgba(14,47,94,0.15)',
+          }}
+        >{signedIn ? 'Account' : 'Sign in'}</Link>
+      </div>
 
       <button
         className="mobile-menu-btn"
@@ -205,56 +269,58 @@ export default function Navbar() {
         aria-expanded={menuOpen}
         style={{
           background: 'transparent', border: '1px solid var(--border)', color: 'var(--text)',
-          fontSize: 18, cursor: 'pointer', padding: '4px 10px', borderRadius: 8,
+          fontSize: 18, cursor: 'pointer', padding: '6px 12px', borderRadius: 8,
+          lineHeight: 1,
         }}
       >{menuOpen ? '✕' : '☰'}</button>
 
-      {/* Mobile menu — grouped mega-list */}
+      {/* Mobile menu */}
       {menuOpen && (
         <div
           role="dialog"
           aria-modal="true"
           aria-label="Site menu"
           style={{
-            position: 'absolute', top: 60, left: 0, right: 0,
+            position: 'absolute', top: 64, left: 0, right: 0,
             background: 'var(--surface)', borderBottom: '1px solid var(--border)',
-            padding: '16px 20px 24px', boxShadow: '0 8px 20px rgba(0,0,0,0.4)',
-            zIndex: 99, maxHeight: 'calc(100vh - 60px)', overflowY: 'auto',
+            padding: '16px 20px 24px', boxShadow: 'var(--shadow-lg)',
+            zIndex: 99, maxHeight: 'calc(100vh - 64px)', overflowY: 'auto',
           }}
         >
-          <form onSubmit={submitSearch} style={{ marginBottom: 16 }}>
+          <form onSubmit={submitSearch} style={{ marginBottom: 14 }}>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search MTG cards…"
+              placeholder="Search cards, sets, types…"
               aria-label="Search MTG cards"
               style={{
-                width: '100%', padding: '10px 12px', borderRadius: 10,
+                width: '100%', padding: '11px 12px', borderRadius: 10,
                 border: '1px solid var(--border)', background: 'var(--bg-light)',
-                color: 'var(--text)', fontSize: 14, outline: 'none', boxSizing: 'border-box',
+                color: 'var(--text)', fontSize: 15, outline: 'none', boxSizing: 'border-box',
               }}
             />
           </form>
 
-          {/* Account row */}
-          <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
             <Link
-              href={signedIn ? '/account' : `/login?next=${encodeURIComponent(pathname ?? '/')}`}
+              href={signedIn ? '/account' : `/login?next=${encodeURIComponent(pathname)}`}
               onClick={() => setMenuOpen(false)}
-              style={{
-                display: 'block', padding: '10px 12px', borderRadius: 10,
-                background: signedIn ? 'var(--primary-soft)' : 'var(--bg-light)',
-                color: signedIn ? 'var(--primary)' : 'var(--text)',
-                fontSize: 14, fontWeight: 700, textDecoration: 'none',
-              }}
-            >{signedIn ? 'Account · Collection' : 'Sign in / Create account'}</Link>
+              className="btn btn-primary"
+              style={{ flex: 1 }}
+            >{signedIn ? 'Account' : 'Sign in'}</Link>
+            <Link
+              href="/collection"
+              onClick={() => setMenuOpen(false)}
+              className="btn btn-ghost"
+              style={{ flex: 1 }}
+            >Collection</Link>
           </div>
 
-          {NAV_GROUPS.map((g) => (
+          {MOBILE_GROUPS.map((g) => (
             <div key={g.title} style={{ marginBottom: 20 }}>
-              <div className="label-mono" style={{ marginBottom: 6, color: 'var(--accent)' }}>{g.title}</div>
+              <div className="label-mono" style={{ marginBottom: 6, color: 'var(--gold-600)' }}>{g.title}</div>
               <div style={{ display: 'grid', gap: 4 }}>
-                {g.items.map((it) => it.href ? (
+                {g.items.map((it) => (
                   <Link
                     key={it.label}
                     href={it.href}
@@ -262,23 +328,10 @@ export default function Navbar() {
                     style={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                       color: 'var(--text)', textDecoration: 'none',
-                      padding: '10px 4px', fontSize: 15, fontWeight: 600,
+                      padding: '11px 6px', fontSize: 15, fontWeight: 600,
                       borderBottom: '1px solid var(--border)',
                     }}
                   >{it.label}</Link>
-                ) : (
-                  <div key={it.label} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '10px 4px', fontSize: 15, fontWeight: 600,
-                    color: 'var(--text-muted)', borderBottom: '1px solid var(--border)',
-                  }}>
-                    <span>{it.label}</span>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
-                      background: 'var(--primary-soft)', color: 'var(--primary)',
-                      letterSpacing: 0.4, textTransform: 'uppercase',
-                    }}>Soon</span>
-                  </div>
                 ))}
               </div>
             </div>
@@ -288,14 +341,16 @@ export default function Navbar() {
 
       <style jsx>{`
         input::placeholder { color: var(--text-muted); }
-        @media (min-width: 900px) {
+        @media (min-width: 1080px) {
           .mobile-menu-btn { display: none !important; }
           .nav-search { display: block !important; }
           .desktop-nav { display: flex !important; }
+          .nav-account-cluster { display: flex !important; }
         }
-        @media (max-width: 899px) {
+        @media (max-width: 1079px) {
           .desktop-nav { display: none !important; }
           .nav-search { display: none !important; }
+          .nav-account-cluster { display: none !important; }
           .mobile-menu-btn { display: inline-flex !important; }
         }
       `}</style>

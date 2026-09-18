@@ -110,7 +110,7 @@ export default function BuildWithAI({ formats }: Props) {
         <div className="label-mono">Build with AI</div>
         <button type="button" onClick={() => setOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12 }}>Hide</button>
       </div>
-      <div style={{ padding: '6px 10px', background: 'var(--accent-soft)', color: 'var(--amber)', border: '1px solid rgba(160,129,63,0.28)', borderRadius: 8, fontSize: 11, marginBottom: 10 }}>
+      <div style={{ padding: '6px 10px', background: 'var(--accent-soft)', color: 'var(--amber)', border: '1px solid rgba(232,169,75,0.28)', borderRadius: 8, fontSize: 11, marginBottom: 10 }}>
         AI proposes a deck. Nothing saves until you confirm. Every card comes from a real MTGPrices search.
       </div>
 

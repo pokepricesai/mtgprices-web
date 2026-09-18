@@ -101,7 +101,7 @@ export default function RulesAwareSim({ deck }: { deck: ClientDeckMeta }) {
 
   return (
     <section>
-      <div style={{ padding: 10, background: 'var(--amber-soft, rgba(160,129,63,0.10))', color: 'var(--amber, #a0813f)', border: '1px solid rgba(160,129,63,0.28)', borderRadius: 8, fontSize: 12, marginBottom: 10 }}>
+      <div style={{ padding: 10, background: 'var(--amber-soft, rgba(232,169,75,0.10))', color: 'var(--amber, #a0813f)', border: '1px solid rgba(232,169,75,0.28)', borderRadius: 8, fontSize: 12, marginBottom: 10 }}>
         Phase 4B preview. Rules-aware simulation runs against a real MTG rules engine (Forge).
         Numbers below describe THIS matchup and THIS engine version only — not a universal win rate.
       </div>

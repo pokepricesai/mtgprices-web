@@ -205,7 +205,7 @@ function ExampleChip({ href, children }: { href: string; children: React.ReactNo
       padding: '5px 12px', background: 'var(--primary-soft)',
       color: 'var(--primary)', borderRadius: 999,
       fontSize: 12, fontWeight: 600, textDecoration: 'none',
-      border: '1px solid rgba(104,65,230,0.25)',
+      border: '1px solid rgba(35,95,174,0.25)',
     }}>{children}</Link>
   )
 }
@@ -235,8 +235,8 @@ function ModeToggle({ current, target, sp }: { current: 'play' | 'collecting'; t
 }
 
 const RARITY_COLOR: Record<string, string> = {
-  common: '#9AA3B2', uncommon: '#c0c8d0', rare: '#C9A55C',
-  mythic: '#e07d3a', special: '#7C5CE7', bonus: '#7C5CE7',
+  common: '#9AA3B2', uncommon: '#c0c8d0', rare: '#E8A94B',
+  mythic: '#e07d3a', special: '#235FAE', bonus: '#235FAE',
 }
 
 function fmtPrice(p: FinderHit['cheapest']): string {

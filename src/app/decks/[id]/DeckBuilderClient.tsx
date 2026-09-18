@@ -393,7 +393,7 @@ function AlternativesSheet({ deckId, oracleId, cardName, mode, onClose, onAdd }:
         </div>
 
         {mode === 'ai' && (
-          <div style={{ padding: '6px 10px', background: 'var(--accent-soft)', color: 'var(--amber)', border: '1px solid rgba(160,129,63,0.28)', borderRadius: 8, fontSize: 11, marginBottom: 10 }}>
+          <div style={{ padding: '6px 10px', background: 'var(--accent-soft)', color: 'var(--amber)', border: '1px solid rgba(232,169,75,0.28)', borderRadius: 8, fontSize: 11, marginBottom: 10 }}>
             AI ranks candidates from real search results. All cards below came from deterministic tool calls; the ranking is AI interpretation.
           </div>
         )}

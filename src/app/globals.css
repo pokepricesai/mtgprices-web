@@ -1,60 +1,138 @@
-/* MTGPrices — light premium collector palette (Sept 2026 refresh).
-   Warm off-white background, near-white surfaces, dark navy/charcoal
-   text. Violet remains the primary accent, gold is a restrained
-   prestige highlight. Card artwork is the strongest visual element. */
+/* MTGPrices — arcane/collector design system (2026-09).
+   Warm ivory page, deep-midnight ink text, burnished gold as the primary
+   brand accent, arcane blue as the interactive secondary, ember as a
+   restrained hot accent. Colours are chosen to sit under the new logo
+   without competing with it. All existing surfaces read from the same
+   token names so the whole site re-skins from this file. */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Base */
-  --bg:               #F6F5F1;   /* warm off-white page background */
-  --bg-light:         #EEEBE2;   /* subtle emphasis behind surfaces */
+  /* ── Foundation ─────────────────────────────────────────────── */
+  --bg:               #F6F1E4;   /* warm ivory / lightly aged parchment */
+  --bg-light:         #EFE7D2;   /* mild emphasis behind surfaces */
+  --bg-strong:        #E7DBBB;   /* stronger inset (rare use) */
   --surface:          #FFFFFF;   /* main content cards */
+  --surface-raised:   #FFFDF6;   /* subtly warmer card for hover / feature */
   --card:             #FFFFFF;
-  --text:             #17203A;   /* dark navy-charcoal */
-  --text-muted:       #6B7280;   /* muted grey */
 
-  /* Interactive accents */
-  --primary:          #6841E6;   /* violet — slightly deeper for light-bg contrast */
-  --primary-hover:    #5B36CD;
-  --primary-soft:     rgba(104,65,230,0.12);
+  --text:             #14213D;   /* deep midnight ink */
+  --text-strong:      #0B1633;
+  --text-muted:       #5E6B85;   /* muted slate */
+  --text-subtle:      #8892AB;
 
-  --accent:           #A0813F;   /* gold — restrained, WCAG-readable on white */
-  --accent-hover:     #8B6E33;
-  --accent-soft:      rgba(160,129,63,0.16);
+  /* ── Brand — burnished gold (primary interactive) ───────────── */
+  --gold-50:          #FBF3DE;
+  --gold-100:         #F5E4B4;
+  --gold-200:         #EDCE85;
+  --gold-300:         #E8A94B;
+  --gold-400:         #D18A2E;
+  --gold-500:         #A8681C;
+  --gold-600:         #7A4A13;
 
-  --green:            #2B8659;   /* positive/legal */
-  --red:              #B44146;   /* negative/banned */
-  --amber:            #9A7220;   /* warning / restricted */
+  --accent:           var(--gold-400);       /* legacy alias — gold */
+  --accent-hover:     var(--gold-500);
+  --accent-soft:      rgba(232,169,75,0.16);
+  --accent-border:    rgba(168,104,28,0.35);
 
-  --border:           #E4E1D9;   /* warm subtle border */
-  --border-light:     #D8D4C9;
+  /* Primary CTA = arcane blue (deep, saturated, legible) */
+  --arcane-50:        #E4EEFB;
+  --arcane-100:       #B8D0F0;
+  --arcane-200:       #7EA9E1;
+  --arcane-300:       #3E7BC9;
+  --arcane-400:       #235FAE;
+  --arcane-500:       #164889;
+  --arcane-600:       #0E2F5E;
+  --arcane-700:       #0A1E3F;
 
-  /* Contextual mana colours — used ONLY for MTG metadata pips,
-     never as global brand colours. Values tuned for the light palette. */
-  --mana-w:           #F5F0DC;
-  --mana-u:           #8ecff6;
-  --mana-b:           #464646;
-  --mana-r:           #E68A78;
-  --mana-g:           #86C89A;
-  --mana-c:           #B9B1A0;
+  --primary:          var(--arcane-400);
+  --primary-hover:    var(--arcane-500);
+  --primary-strong:   var(--arcane-600);
+  --primary-soft:     rgba(35,95,174,0.12);
+  --primary-border:   rgba(14,47,94,0.28);
+
+  /* Ember — hot accent (limited use: hover glows, tiny highlights) */
+  --ember-300:        #F27A4E;
+  --ember-400:        #E85A2C;
+  --ember-500:        #C4441B;
+  --ember-soft:       rgba(232,90,44,0.14);
+
+  /* Deep midnight — dark surfaces (hero, footer accent band) */
+  --midnight:         #0D1B3A;
+  --midnight-2:       #101F41;
+  --midnight-3:       #182B57;
+
+  /* ── Status ────────────────────────────────────────────────── */
+  --green:            #2A8459;
+  --green-soft:       rgba(42,132,89,0.14);
+  --red:              #B43A3E;
+  --red-soft:         rgba(180,58,62,0.14);
+  --amber:            #A8781A;
+  --amber-soft:       rgba(168,120,26,0.15);
+
+  /* ── Structural ────────────────────────────────────────────── */
+  --border:           #E4DAC1;
+  --border-light:     #D6C8A6;
+  --border-strong:    #B9A87C;
+  --shadow-sm:        0 1px 2px rgba(20,33,61,0.06);
+  --shadow-md:        0 6px 18px rgba(20,33,61,0.10), 0 2px 4px rgba(20,33,61,0.04);
+  --shadow-lg:        0 18px 44px rgba(11,22,51,0.14), 0 4px 10px rgba(11,22,51,0.06);
+  --shadow-gold:      0 8px 24px rgba(168,104,28,0.20);
+
+  --radius-sm:        8px;
+  --radius:           12px;
+  --radius-lg:        16px;
+  --radius-xl:        22px;
+
+  /* ── Five-colour accent tokens ─────────────────────────────── */
+  /* Design accents, NOT replicas of official mana symbols. Used
+     sparingly on format pills, capability chips, section dividers.  */
+  --hue-w:            #E9DDA6;   /* ivory */
+  --hue-w-ink:        #6B5218;
+  --hue-u:            #3E7BC9;   /* arcane blue */
+  --hue-u-ink:        #0F2649;
+  --hue-b:            #4A3A55;   /* dusk plum */
+  --hue-b-ink:        #F1E8F5;
+  --hue-r:            #E85A2C;   /* ember */
+  --hue-r-ink:        #4A130B;
+  --hue-g:            #4E8F5A;   /* verdant */
+  --hue-g-ink:        #0F2E17;
+
+  /* Contextual mana pip fills — kept for the existing .mana-* helpers. */
+  --mana-w:           #F0E5B8;
+  --mana-u:           #A9C8EF;
+  --mana-b:           #2A2434;
+  --mana-r:           #F1997A;
+  --mana-g:           #9BCDA2;
+  --mana-c:           #C8BEA6;
 }
 
 * { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
 
 body {
   font-family: 'Figtree', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 h1, h2, h3, h4 {
   font-family: 'Outfit', system-ui, sans-serif;
   font-weight: 700;
-  color: var(--text);
+  color: var(--text-strong);
+  letter-spacing: -0.015em;
+}
+
+/* Serif display treatment reserved for hero + section headers that want
+   a stronger fantasy feel. Applied via .display class, never globally. */
+.display {
+  font-family: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+  font-weight: 700;
   letter-spacing: -0.01em;
 }
 
@@ -63,25 +141,93 @@ a:hover { color: var(--primary-hover); }
 
 ::placeholder { color: var(--text-muted); opacity: 0.7; }
 
-/* Motion */
+/* ── Motion ──────────────────────────────────────────────────── */
 @keyframes fadeIn   { from { opacity: 0; transform: translateY(6px);  } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes shimmer  { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes drift    { 0%, 100% { transform: translate3d(0,0,0); } 50% { transform: translate3d(0,-8px,0); } }
+@keyframes twinkle  { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+
 .animate-fade-in    { animation: fadeIn 0.28s ease-out; }
 .animate-fade-in-up { animation: fadeInUp 0.4s ease-out both; }
-.delay-1 { animation-delay: 0.05s; } .delay-2 { animation-delay: 0.1s; } .delay-3 { animation-delay: 0.15s; } .delay-4 { animation-delay: 0.2s; }
+.delay-1 { animation-delay: 0.05s; }
+.delay-2 { animation-delay: 0.10s; }
+.delay-3 { animation-delay: 0.15s; }
+.delay-4 { animation-delay: 0.20s; }
 
-/* Card hover — soft lift on light backgrounds */
-.card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(23,32,58,0.08), 0 2px 6px rgba(23,32,58,0.06);
-  border-color: var(--border-light);
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in, .animate-fade-in-up { animation: none; }
+  .decor-drift { animation: none !important; }
+  .decor-twinkle { animation: none !important; }
 }
 
-/* Skeleton — light-mode */
+/* ── Cards & hover ───────────────────────────────────────────── */
+.card-hover {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-light);
+}
+.card-hover-gold:hover {
+  border-color: var(--accent-border);
+  box-shadow: var(--shadow-gold);
+}
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: inherit; font-weight: 700; font-size: 14px; line-height: 1;
+  border-radius: 10px; padding: 11px 18px; cursor: pointer;
+  border: 1px solid transparent; text-decoration: none;
+  transition: transform 150ms ease, background 150ms ease, box-shadow 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--arcane-400) 0%, var(--arcane-500) 100%);
+  color: #FFFFFF;
+  box-shadow: 0 2px 4px rgba(14,47,94,0.15), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.btn-primary:hover { color: #FFFFFF; box-shadow: 0 6px 18px rgba(14,47,94,0.25), inset 0 1px 0 rgba(255,255,255,0.2); transform: translateY(-1px); }
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold-300) 0%, var(--gold-400) 100%);
+  color: #2A1A05;
+  box-shadow: 0 2px 4px rgba(168,104,28,0.20), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.btn-gold:hover { color: #2A1A05; box-shadow: var(--shadow-gold), inset 0 1px 0 rgba(255,255,255,0.4); transform: translateY(-1px); }
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.btn-ghost:hover { background: var(--surface); border-color: var(--primary-border); color: var(--primary); }
+.btn-dark {
+  background: linear-gradient(180deg, var(--midnight-2) 0%, var(--midnight) 100%);
+  color: #F6EED9;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 2px 4px rgba(11,22,51,0.30), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.btn-dark:hover { color: #FFFFFF; }
+.btn-sm { padding: 8px 12px; font-size: 12.5px; border-radius: 8px; }
+.btn-lg { padding: 14px 22px; font-size: 15px; border-radius: 12px; }
+
+/* ── Chips ───────────────────────────────────────────────────── */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.01em;
+  background: var(--bg-light); color: var(--text);
+  border: 1px solid var(--border);
+}
+.chip-gold   { background: var(--accent-soft); color: var(--gold-600); border-color: var(--accent-border); }
+.chip-arcane { background: var(--primary-soft); color: var(--primary-strong); border-color: var(--primary-border); }
+.chip-ember  { background: var(--ember-soft); color: var(--ember-500); border-color: rgba(196,68,27,0.30); }
+.chip-ivy    { background: var(--green-soft); color: var(--green); border-color: rgba(42,132,89,0.30); }
+.chip-dusk   { background: rgba(74,58,85,0.10); color: #4A3A55; border-color: rgba(74,58,85,0.28); }
+
+/* ── Skeleton ────────────────────────────────────────────────── */
 .skeleton {
-  background: linear-gradient(90deg, #edeae1 25%, #f7f5ef 50%, #edeae1 75%);
+  background: linear-gradient(90deg, #EEE4C6 25%, #F7EEC9 50%, #EEE4C6 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 10px;
@@ -90,7 +236,7 @@ a:hover { color: var(--primary-hover); }
 .price-up   { color: var(--green); }
 .price-down { color: var(--red);   }
 
-/* Scrollbar */
+/* ── Scrollbar ───────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
@@ -109,32 +255,32 @@ details summary::marker { display: none; }
 }
 .chip-strip::-webkit-scrollbar { display: none; }
 
-/* Sort buttons */
+/* ── Sort buttons ────────────────────────────────────────────── */
 .sort-btn {
   background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
   padding: 6px 16px; font-size: 13px; font-weight: 600; color: var(--text-muted);
   cursor: pointer; transition: all 0.15s; font-family: inherit;
 }
-.sort-btn:hover { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
+.sort-btn:hover { background: var(--accent-soft); color: var(--gold-600); border-color: var(--accent-border); }
 .sort-btn.active { background: var(--primary); color: #FFFFFF; border-color: var(--primary); }
 
-/* Prestige badge */
+/* ── Prestige badge ──────────────────────────────────────────── */
 .badge-prestige {
-  display: inline-block; background: var(--accent-soft); color: var(--accent);
-  font-size: 12px; font-weight: 700; letter-spacing: 0.02em;
-  padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(160,129,63,0.28);
+  display: inline-block; background: var(--accent-soft); color: var(--gold-600);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.03em;
+  padding: 4px 10px; border-radius: 999px; border: 1px solid var(--accent-border);
 }
 
 /* Terminal-style monospace label */
 .label-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.10em;
   color: var(--text-muted);
 }
 
 /* Focus ring for keyboard users */
 :focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--gold-300);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -144,11 +290,150 @@ details summary::marker { display: none; }
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 20px; height: 20px; padding: 0 6px;
   border-radius: 999px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12px;
-  color: #17203A;
+  color: #14213D;
 }
 .mana-w { background: var(--mana-w); }
-.mana-u { background: var(--mana-u); color: #0b2a49; }
-.mana-b { background: var(--mana-b); color: #F5F0DC; }
-.mana-r { background: var(--mana-r); color: #4a1010; }
-.mana-g { background: var(--mana-g); color: #0f3418; }
+.mana-u { background: var(--mana-u); color: #0f2649; }
+.mana-b { background: var(--mana-b); color: #F0E5B8; }
+.mana-r { background: var(--mana-r); color: #4A130B; }
+.mana-g { background: var(--mana-g); color: #0F2E17; }
 .mana-c { background: var(--mana-c); }
+
+/* ═══════════════════════════════════════════════════════════════
+   Decorative arcane accents (CSS/SVG only, no raster)
+   Used sparingly in section backgrounds. All at low opacity so
+   product content dominates.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Section band — warm dark on midnight for hero/deck-lab feature areas. */
+.arcane-band {
+  position: relative;
+  background:
+    radial-gradient(120% 100% at 15% 10%, rgba(232,169,75,0.20) 0%, rgba(232,169,75,0) 55%),
+    radial-gradient(90% 110% at 85% 90%, rgba(232,90,44,0.16) 0%, rgba(232,90,44,0) 55%),
+    linear-gradient(180deg, var(--midnight-2) 0%, var(--midnight) 100%);
+  color: #F1E9D2;
+  overflow: hidden;
+  isolation: isolate;
+}
+.arcane-band h1, .arcane-band h2, .arcane-band h3, .arcane-band h4 { color: #FBF3DE; }
+.arcane-band .label-mono { color: #C9B994; }
+
+/* Light "aged parchment" band for gentle section grouping. */
+.ivory-band {
+  position: relative;
+  background:
+    radial-gradient(60% 80% at 10% 0%, rgba(232,169,75,0.10) 0%, rgba(232,169,75,0) 60%),
+    radial-gradient(50% 70% at 100% 100%, rgba(35,95,174,0.08) 0%, rgba(35,95,174,0) 60%),
+    var(--bg);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Rune-corner decoration for feature cards. Apply .rune-tl to add a
+   faint gold arcane sigil in the top-left; .rune-br for bottom-right. */
+.rune-tl::before,
+.rune-br::after {
+  content: '';
+  position: absolute;
+  width: 80px; height: 80px;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.28;
+}
+.rune-tl::before {
+  top: -14px; left: -14px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80' fill='none' stroke='%23A8681C' stroke-width='1.3'><path d='M4 4h32M4 4v32M4 4l14 14'/><circle cx='24' cy='24' r='3'/><path d='M42 8l4 6 6-4M8 42l6 4-4 6'/></svg>");
+}
+.rune-br::after {
+  bottom: -14px; right: -14px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80' fill='none' stroke='%23A8681C' stroke-width='1.3'><path d='M76 76h-32M76 76v-32M76 76l-14 -14'/><circle cx='56' cy='56' r='3'/><path d='M38 72l-4 -6 -6 4M72 38l-6 -4 4 -6'/></svg>");
+}
+
+/* Star-spark constellation background — used on hero. */
+.spark-field {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    radial-gradient(1.6px 1.6px at 12% 22%, rgba(232,169,75,0.55), transparent 60%),
+    radial-gradient(1.4px 1.4px at 78% 18%, rgba(255,255,255,0.60), transparent 60%),
+    radial-gradient(1.2px 1.2px at 40% 65%, rgba(232,169,75,0.45), transparent 60%),
+    radial-gradient(1.8px 1.8px at 88% 60%, rgba(126,169,225,0.55), transparent 60%),
+    radial-gradient(1.2px 1.2px at 25% 82%, rgba(255,255,255,0.55), transparent 60%),
+    radial-gradient(1.5px 1.5px at 62% 88%, rgba(232,169,75,0.40), transparent 60%),
+    radial-gradient(1.2px 1.2px at 8%  55%, rgba(126,169,225,0.45), transparent 60%),
+    radial-gradient(1.4px 1.4px at 95% 32%, rgba(232,169,75,0.35), transparent 60%);
+  animation: twinkle 6s ease-in-out infinite;
+}
+
+/* Card silhouette decoration — faint MTG card outline. Two per corner. */
+.card-silhouette {
+  position: absolute; pointer-events: none; opacity: 0.10;
+  width: 120px; height: 168px;
+  border: 1.5px solid currentColor;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, transparent 0%, transparent 62%, rgba(255,255,255,0.06) 62%, rgba(255,255,255,0.06) 100%);
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+.card-silhouette::after {
+  content: '';
+  position: absolute; top: 10%; left: 10%; right: 10%; height: 46%;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  opacity: 0.5;
+}
+
+/* Arcane diamond gem — used inline as a small decorative bullet. */
+.gem {
+  display: inline-block;
+  width: 10px; height: 10px;
+  transform: rotate(45deg);
+  background: linear-gradient(135deg, var(--arcane-200), var(--arcane-500));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 0 6px rgba(35,95,174,0.35);
+  border-radius: 2px;
+}
+.gem-gold {
+  background: linear-gradient(135deg, var(--gold-200), var(--gold-500));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 0 6px rgba(232,169,75,0.40);
+}
+.gem-ember {
+  background: linear-gradient(135deg, #F9B79A, var(--ember-500));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 0 6px rgba(232,90,44,0.35);
+}
+
+/* ── Utility: subtle gold gradient text ─────────────────────── */
+.gold-text {
+  background: linear-gradient(135deg, var(--gold-300) 0%, var(--gold-500) 60%, var(--gold-300) 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.ember-text {
+  background: linear-gradient(135deg, var(--ember-300), var(--ember-500));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Nav-scoped tweaks (safe globals) ───────────────────────── */
+.nav-link {
+  position: relative;
+  color: var(--text);
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: color 150ms ease, background 150ms ease;
+}
+.nav-link:hover { background: var(--accent-soft); color: var(--gold-600); }
+.nav-link.active {
+  color: var(--gold-600);
+  background: var(--accent-soft);
+}
+
+/* Divider — thin gilt line, useful in dark bands. */
+.gilt-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--gold-300) 20%, var(--gold-300) 80%, transparent 100%);
+  opacity: 0.5;
+}

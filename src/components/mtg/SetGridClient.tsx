@@ -35,8 +35,8 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 
 const RARITY_ORDER: Record<string, number> = { mythic: 0, rare: 1, uncommon: 2, common: 3, special: 4, bonus: 5 }
 const RARITY_COLOUR: Record<string, string> = {
-  common: '#9AA3B2', uncommon: '#c0c8d0', rare: '#C9A55C', mythic: '#e07d3a',
-  special: '#7C5CE7', bonus: '#7C5CE7',
+  common: '#9AA3B2', uncommon: '#c0c8d0', rare: '#E8A94B', mythic: '#e07d3a',
+  special: '#235FAE', bonus: '#235FAE',
 }
 
 const COLOR_CHOICES: { code: string; label: string; bg: string; fg: string }[] = [
@@ -320,7 +320,7 @@ function Chip({ active, onClick, label, dot }: { active: boolean; onClick: () =>
         display: 'inline-flex', alignItems: 'center', gap: 6,
         background: active ? 'var(--primary-soft)' : 'var(--bg-light)',
         color: active ? 'var(--primary)' : 'var(--text)',
-        border: `1px solid ${active ? 'rgba(104,65,230,0.35)' : 'var(--border)'}`,
+        border: `1px solid ${active ? 'rgba(35,95,174,0.35)' : 'var(--border)'}`,
         borderRadius: 999, padding: '5px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
       }}
     >

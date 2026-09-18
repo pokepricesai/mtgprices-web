@@ -91,7 +91,7 @@ export default async function FormatPage({ params }: { params: Promise<Params> }
               <Link key={c} href={`/card-finder?mode=play&legal=${f.key}&caps=${c}`} style={{
                 fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 999,
                 background: 'var(--primary-soft)', color: 'var(--primary)',
-                border: '1px solid rgba(104,65,230,0.25)', textDecoration: 'none',
+                border: '1px solid rgba(35,95,174,0.25)', textDecoration: 'none',
               }}>
                 {c.split('-').map((s) => s[0].toUpperCase() + s.slice(1)).join(' ')}
               </Link>

@@ -65,8 +65,9 @@ export const metadata: Metadata = {
   },
   alternates: { canonical: SITE_URL },
   robots: SITE_LAUNCHED ? LAUNCHED_ROBOTS : PRE_LAUNCH_ROBOTS,
-  // Favicon + apple-icon + OG image are all generated dynamically from
-  // src/app/{icon,apple-icon,opengraph-image}.tsx via @vercel/og.
+  // Favicon and apple-icon come from src/app/{icon,apple-icon}.png
+  // (Next 16 auto-wires those into <head>). The default OG card is still
+  // rendered dynamically by src/app/opengraph-image.tsx via @vercel/og.
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -76,7 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Figtree:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Figtree:wght@400;500;600;700&family=Cormorant+Garamond:wght@500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>
