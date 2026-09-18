@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     }, { status: 422 })
   }
 
-  // Deterministic shopping-preview — AI never sources price data.
+  // Deterministic shopping-preview, AI never sources price data.
   const entries: Array<{ oracle_card_id: string; quantity: number; name?: string }> = []
   for (const c of pipeline.proposed.commanders) entries.push({ oracle_card_id: c.oracle_card_id, quantity: 1, name: c.card?.name })
   for (const m of pipeline.proposed.main) entries.push({ oracle_card_id: m.oracle_card_id, quantity: m.quantity, name: m.card?.name })

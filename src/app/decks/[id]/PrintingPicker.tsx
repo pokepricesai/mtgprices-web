@@ -1,7 +1,7 @@
 'use client'
 // Full printing picker for a deck card. Splits Owned vs Other printings.
 // Owned printings are always preferred visually. Every option is a
-// real mtg_printing_finishes row — never invented.
+// real mtg_printing_finishes row, never invented.
 
 import { useEffect, useState } from 'react'
 
@@ -148,7 +148,7 @@ function PickCard({ o, current, onPick, currencyPrefix }: {
       <div style={{ textAlign: 'right', fontSize: 12, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
         {o.price
           ? `${currencyPrefix(o.price.currency)}${o.price.price.toFixed(2)}`
-          : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+          : <span style={{ color: 'var(--text-muted)' }}>,</span>}
       </div>
     </button>
   )

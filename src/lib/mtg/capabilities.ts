@@ -8,13 +8,13 @@
 //   - The backfill script (scripts/phase2b-backfill-capabilities.ts).
 //   - The incremental classifier (scripts/phase2b-classify-changed.ts).
 //
-// No framework imports — this file must be safe to run in Node scripts
+// No framework imports, this file must be safe to run in Node scripts
 // and in Next.js server components. It never imports `server-only`,
 // database clients, or React.
 //
 // Conservative principle: miss a capability rather than falsely label
 // one. Every regex here is written to fire on unambiguous Oracle-text
-// idioms. Cards with unusual wording will simply not receive that tag —
+// idioms. Cards with unusual wording will simply not receive that tag ,
 // that is intended.
 
 // ── Taxonomy ────────────────────────────────────────────────────────
@@ -108,7 +108,7 @@ export function labelForCapability(cap: CardCapability): string {
   return CAPABILITY_LABELS[cap]
 }
 
-/** Card-Finder-facing set — the tags a user would meaningfully filter
+/** Card-Finder-facing set, the tags a user would meaningfully filter
  *  on. Type tags are handled by the type filter dimension and omitted
  *  here to avoid duplication in the UI. */
 export const SEARCHABLE_CAPABILITIES: CardCapability[] = CAPABILITY_TAGS
@@ -184,7 +184,7 @@ export function classify(input: ClassifyInput): CardCapability[] {
     caps.add('counter-spell')
   }
 
-  // ── Targeted removal — by target type ────────────────────
+  // ── Targeted removal, by target type ────────────────────
   if (
     has(/\bdestroy target creature\b/) ||
     has(/\bexile target (creature|attacking creature|blocking creature|creature card)\b/) ||

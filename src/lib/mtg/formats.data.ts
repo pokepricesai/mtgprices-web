@@ -1,5 +1,5 @@
 // src/lib/mtg/formats.data.ts
-// Pure data + types for MTG formats. NO server-only import — client
+// Pure data + types for MTG formats. NO server-only import, client
 // components import from here for form controls, chip labels, etc.
 // DB helpers live in ./formats.ts.
 
@@ -32,7 +32,7 @@ export type FormatDef = {
   blurb: string
 }
 
-/** Presentation-facing format list — ordered inside each group. Only
+/** Presentation-facing format list, ordered inside each group. Only
  *  formats that we know exist in `mtg_oracle_legalities`. */
 export const FORMATS: FormatDef[] = [
   { key: 'standard',      label: 'Standard',        group: 'Primary',    blurb: 'Rotating format built around the newest sets. WOTC ban list applies.' },
@@ -41,7 +41,7 @@ export const FORMATS: FormatDef[] = [
 
   { key: 'legacy',        label: 'Legacy',          group: 'Eternal',    blurb: 'Deep card pool. Ban list, no restrictions.' },
   { key: 'vintage',       label: 'Vintage',         group: 'Eternal',    blurb: 'Nearly every card is legal. Uses a restricted list.' },
-  { key: 'pauper',        label: 'Pauper',          group: 'Eternal',    blurb: 'Commons only — every card must have been printed at common somewhere.' },
+  { key: 'pauper',        label: 'Pauper',          group: 'Eternal',    blurb: 'Commons only. Every card must have been printed at common somewhere.' },
 
   { key: 'commander',     label: 'Commander',       group: 'Casual',     blurb: '100-card singleton around a legendary commander.' },
   { key: 'oathbreaker',   label: 'Oathbreaker',     group: 'Casual',     blurb: '60-card singleton around a planeswalker + signature spell.' },
@@ -55,7 +55,7 @@ export const FORMATS: FormatDef[] = [
   { key: 'penny',         label: 'Penny Dreadful',  group: 'Digital',    blurb: 'Only cards under a small price ceiling are legal.' },
 
   { key: 'premodern',     label: 'Premodern',       group: 'Historical', blurb: '4th Edition through Scourge. Community-run.' },
-  { key: 'oldschool',     label: 'Old School',      group: 'Historical', blurb: 'Very early cardpool — Alpha through Fallen Empires-era.' },
+  { key: 'oldschool',     label: 'Old School',      group: 'Historical', blurb: 'Very early cardpool from the Alpha through Fallen Empires era.' },
   { key: 'predh',         label: 'PreDH',           group: 'Historical', blurb: 'Commander using pre-2011 cards only.' },
   { key: 'future',        label: 'Future Standard', group: 'Historical', blurb: 'What Standard will look like once the current block rotates in.' },
   { key: 'duel',          label: 'Duel Commander', group: 'Historical', blurb: '1v1 Commander variant with its own ban list.' },

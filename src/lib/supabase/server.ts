@@ -1,7 +1,7 @@
 // src/lib/supabase/server.ts
 // Server-side Supabase client that reads/writes the session cookie so
 // server components can honour the caller's authenticated identity.
-// Uses the ANON key — RLS policies enforce access. The service-role
+// Uses the ANON key, RLS policies enforce access. The service-role
 // client (src/lib/supabaseService.ts) is separate and admin-only.
 
 import 'server-only'
@@ -34,7 +34,7 @@ export async function getSupabaseServerClient() {
   })
 }
 
-/** Convenience — returns the currently-authenticated user or null. */
+/** Convenience, returns the currently-authenticated user or null. */
 export async function getCurrentUser() {
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()

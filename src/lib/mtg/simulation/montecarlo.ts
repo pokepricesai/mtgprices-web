@@ -9,9 +9,9 @@
 //   - probability of drawing at least one card with MV ≤ X by turn Y
 //
 // Every function operates over the CARDS SEEN by end of a given turn
-// (opening 7 + N draw-step draws — respects play/draw + Commander
+// (opening 7 + N draw-step draws, respects play/draw + Commander
 // first-player-draw toggle). We never claim "you can cast X on
-// turn T" — this is availability, not castability.
+// turn T", this is availability, not castability.
 //
 // Simulation is 100% in-memory. No DB. No AI. Deterministic given a
 // seed.
@@ -53,7 +53,7 @@ export type MCSpec = {
   trackOracleId?: string
   /** Capabilities to track. */
   trackCapabilities?: CardCapability[]
-  /** MV thresholds — for each threshold, we report P(saw a card with MV ≤ threshold by turn T). */
+  /** MV thresholds, for each threshold, we report P(saw a card with MV ≤ threshold by turn T). */
   trackMVLeq?: number[]
   /** Deterministic seed. */
   seed?: number
@@ -125,7 +125,7 @@ function passesMulliganRule(hand: SimCard[], rule: MulliganRule | undefined): bo
 }
 
 /** Choose which cards to bottom on mulligan. Same strategy as
- *  bottomHighMV — bottom highest MV first — but with a bias to KEEP
+ *  bottomHighMV, bottom highest MV first, but with a bias to KEEP
  *  lands (never bottom lands unless we've bottomed all non-lands). */
 function chooseBottom(hand: SimCard[], m: number): SimCard[] {
   if (m <= 0) return hand
@@ -140,7 +140,7 @@ function chooseBottom(hand: SimCard[], m: number): SimCard[] {
   return hand.filter((c) => !bottom.has(c))
 }
 
-/** Run a full Monte Carlo pass. Pure — no DB, no AI. */
+/** Run a full Monte Carlo pass. Pure, no DB, no AI. */
 export function runMonteCarlo(spec: MCSpec): MCResult {
   const t0 = Date.now()
   const iterations = Math.max(1, Math.floor(spec.iterations))
@@ -233,7 +233,7 @@ export function runMonteCarlo(spec: MCSpec): MCResult {
       }
       m += 1
       // For the next iteration of the London loop we RESHUFFLE.
-      // The London rules do not put returned cards on the top — a
+      // The London rules do not put returned cards on the top, a
       // fresh shuffle is the standard interpretation for simulation.
       // (We already have `shuffled`; we shuffle again with fresh RNG
       // draws below inline.)
@@ -268,9 +268,9 @@ export function runMonteCarlo(spec: MCSpec): MCResult {
     `${iterations.toLocaleString()} independent simulated games`,
     play === 'play' ? 'On the play' : 'On the draw',
     firstDraws ? 'First player draws on turn 1 (Commander multiplayer rule)' : 'First player skips their turn-1 draw (standard constructed rule)',
-    `London mulligan up to ${maxMulligans} times${spec.mulligan ? ', using the configured keep-rule' : ' (never mulligans — no rule set)'}`,
+    `London mulligan up to ${maxMulligans} times${spec.mulligan ? ', using the configured keep-rule' : ' (never mulligans, no rule set)'}`,
     `Draws counted through the end of each turn's draw step`,
-    `Card availability, not castability — no mana cost analysis`,
+    `Card availability, not castability, no mana cost analysis`,
   ]
 
   return {

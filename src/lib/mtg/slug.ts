@@ -1,5 +1,5 @@
 // src/lib/mtg/slug.ts
-// Pure slug helpers. NO server-only import — client components use these
+// Pure slug helpers. NO server-only import, client components use these
 // to build /card URLs. Server code re-exports them from cards.ts.
 
 /** Convert "Massacre Girl, Known Killer" → "massacre-girl-known-killer". */

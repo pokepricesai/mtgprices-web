@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Privacy',
-  description: 'How MTGPrices handles your data — short version: we collect very little.',
+  description: 'How MTGPrices handles your data. Short version: we collect very little.',
   alternates: { canonical: 'https://mtgprices.io/privacy' },
   openGraph: { url: 'https://mtgprices.io/privacy' },
 }

@@ -10,7 +10,7 @@
 // result to Supabase via the atomic-claim + complete RPCs.
 //
 // Retries + delivery guarantees come from Vercel Queue. Idempotency
-// comes from mtg_simulation_claim_next() — duplicate delivery of the
+// comes from mtg_simulation_claim_next(), duplicate delivery of the
 // same job_id is safe (only the first claim runs; subsequent claims
 // get null and this handler returns 200 no-op).
 
@@ -46,7 +46,7 @@ export const POST = handleCallback<QueueMessage>(async (message, metadata) => {
       signal: AbortSignal.timeout(670_000),
     })
   } catch (err: any) {
-    // Network failure or timeout — throw so the Queue retries.
+    // Network failure or timeout, throw so the Queue retries.
     console.error(`forge-sim consumer: worker fetch failed job_id=${jobId} message=${metadata.messageId} err=${err?.message}`)
     throw new Error(`worker_unreachable: ${err?.message ?? 'unknown'}`)
   }

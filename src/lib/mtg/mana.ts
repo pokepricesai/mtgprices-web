@@ -72,7 +72,7 @@ export function manaColors(token: ManaToken): { bg: string; fg: string; ring?: s
     if (c === 'G') return { bg: '#9ee0a5', fg: '#0f3418' }
     if (c === 'C') return { bg: '#c8c1b0', fg: '#25313f' }
   }
-  // Hybrid — halved background, use ring to hint at hybrid.
+  // Hybrid, halved background, use ring to hint at hybrid.
   const [a, b] = token.colors
   return { bg: manaColors({ ...token, colors: [a] }).bg, fg: '#25313f', ring: manaColors({ ...token, colors: [b] }).bg }
 }

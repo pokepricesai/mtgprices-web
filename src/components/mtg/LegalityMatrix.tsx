@@ -1,6 +1,6 @@
 // src/components/mtg/LegalityMatrix.tsx
 // Grouped format legality display for the card page.
-// Only shows formats present in FORMATS (the curated list) — hides
+// Only shows formats present in FORMATS (the curated list), hides
 // obscure formats that would just add clutter.
 
 import Link from 'next/link'

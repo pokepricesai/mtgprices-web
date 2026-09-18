@@ -261,7 +261,7 @@ export type MtgSearchFilters = {
   colors?: string[]
   /** Match if the card's color_identity is a SUBSET of these letters. */
   colorIdentity?: string[]
-  /** Include colourless as "C" — the field literally checks `colors=[]`. */
+  /** Include colourless as "C", the field literally checks `colors=[]`. */
   colorless?: boolean
   /** Include only cards legal in this format. */
   legalIn?: string
@@ -269,7 +269,7 @@ export type MtgSearchFilters = {
   rarity?: string
 }
 
-/** Multi-filter card search. Name is optional — pass filters alone and
+/** Multi-filter card search. Name is optional, pass filters alone and
  *  you get an arbitrary slice of the DB matching the constraints. */
 export async function searchCards(
   filters: MtgSearchFilters,
@@ -286,7 +286,7 @@ export async function searchCards(
   const anyFilter = name.length >= 2 || type.length >= 2 || text.length >= 2 || colors.length > 0 || colorId.length > 0 || legalIn.length > 0 || rarity.length > 0 || filters.colorless
   if (!anyFilter) return []
 
-  // Step 1 — apply oracle-level filters.
+  // Step 1, apply oracle-level filters.
   let oraclesQ = supabase
     .from('mtg_oracle_cards')
     .select('id, name, type_line, mana_cost, colors')
@@ -304,7 +304,7 @@ export async function searchCards(
   }
   let oracleIds: string[] = oracles.map((o: any) => o.id)
 
-  // Step 2 — narrow by format legality if requested.
+  // Step 2, narrow by format legality if requested.
   if (legalIn.length > 0) {
     const { data: legals } = await supabase
       .from('mtg_oracle_legalities')
@@ -317,7 +317,7 @@ export async function searchCards(
     if (oracleIds.length === 0) return []
   }
 
-  // Step 3 — fetch printings for the surviving oracles.
+  // Step 3, fetch printings for the surviving oracles.
   let printingsQ = supabase
     .from('mtg_printings')
     .select('id, oracle_card_id, set_code, collector_number, name, image_uri_small, rarity, released_at')

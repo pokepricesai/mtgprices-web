@@ -35,7 +35,7 @@ const PROVIDER_LABEL: Record<string, string> = {
 }
 
 function fmtUSD(v: number | undefined | null): string {
-  if (v == null || Number.isNaN(v)) return '—'
+  if (v == null || Number.isNaN(v)) return '-'
   return '$' + Number(v).toFixed(2)
 }
 

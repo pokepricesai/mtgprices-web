@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export const metadata: Metadata = {
-  title: 'Test deck — MTGPrices',
+  title: 'Test deck, MTGPrices',
   description: 'Interactive playtest lab for your MTG deck.',
   robots: { index: false, follow: false },
 }

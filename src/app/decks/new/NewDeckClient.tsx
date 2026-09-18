@@ -59,7 +59,7 @@ export default function NewDeckClient({ formats }: Props) {
           {Array.from(new Set(formats.map((f) => f.group))).map((g) => (
             <optgroup key={g} label={`${g} formats`}>
               {formats.filter((f) => f.group === g).map((f) => (
-                <option key={f.key} value={f.key}>{f.label}{f.hasCommander ? ' — commander-based' : ''}</option>
+                <option key={f.key} value={f.key}>{f.label}{f.hasCommander ? ', commander-based' : ''}</option>
               ))}
             </optgroup>
           ))}

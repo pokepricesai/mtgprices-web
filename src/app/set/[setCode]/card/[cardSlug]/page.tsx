@@ -1,4 +1,4 @@
-// app/set/[setCode]/card/[cardSlug]/page.tsx — deep MTG card page.
+// app/set/[setCode]/card/[cardSlug]/page.tsx, deep MTG card page.
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -38,8 +38,8 @@ const PROVIDER_LABEL: Record<string, string> = {
 }
 
 const PROVIDER_COLOUR: Record<string, string> = {
-  tcgplayer: '#A8681C',    // gold — new brand
-  cardkingdom: '#235FAE',  // arcane blue — new brand
+  tcgplayer: '#A8681C',    // gold, new brand
+  cardkingdom: '#235FAE',  // arcane blue, new brand
   cardmarket: '#3E7BC9',
   manapool: '#2A8459',
   cardhoarder: '#C4441B',
@@ -60,8 +60,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   if (!detail) return { title: 'Card not found' }
   const canonical = `${SITE_URL}/set/${detail.printing.set_code}/card/${cardSlug}`
   return {
-    title: `${detail.printing.name} (${detail.printing.set_code.toUpperCase()}) — MTG price & printings`,
-    description: `${detail.printing.name} from ${detail.printing.set_code.toUpperCase()}. Live paper price, 90-day chart, legality, rulings and other printings.`,
+    title: `${detail.printing.name} (${detail.printing.set_code.toUpperCase()}). MTG price and printings`,
+    description: `${detail.printing.name} from ${detail.printing.set_code.toUpperCase()}. Live paper price, 90 day chart, legality, rulings and other printings.`,
     alternates: { canonical },
     openGraph: { url: canonical },
   }
@@ -113,7 +113,7 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
     }))
     .filter((s) => s.points.length > 0)
 
-  // Second image for DFC/transform/MDFC — pulled from oracle.card_faces
+  // Second image for DFC/transform/MDFC, pulled from oracle.card_faces
   // if present. This is the back-face image of the *default* printing;
   // artwork may differ from this printing but rules are equivalent.
   const backImage =
@@ -127,7 +127,7 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
     '@context': 'https://schema.org',
     '@type': 'WebPage',
     name: `${printing.name} (${printing.set_code.toUpperCase()})`,
-    description: `${printing.name} — MTG card printing.`,
+    description: `${printing.name}. MTG card printing.`,
     url: `${SITE_URL}/set/${printing.set_code}/card/${cardSlug}`,
   }
 
@@ -153,7 +153,7 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
           <div style={{ display: 'grid', gap: 12 }}>
             <CardImage src={printing.image_uri} alt={printing.name} />
             {backImage && (
-              <CardImage src={backImage} alt={`${printing.name} — back face`} caption="Back face (default printing artwork)" />
+              <CardImage src={backImage} alt={`${printing.name}, back face`} caption="Back face (default printing artwork)" />
             )}
           </div>
 
@@ -182,10 +182,10 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
           <div style={{ marginTop: 20, padding: 14, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 13, display: 'grid', gap: 6 }}>
             <div className="label-mono" style={{ marginBottom: 4 }}>This printing</div>
             <Row k="Set" v={<Link href={`/set/${printing.set_code}`} style={{ color: 'var(--accent)' }}>{printing.set_code.toUpperCase()}</Link>} />
-            <Row k="Collector #" v={printing.collector_number ?? '—'} />
-            <Row k="Released" v={printing.released_at ?? '—'} />
-            <Row k="Rarity" v={printing.rarity ? printing.rarity : '—'} />
-            <Row k="Artist" v={printing.artist ?? '—'} />
+            <Row k="Collector #" v={printing.collector_number ?? '-'} />
+            <Row k="Released" v={printing.released_at ?? '-'} />
+            <Row k="Rarity" v={printing.rarity ? printing.rarity : '-'} />
+            <Row k="Artist" v={printing.artist ?? '-'} />
             <Row k="Language" v={(printing.lang ?? 'en').toUpperCase()} />
             <Row k="Layout" v={oracle.layout ?? 'normal'} />
             {(printing.borderless || printing.full_art || printing.promo || printing.reprint) && (
@@ -222,7 +222,7 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
               <span style={{
                 fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
                 background: 'rgba(180,65,70,0.14)', color: 'var(--red)', letterSpacing: 0.4, textTransform: 'uppercase',
-              }} title="On the WOTC Reserved List — will never be reprinted in a tournament-legal set.">Reserved list</span>
+              }} title="On the WOTC Reserved List, will never be reprinted in a tournament-legal set.">Reserved list</span>
             )}
             {oracle.game_changer && (
               <span style={{

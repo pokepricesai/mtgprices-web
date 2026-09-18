@@ -18,7 +18,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!deck) return NextResponse.json({ error: 'deck not found' }, { status: 404 })
 
   const rows = await getDeckCards(id)
-  if (rows.length === 0) return new NextResponse(`// ${deck.name} — ${deck.format}\n`, {
+  if (rows.length === 0) return new NextResponse(`// ${deck.name}, ${deck.format}\n`, {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   })
 

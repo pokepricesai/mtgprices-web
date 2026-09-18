@@ -1,7 +1,7 @@
 // src/lib/mtg/simulation/deck-export.ts
 //
 // Convert an MTGPrices AdapterDeck to the text formats that Forge
-// and XMage understand. Nothing here talks to an engine — this is
+// and XMage understand. Nothing here talks to an engine, this is
 // pure text transformation with the printing metadata we already
 // have in mtg_printings. Adapters call one of these to produce the
 // engine-native deck text, then hand it to their process.
@@ -14,7 +14,7 @@ import type { AdapterDeck } from './rules-engine-adapter'
  *  hydrate this from mtg_oracle_cards + mtg_printings and pass it in.
  *
  *  For split / DFC cards `name` MUST be the aggregate ("Fire // Ice",
- *  "Delver of Secrets // Insectile Aberration") — this is what both
+ *  "Delver of Secrets // Insectile Aberration"), this is what both
  *  engines' card databases key on. */
 export type ExportCardMeta = {
   oracle_card_id: string

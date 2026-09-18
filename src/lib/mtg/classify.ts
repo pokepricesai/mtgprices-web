@@ -1,7 +1,7 @@
 // src/lib/mtg/classify.ts
 //
 // Thin re-export shim for the UI. The taxonomy + classifier live in
-// ./capabilities.ts — that is the single source of truth used by both
+// ./capabilities.ts, that is the single source of truth used by both
 // the Next.js app and the backfill scripts.
 
 export {

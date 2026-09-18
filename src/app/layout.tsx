@@ -9,7 +9,7 @@ import { SITE_LAUNCHED, SITE_URL } from '@/lib/launch'
 const SITE_NAME = 'MTGPrices'
 const SITE_TAGLINE = 'Live MTG card prices, sets, and history'
 const SITE_DESCRIPTION =
-  'MTGPrices — live Magic: The Gathering card prices, printings, historical charts and set catalogue. Powered by Scryfall + MTGJSON. Free, no login required.'
+  'MTGPrices. Live Magic: The Gathering card prices, printings, historical charts and set catalogue. Powered by Scryfall and MTGJSON. Free, no login required.'
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
 
@@ -39,7 +39,7 @@ const PRE_LAUNCH_ROBOTS: NonNullable<Metadata['robots']> = {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    default: `${SITE_NAME}. ${SITE_TAGLINE}`,
     template: `%s · ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -54,13 +54,13 @@ export const metadata: Metadata = {
     // the fallback for pages that don't set one (currently just "/").
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    title: `${SITE_NAME}. ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
     // Images auto-attached from src/app/opengraph-image.tsx
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    title: `${SITE_NAME}. ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
   },
   alternates: { canonical: SITE_URL },

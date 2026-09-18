@@ -27,7 +27,7 @@ export type BuildPipelineInput = {
   useCollection: boolean
   budgetMax?: number
   budgetCurrency?: 'USD' | 'EUR'
-  /** Test seams — allow the mocked test suite to inject deterministic
+  /** Test seams, allow the mocked test suite to inject deterministic
    *  responses. Never set from production code. */
   overrides?: {
     plan?: BuildPlan | null
@@ -237,13 +237,13 @@ export async function runBuildPipeline(input: BuildPipelineInput): Promise<Build
 
   // Enforce singleton: dedupe quantity>1 for singleton formats before
   // running the validator. Model may occasionally emit qty=2 on a
-  // Commander card by mistake — repair mechanically.
+  // Commander card by mistake, repair mechanically.
   if (rule.singleton) {
     for (const m of verified.value.main) {
       const o = oracleById.get(m.oracle_card_id)
       // Basic lands (auto-filled by the save endpoint) shouldn't appear
       // in main[]. When they do, or when the card isn't hydrated,
-      // enforce qty=1 — singleton is the format contract.
+      // enforce qty=1, singleton is the format contract.
       if (!o || !isBasicLand(o.type_line)) m.quantity = 1
     }
   }
@@ -406,7 +406,7 @@ function validateSelection(
       keywords: o.keywords ?? null, oracle_text: o.oracle_text ?? null, legality: 'legal',
     })
   }
-  // Phantom basics — quantity from build.basic_lands_to_add or the
+  // Phantom basics, quantity from build.basic_lands_to_add or the
   // target when the model omitted the field. Uses a fake oracle_id so
   // the singleton rule (which is per-oracle) does not fire.
   const basicCount = Math.max(build.basic_lands_to_add ?? 0, targetBasics > 0 ? targetBasics : 0)
@@ -414,7 +414,7 @@ function validateSelection(
     cards.push({
       oracle_card_id: '00000000-0000-0000-0000-00000000ba51' as any,
       name: 'Basic Land (phantom)', quantity: basicCount, zone: 'main',
-      type_line: 'Basic Land — Island', color_identity: null,
+      type_line: 'Basic Land, Island', color_identity: null,
       keywords: null, oracle_text: null, legality: 'legal',
     })
   }
@@ -458,7 +458,7 @@ async function attemptRepair(input: RepairInput): Promise<
 
   const rule = getFormatRule(input.format)!
   const parts: string[] = []
-  parts.push('Repair the invalid draft. Emit the FULL BuildSchema — you may reuse commanders + most of "main" verbatim, only change the minimum needed to fix these issues:')
+  parts.push('Repair the invalid draft. Emit the FULL BuildSchema, you may reuse commanders + most of "main" verbatim, only change the minimum needed to fix these issues:')
   for (const i of fixable) parts.push(`  - ${i.message}`)
   parts.push('')
   parts.push(`Format: ${rule.label}. Singleton: ${rule.singleton}. Deck size target: ${rule.minDeckSize} + commander.`)
@@ -470,7 +470,7 @@ async function attemptRepair(input: RepairInput): Promise<
     parts.push(`    ${m.oracle_card_id} | x${m.quantity} | ${o.name ?? '?'}`)
   }
   parts.push('')
-  parts.push('Available additional candidates (append or swap in from here — every ID must appear below or already be in the draft):')
+  parts.push('Available additional candidates (append or swap in from here, every ID must appear below or already be in the draft):')
   const usedIds = new Set([...input.build.commanders, ...input.build.main.map((m) => m.oracle_card_id)])
   const available = input.pool.candidates.filter((c) => !usedIds.has(c.oracle_card_id)).slice(0, 120)
   for (const c of available) parts.push(`  ${c.oracle_card_id} | ${c.name} | ${c.type_line ?? ''} | ${(c.capabilities ?? []).join('/')}`)

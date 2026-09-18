@@ -1,7 +1,7 @@
 // src/lib/mtg/simulation/probability.ts
 //
 // Closed-form hypergeometric helpers. Not used in the hot simulation
-// loop — kept here for (1) validation of Monte Carlo results in tests
+// loop, kept here for (1) validation of Monte Carlo results in tests
 // and (2) fast approximate probabilities the UI can quote without
 // running 10k simulations.
 //
@@ -34,13 +34,13 @@ function logComb(n: number, k: number): number {
   return logGamma(n + 1) - logGamma(k + 1) - logGamma(n - k + 1)
 }
 
-/** P(X = k) — hypergeometric point probability. */
+/** P(X = k), hypergeometric point probability. */
 export function hyperPmf(N: number, K: number, n: number, k: number): number {
   if (k < 0 || k > n || k > K || (n - k) > (N - K)) return 0
   return Math.exp(logComb(K, k) + logComb(N - K, n - k) - logComb(N, n))
 }
 
-/** P(X ≥ k) — hypergeometric right tail. */
+/** P(X ≥ k), hypergeometric right tail. */
 export function hyperAtLeast(N: number, K: number, n: number, k: number): number {
   let p = 0
   const upper = Math.min(n, K)
@@ -48,7 +48,7 @@ export function hyperAtLeast(N: number, K: number, n: number, k: number): number
   return p
 }
 
-/** P(X ≤ k) — hypergeometric left tail. */
+/** P(X ≤ k), hypergeometric left tail. */
 export function hyperAtMost(N: number, K: number, n: number, k: number): number {
   let p = 0
   const lower = Math.max(0, n - (N - K))
@@ -57,7 +57,7 @@ export function hyperAtMost(N: number, K: number, n: number, k: number): number 
 }
 
 /** Convenience: probability of drawing at least one success in n
- *  draws — the classic "chance of seeing a specific card by turn T"
+ *  draws, the classic "chance of seeing a specific card by turn T"
  *  when K is small (e.g. K=1 for a specific singleton). */
 export function pAtLeastOne(N: number, K: number, n: number): number {
   return hyperAtLeast(N, K, n, 1)

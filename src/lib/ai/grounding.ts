@@ -10,7 +10,7 @@
 //   4. Add-target must be inside the commander colour identity when
 //      applicable.
 //   5. The deterministic validator runs against the RESULTING deck
-//      (with the proposed swaps applied) — if it fails, the suggestion
+//      (with the proposed swaps applied), if it fails, the suggestion
 //      is refused with an explanation.
 
 import 'server-only'
@@ -53,7 +53,7 @@ export const ReplaceSchema = z.object({
   })).max(12),
 })
 
-// Build schema — kept small so Sonnet 5 can emit it in reasonable
+// Build schema, kept small so Sonnet 5 can emit it in reasonable
 // time. main[] is capped at 45 named cards; `basic_lands_to_add`
 // tells the save endpoint to auto-fill the remainder with basic
 // Islands/Plains/Swamps/Mountains/Forests picked from the

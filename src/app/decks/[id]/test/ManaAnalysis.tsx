@@ -1,6 +1,6 @@
 'use client'
 // Mana analysis: colour-source composition vs mana-cost pressure.
-// Deliberately conservative — categorises rocks, mana creatures, and
+// Deliberately conservative, categorises rocks, mana creatures, and
 // conditional lands separately from basic + non-basic-untapped.
 
 import { useMemo } from 'react'
@@ -41,8 +41,8 @@ export default function ManaAnalysis({ library }: { library: ClientSimLibrary })
         <tbody>
           {[
             { key: 'basic_land', label: 'Basic lands', tail: 'Always untapped, always produces their named colour.' },
-            { key: 'nonbasic_untapped', label: 'Non-basic lands (untapped default)', tail: 'Shock lands, duals, City of Brass — enter untapped in the default player line.' },
-            { key: 'nonbasic_conditional', label: 'Non-basic lands (conditional / enters tapped)', tail: 'Tap-lands, check-lands, fetch lands — real lands, not counted as turn-1 coloured sources.' },
+            { key: 'nonbasic_untapped', label: 'Non-basic lands (untapped default)', tail: 'Shock lands, duals, City of Brass, enter untapped in the default player line.' },
+            { key: 'nonbasic_conditional', label: 'Non-basic lands (conditional / enters tapped)', tail: 'Tap-lands, check-lands, fetch lands, real lands, not counted as turn-1 coloured sources.' },
             { key: 'colourless_land', label: 'Colourless lands', tail: 'Lands producing only colourless (Wastes / utility lands).' },
             { key: 'mana_rock', label: 'Mana rocks', tail: 'Non-land artifact mana. Not equivalent to a turn-1 land.' },
             { key: 'mana_creature', label: 'Mana creatures', tail: 'Creatures that tap for mana. Summoning sickness first turn.' },
@@ -92,14 +92,14 @@ export default function ManaAnalysis({ library }: { library: ClientSimLibrary })
             <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c}</div>
             <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{pressure[c].toFixed(1)}</div>
             <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-              {totalPressure > 0 ? `${((pressure[c] / totalPressure) * 100).toFixed(0)}%` : '—'}
+              {totalPressure > 0 ? `${((pressure[c] / totalPressure) * 100).toFixed(0)}%` : '-'}
             </div>
           </div>
         ))}
       </div>
       <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 18 }}>
         Coloured mana symbols across all non-land cards (commanders included). Hybrid symbols split evenly between the two colours.
-        This is factual pressure — compare against the untapped sources above. We do NOT claim a "correct" count of coloured sources.
+        This is factual pressure, compare against the untapped sources above. We do NOT claim a "correct" count of coloured sources.
       </div>
     </section>
   )

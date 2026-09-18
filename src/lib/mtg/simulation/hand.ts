@@ -31,7 +31,7 @@ export function drawN(state: LibraryDeck, n: number): SimCard[] {
  *  the remaining library state.
  *
  *  The manual (UI) flow calls drawN(state, 7) directly and lets the
- *  user pick cards to bottom themselves — this helper is for
+ *  user pick cards to bottom themselves, this helper is for
  *  automated / simulation mulliganing. */
 export type BottomStrategy = (hand: SimCard[], m: number) => SimCard[]
 

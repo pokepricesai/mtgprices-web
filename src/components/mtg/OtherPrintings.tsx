@@ -1,6 +1,6 @@
 // src/components/mtg/OtherPrintings.tsx
 // Grid of other printings for the same oracle card.
-// Server component — takes pre-computed headline prices from the parent.
+// Server component, takes pre-computed headline prices from the parent.
 
 import Link from 'next/link'
 import { buildCardSlug, type MtgPrinting } from '@/lib/mtg/cards'
@@ -21,7 +21,7 @@ const RARITY_COLOR: Record<string, string> = {
 }
 
 function fmtUSD(v: number | undefined): string {
-  if (v === undefined || v === null || !Number.isFinite(v)) return '—'
+  if (v === undefined || v === null || !Number.isFinite(v)) return '-'
   return `$${v.toFixed(2)}`
 }
 
@@ -105,7 +105,7 @@ export default function OtherPrintings({ currentPrintingId, otherPrintings, head
               <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', gap: 6, alignItems: 'center' }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: dot }} aria-hidden />
                 <span style={{ textTransform: 'uppercase' }}>{p.set_code}</span>
-                <span>· #{p.collector_number ?? '—'}</span>
+                <span>· #{p.collector_number ?? '-'}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 4 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.released_at ?? ''}</span>

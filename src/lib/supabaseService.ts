@@ -2,7 +2,7 @@
 // Server-only Supabase client backed by the service-role key.
 //
 // `import 'server-only'` makes Next.js fail the build if any client
-// component or client bundle tries to import this module — that is the
+// component or client bundle tries to import this module, that is the
 // guard that keeps the service-role key out of the browser.
 //
 // Credentials are read lazily, only on first use, and never logged.

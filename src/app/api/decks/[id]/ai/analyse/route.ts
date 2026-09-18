@@ -1,5 +1,5 @@
 // app/api/decks/[id]/ai/analyse/route.ts
-// "Analyse deck" — sections grounded in DeckContext.
+// "Analyse deck", sections grounded in DeckContext.
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { getCurrentUser } from '@/lib/supabase/server'

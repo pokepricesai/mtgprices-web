@@ -107,7 +107,7 @@ export default function LoginClient({ nextPath, initialError }: Props) {
           padding: 12, background: 'rgba(43,134,89,0.10)', border: '1px solid rgba(43,134,89,0.28)',
           borderRadius: 10, color: 'var(--green)', fontSize: 13,
         }}>
-          Check your inbox — a magic-link sign-in email is on the way.
+          Check your inbox. A magic link sign in email is on the way.
         </div>
       )}
     </div>

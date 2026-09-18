@@ -1,7 +1,7 @@
 // app/api/decks/new-ai/save/route.ts
 // Saves an AI-drafted deck AFTER user confirmation. Re-runs
 // deterministic validation on the exact contents the user is about
-// to commit — the AI's confirmation isn't trusted.
+// to commit, the AI's confirmation isn't trusted.
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { getCurrentUser, getSupabaseServerClient } from '@/lib/supabase/server'
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
         .select('id, name, type_line')
         .ilike('type_line', 'Basic Land%')
         .in('name', wantedNames)
-      // Dedup by name — a name like "Plains" can appear multiple times
+      // Dedup by name, a name like "Plains" can appear multiple times
       // in the oracle table across special basic printings (snow, full-art).
       const byName = new Map<string, { id: string; name: string }>()
       for (const b of (basics ?? []) as any[]) if (!byName.has(b.name)) byName.set(b.name, { id: b.id, name: b.name })

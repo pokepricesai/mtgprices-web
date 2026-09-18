@@ -1,5 +1,5 @@
 'use client'
-// Owner-only shopping list. Deterministic — fetches missing-card data
+// Owner-only shopping list. Deterministic, fetches missing-card data
 // from /api/decks/[id]/shopping. Never touches AI.
 
 import { useEffect, useMemo, useState } from 'react'
@@ -74,7 +74,7 @@ export default function DeckShoppingPanel({ deckId }: Props) {
               label={`Total (${data.basis.provider} ${data.basis.currency})`}
               v={totals?.estimatedCost != null && totals.estimatedCost > 0
                 ? `${currencyPrefix(data.basis.currency)}${totals.estimatedCost.toFixed(2)}`
-                : '—'}
+                : '-'}
             />
             {(totals?.linesWithoutPrice ?? 0) > 0 && <Mini label="No price" v={String(totals!.linesWithoutPrice)} />}
           </div>

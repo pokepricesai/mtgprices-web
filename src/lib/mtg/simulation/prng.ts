@@ -1,10 +1,10 @@
 // src/lib/mtg/simulation/prng.ts
 //
-// Seedable pseudo-random number generator. Deterministic — the same
+// Seedable pseudo-random number generator. Deterministic, the same
 // seed always produces the same sequence, so simulations can be
 // reproduced for debugging or test assertion.
 //
-// Algorithm: xoshiro128** — small state (128 bits), good statistical
+// Algorithm: xoshiro128**, small state (128 bits), good statistical
 // properties, extremely fast. Not cryptographically secure; that is
 // not the goal.
 
@@ -24,7 +24,7 @@ function mulberryExpand(seed: number): [number, number, number, number] {
   return [next(), next(), next(), next()]
 }
 
-/** xoshiro128** — returns a function that yields floats in [0, 1). */
+/** xoshiro128**, returns a function that yields floats in [0, 1). */
 export function makePrng(seed: number): PRNG {
   let [s0, s1, s2, s3] = mulberryExpand(seed >>> 0)
   return function next(): number {
@@ -42,7 +42,7 @@ export function makePrng(seed: number): PRNG {
 }
 
 /** A convenient default seed for one-off use. Uses the current
- *  millisecond clock — do NOT use where reproducibility matters.
+ *  millisecond clock, do NOT use where reproducibility matters.
  *  For reproducible results, pass an explicit seed to makePrng. */
 export function defaultSeed(): number {
   return Date.now() ^ Math.floor(Math.random() * 0x7fffffff)

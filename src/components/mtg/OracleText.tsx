@@ -1,6 +1,6 @@
 // src/components/mtg/OracleText.tsx
 // Renders MTG Oracle text preserving line breaks and inline mana symbols.
-// Never uses dangerouslySetInnerHTML — every token is a real React node.
+// Never uses dangerouslySetInnerHTML, every token is a real React node.
 
 import { parseManaCost, manaColors } from '@/lib/mtg/mana'
 

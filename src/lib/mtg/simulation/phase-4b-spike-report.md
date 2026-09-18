@@ -1,4 +1,4 @@
-# Phase 4B Spike — Rules Engine Integration Report
+# Phase 4B Spike, Rules Engine Integration Report
 
 **Status:** Spike only. Nothing deployed. No cloud infrastructure
 provisioned. `SITE_LAUNCHED=false` unchanged. Phase 4C not started.
@@ -7,7 +7,7 @@ provisioned. `SITE_LAUNCHED=false` unchanged. Phase 4C not started.
 
 ## 1. Constraint acknowledged upfront
 
-The local dev machine for this spike has Node.js + git only — no JVM,
+The local dev machine for this spike has Node.js + git only, no JVM,
 no Maven, no cargo, no Docker. That means:
 
 - **Verified by direct code inspection** of each engine's source tree
@@ -29,7 +29,7 @@ no Maven, no cargo, no Docker. That means:
 - **Simulation Mode entry point:** `forge-gui-desktop/src/main/java/forge/view/SimulateMatch.java`. Verified.
 - **CLI surface (verified in source):** `sim -d <deck>… -D <dir> -n <N> -m <M> -t <bracket|swiss|roundrobin> -f <format> -s <seed> -a <ai-profile> -c <clock-sec> -q`. Format defaults to Constructed; `-f commander` supported.
 - **Deterministic seed:** `-s <seed>` calls `MyRandom.setRandom(new Random(seed))`. Yes.
-- **Deck format:** `.dck` — `[metadata]` + `[main]` + optional `[commander]` / `[sideboard]` / `[companion]`. Deck lines are `<count> <Name>|<SET>`. Trivial to generate from MTGPrices printings. Exporter shipped in `src/lib/mtg/simulation/deck-export.ts` and unit-tested.
+- **Deck format:** `.dck`, `[metadata]` + `[main]` + optional `[commander]` / `[sideboard]` / `[companion]`. Deck lines are `<count> <Name>|<SET>`. Trivial to generate from MTGPrices printings. Exporter shipped in `src/lib/mtg/simulation/deck-export.ts` and unit-tested.
 - **Output shape:** `System.out.println(GameLogEntry)` per event; final line `"Game Result: Game N ended in X ms. NAME has won!"`. Structured internally (`Game.getGameLog().getLogEntries(...)`) but the CLI emits line-based text. Structured JSON would require either (a) a small Java patch adding a `-o json` flag, or (b) parsing the text (fragile), or (c) using Manabrew's `forge-harness` which already exposes JSON around the same engine.
 - **Card corpus:** **33,865 card-script `.txt` files** counted on HEAD. Coverage against real MTGPrices decks (measured, this spike):
 
@@ -38,8 +38,8 @@ no Maven, no cargo, no Docker. That means:
   | Synthetic 60-card Modern legal cards | 60 / 60 | **100.0%** |
   | Real 99-card Commander (my Phase-3C test deck) | 15 / 16 | **93.8%** (missed: "Undulating Witness", a recent set) |
   | Synthetic 100-card Commander legal cards | 99 / 100 | **99.0%** (missed: "Make a _____ Splash", an Un-set joke card) |
-- **Commander support:** yes — `RegisteredPlayer.forCommander(d)` + `GameType.Commander` in SimulateMatch.
-- **AI quality:** competent — used by the Forge desktop client's single-player mode. Multiple AI profiles selectable via `-a`.
+- **Commander support:** yes, `RegisteredPlayer.forCommander(d)` + `GameType.Commander` in SimulateMatch.
+- **AI quality:** competent, used by the Forge desktop client's single-player mode. Multiple AI profiles selectable via `-a`.
 - **Process model:** each `SimulateMatch.simulate(args)` call re-initialises the model (`FModel.initialize(null, null)`) which loads the entire card DB into memory. Community wisdom says this is ~30–60s cold start, ~2 GB RAM per JVM. Running many games in one process amortises this cost.
 - **Startup overhead:** significant per-JVM. Long-lived worker is essential.
 - **Not verified locally:** actual timing, actual RAM footprint.
@@ -50,26 +50,26 @@ no Maven, no cargo, no Docker. That means:
 - **API surface (test-mode):** `setDecknamePlayerA("Deck.dck")`, `createPlayer(game, name, deckName)`, `castSpell(turn, phase, player, name)`, `attack(...)`, `block(...)`, `setStopAt(turn, phase)`, `execute()`. Assertions include `assertLife(player, N)`, `assertHandCount`, `assertBattlefieldCount`, `assertExileCount`, `assertCommandZoneCount`, etc. Verified in `AnafenzaTest.java`.
 - **Deterministic seed:** not obvious from the test harness. Wire protocol (JBoss Remoting) governs online play; test-mode has fixed-state setup, which is a different kind of determinism.
 - **Deck format:** `<count> [<SET>:<CN>] <Name>`. Verified in `Mage.Tests/CMDNorinTheWary.dck`. Exporter shipped in `deck-export.ts`.
-- **Output shape:** in-JVM. Game state accessed via assertion methods on `CardTestPlayerAPIImpl` — programmatic and structured, but *not* serialised to JSON out of the box. Would require a JSON serialiser layer.
+- **Output shape:** in-JVM. Game state accessed via assertion methods on `CardTestPlayerAPIImpl`, programmatic and structured, but *not* serialised to JSON out of the box. Would require a JSON serialiser layer.
 - **Card corpus:** README claim "~32,000 unique cards and 91,000 reprints." Not remeasured here (would require building the project).
-- **Commander support:** yes — `CommanderDuel(MultiplayerAttackOption.LEFT, RangeOfInfluence.ONE, MulliganType.GAME_DEFAULT.getMulligan(0), 40, 7)` in test harness.
+- **Commander support:** yes, `CommanderDuel(MultiplayerAttackOption.LEFT, RangeOfInfluence.ONE, MulliganType.GAME_DEFAULT.getMulligan(0), 40, 7)` in test harness.
 - **AI quality:** README calls it "server-side AI." Community reports it as playable but slower than Forge's.
-- **Process model:** JBoss Remoting server (`Mage.Server`), designed as a long-running lobby. Test-mode is JUnit-invocable — an embedded rules engine. Runs headless with `-Djava.awt.headless=true`.
+- **Process model:** JBoss Remoting server (`Mage.Server`), designed as a long-running lobby. Test-mode is JUnit-invocable, an embedded rules engine. Runs headless with `-Djava.awt.headless=true`.
 - **Wire protocol:** JBoss Remoting (Java RMI-style). **No HTTP/JSON on the box.** Making XMage speak JSON requires a Java shim.
 - **Integration difficulty:** higher than Forge. There is no upstream JSON adapter; we'd write one.
 
-### 2.3 Manabrew — Rust/WASM path (`witchesofthehill/manabrew`, AGPL-3.0)
+### 2.3 Manabrew, Rust/WASM path (`witchesofthehill/manabrew`, AGPL-3.0)
 
 - **Rust engine crates verified:** `manabrew-rs/crates/manabrew-engine`, `forge-carddb`, `forge-foundation`, `manabrew_game_runtime`, `manabrew-agent-interface`.
-- **Card corpus source:** the Rust engine parses **Forge's card scripts** — same 33,865 files. Coverage BOUNDED ABOVE by Forge's corpus, in practice lower because not every Forge mechanic is implemented in Rust yet. Manabrew's own docs (`docs.manabrew.app/formats/`) acknowledge "broad card coverage still in progress."
-- **WASM viability:** yes — `forge-harness/native/wasm-src/` + `build-wasm.sh` present. Manabrew ships a WASM engine for the browser.
-- **Headless server viability:** the Rust engine can also drive the Java Forge — see section 2.4 — so the Rust engine + Java Forge fallback pattern gives you both a browser path and a server path from the same codebase.
-- **Determinism:** yes — engine takes an explicit seed (verified in `manabrew-rs/crates/manabrew-engine`).
+- **Card corpus source:** the Rust engine parses **Forge's card scripts**, same 33,865 files. Coverage BOUNDED ABOVE by Forge's corpus, in practice lower because not every Forge mechanic is implemented in Rust yet. Manabrew's own docs (`docs.manabrew.app/formats/`) acknowledge "broad card coverage still in progress."
+- **WASM viability:** yes, `forge-harness/native/wasm-src/` + `build-wasm.sh` present. Manabrew ships a WASM engine for the browser.
+- **Headless server viability:** the Rust engine can also drive the Java Forge, see section 2.4, so the Rust engine + Java Forge fallback pattern gives you both a browser path and a server path from the same codebase.
+- **Determinism:** yes, engine takes an explicit seed (verified in `manabrew-rs/crates/manabrew-engine`).
 - **Game-state API:** structured Rust types; serialised via `manabrew-protocol` and `manabrew-relay-protocol`. JSON-friendly.
 - **AI:** `manabot` crate in the workspace. Not evaluated for quality here.
 - **Key risk:** the pure-Rust engine's card coverage is genuinely in flux and less well-tested than Forge's. Public docs suggest "some mechanics not yet supported."
 
-### 2.4 Manabrew — Java Forge-backed path (AGPL-3.0)
+### 2.4 Manabrew, Java Forge-backed path (AGPL-3.0)
 
 **This is where the spike found the most interesting evidence.**
 
@@ -77,24 +77,24 @@ no Maven, no cargo, no Docker. That means:
   depends on `forge-core`, `forge-game`, `forge-ai`, `forge-gui` and
   **exposes a JSON API around Forge**:
   - `startGame(StartGameRequest)` / `startGameJson(String)` returning a `SessionHandle`
-  - `submitAction(sessionId, actionJson)` — advance the game one step
-  - `getPrompt(sessionId, playerIndex)` — legal-action list for a player
-  - `getSnapshot(sessionId, viewer)` — structured game state
+  - `submitAction(sessionId, actionJson)`, advance the game one step
+  - `getPrompt(sessionId, playerIndex)`, legal-action list for a player
+  - `getSnapshot(sessionId, viewer)`, structured game state
   - `getGameOver(sessionId)` / `endGameJson(sessionId)` / `abortGameJson(sessionId)`
   Verified in `src/main/java/forge/harness/host/ManaBrewEngineAdapter.java`.
-- **`self-hosted-node`** — Rust binary that hosts N concurrent games against ONE in-process Forge engine. GraalVM native-image compiles the Java harness to a shared library (`libforgeharness.so` / `.dll`) so runtime has no JVM startup cost — the 33k-card database loads once per node. Verified in the crate's `Dockerfile` (`FROM rust:1.88-trixie AS chef`, `FROM maven:3.9-eclipse-temurin-17 AS java-builder`, `FROM container-registry.oracle.com/graalvm/native-image:24`).
+- **`self-hosted-node`**, Rust binary that hosts N concurrent games against ONE in-process Forge engine. GraalVM native-image compiles the Java harness to a shared library (`libforgeharness.so` / `.dll`) so runtime has no JVM startup cost, the 33k-card database loads once per node. Verified in the crate's `Dockerfile` (`FROM rust:1.88-trixie AS chef`, `FROM maven:3.9-eclipse-temurin-17 AS java-builder`, `FROM container-registry.oracle.com/graalvm/native-image:24`).
 - **This is essentially the exact sidecar MTGPrices would need.** It's licensed AGPL-3.0-or-later.
 
-## 3. Licensing (documented — not legal advice)
+## 3. Licensing (documented, not legal advice)
 
 | Engine | Licence | Modifying? | Distributing binaries? | Network-use clause? |
 |---|---|---|---|---|
 | Forge | GPL-3.0 | If we patch to emit JSON | Only if we host builds | No AGPL clause |
 | XMage | MIT | Freely | Yes | None |
-| Manabrew (whole) | AGPL-3.0-or-later | Applies | Applies | **YES — Section 13** |
+| Manabrew (whole) | AGPL-3.0-or-later | Applies | Applies | **YES, Section 13** |
 | Manabrew's Forge submodule reused | GPL (Forge scripts) | See above | See above | No AGPL clause |
 
-**Practical read (NOT LEGAL ADVICE — get sign-off before commercial launch):**
+**Practical read (NOT LEGAL ADVICE, get sign-off before commercial launch):**
 
 - Running an **unmodified upstream Forge Simulation Mode** subprocess we build ourselves: GPL-3.0 obligations attach to any *distributed* binaries. If we don't publish binaries (we build from source in CI, host the container ourselves), the obligation is limited. MTGPrices's own code, running on Vercel and speaking to the container over HTTP, is not a derivative work under mainstream FSF interpretation.
 - Running an **unmodified upstream Manabrew self-hosted-node** as a separate service: AGPL Section 13 says users who *interact with the software over a network* must be offered its source. Even for unmodified upstream this obligation likely applies; the safe minimum is to add a "Powered by [Manabrew source link]" attribution and an explicit source-availability link in the UI. **Confirm with counsel before launch.**
@@ -125,7 +125,7 @@ no Maven, no cargo, no Docker. That means:
 | Cold start | 30–60 s (JVM + Forge init) | ~1 s (native binary, DB loaded once) | 30–60 s | ~1 s |
 | RAM per instance | 1.5–2 GB | ~1 GB (single engine, many rooms) | 1.5–2 GB | ~500 MB |
 | Concurrent games/instance | 1 per JVM (cheap way) or many if we thread | Many (in-process rooms) | Many (server mode) | Many |
-| Vercel Functions | ❌ (JVM can't run) | ❌ | ❌ | 🟡 WASM in a Node fn — unproven at scale |
+| Vercel Functions | ❌ (JVM can't run) | ❌ | ❌ | 🟡 WASM in a Node fn, unproven at scale |
 | Fly.io Machines | ✅ (2 GB tier) | ✅ (auto-scale weird for stateful games) | ✅ | ✅ |
 | Railway | ✅ | ✅ | ✅ | ✅ |
 | Google Cloud Run | 🟡 (cold-start pain) | ✅ (min-instances=1) | 🟡 | ✅ |
@@ -211,9 +211,9 @@ per rolling 24h; hard cap at 500 iterations per single-deck request.
 ## 7. Adapter contract
 
 Shipped in `src/lib/mtg/simulation/rules-engine-adapter.ts` (contract
-only — no engine code). Key types:
+only, no engine code). Key types:
 
-- `AdapterDeck` — MTGPrices-native (oracle_card_id + optional printing_id)
+- `AdapterDeck`, MTGPrices-native (oracle_card_id + optional printing_id)
 - `StartMatchRequest` / `StartMatchResult`
 - `GameEvent` union (turn_start, draw, mulligan, play_land, cast, attack, block, life_change, zone_move, trigger, game_end)
 - `EngineAction` union (for future interactive Phase 4C)
@@ -226,7 +226,7 @@ our shim), or a mock (already provided for tests).
 
 ## 8. Prototype
 
-Isolated inside `tests/mtg/rules-adapter-prototype.test.ts` — never
+Isolated inside `tests/mtg/rules-adapter-prototype.test.ts`, never
 touches production paths. Exercises the full pipeline **without**
 running a real engine:
 
@@ -267,7 +267,7 @@ strict subset of implementing the `RulesEngineAdapter` interface.
 | Licence risk | GPL-3.0 (well-understood) | **AGPL-3.0-or-later** (network clause) | MIT (lowest risk) | **AGPL-3.0-or-later** |
 | Engineering effort to first prod use | 3–4 weeks (write Java patch for JSON) | 1–2 weeks (Manabrew is already this) | 4–6 weeks (write JSON server) | 4–6 weeks (write app-side plumbing + verify coverage) |
 
-**Arithmetic score suggests "Forge via Manabrew harness" — but the AGPL Section 13 makes that dangerous for a commercial site without explicit legal sign-off.**
+**Arithmetic score suggests "Forge via Manabrew harness", but the AGPL Section 13 makes that dangerous for a commercial site without explicit legal sign-off.**
 
 ## 10. Recommendation
 
@@ -278,7 +278,7 @@ strict subset of implementing the `RulesEngineAdapter` interface.
    supervisor that:
    - watches Supabase `mtg_simulation_jobs` with SKIP LOCKED
    - exports each job's decks to `.dck` files (reuse the shipped
-     `toForgeDck` in this repo — GPL-compatible because it's ours)
+     `toForgeDck` in this repo, GPL-compatible because it's ours)
    - spawns `java -jar forge-gui-desktop.jar sim -d deck1 -d deck2 -f
      commander -s $SEED -c 120 -q`
    - parses the "Game Result:" line + per-turn `GameLogEntry` lines
@@ -287,7 +287,7 @@ strict subset of implementing the `RulesEngineAdapter` interface.
 2. **Optional richer output later:** a small Java patch to
    `SimulateMatch.java` adding `-o json` (emit `GameLogEntry`
    objects as JSON). Because Forge is GPL, this patch would need to
-   be published upstream or in a fork — but no AGPL network clause.
+   be published upstream or in a fork, but no AGPL network clause.
 3. Host on Fly.io Machine (~$5/mo, 2 GB RAM), min instances 1, scale
    up on queue depth. No Vercel involvement beyond the enqueue
    endpoint.
@@ -305,9 +305,9 @@ technical one.
 
 ## 11. Recommended Phase 4C path
 
-1. **Ship Phase 4A's deterministic simulator as-is.** The hypergeometric probabilities + London mulligan + manual goldfish are fast, cheap, and answer real questions. Do not remove them when 4B lands — they answer *different* questions than a rules-aware sim.
+1. **Ship Phase 4A's deterministic simulator as-is.** The hypergeometric probabilities + London mulligan + manual goldfish are fast, cheap, and answer real questions. Do not remove them when 4B lands, they answer *different* questions than a rules-aware sim.
 2. **Phase 4B (build):** Forge-shim sidecar + Supabase SKIP LOCKED queue + Realtime push. 3–4 weeks of engineering. UI adds a "Simulate a match against another deck" button on `/decks/[id]/test`.
-3. **Phase 4C (analysis):** the AI layer that CONSUMES the structured results — "your deck wins 62% vs an opposing burn shell, mainly through turn-4 board wipes; against control it drops to 34%." AI never generates the probability; the deterministic engine does.
+3. **Phase 4C (analysis):** the AI layer that CONSUMES the structured results, "your deck wins 62% vs an opposing burn shell, mainly through turn-4 board wipes; against control it drops to 34%." AI never generates the probability; the deterministic engine does.
 4. **Phase 4C.5 (evaluate again):** revisit Manabrew's Rust/WASM engine. If browser-native rules-aware sim is viable, we can move the compute off the sidecar for casual use cases while keeping the sidecar for the expensive bulk simulations.
 
 ## 12. What we DID and DID NOT do this spike

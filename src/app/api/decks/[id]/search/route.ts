@@ -46,7 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     page?: number
   }
 
-  // Parse NL first — user's explicit structured filters override.
+  // Parse NL first, user's explicit structured filters override.
   const nl = q && q.trim() ? parseFinderText(q) : { query: {} as FinderQuery, suggestions: [] as string[], warnings: [] as string[] }
   const request: Partial<FinderQuery> = {
     ...nl.query,

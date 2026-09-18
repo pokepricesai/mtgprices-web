@@ -1,4 +1,4 @@
-// Block 5A-W-50D — pin the sitemap index shape + child inventory.
+// Block 5A-W-50D, pin the sitemap index shape + child inventory.
 //
 // The audit found the sitemap index only referenced 4 card shards
 // covering row positions 1..50000, leaving 14,813 rows (dominated

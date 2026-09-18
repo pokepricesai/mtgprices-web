@@ -1,5 +1,5 @@
 // app/api/decks/[id]/ai/improve/route.ts
-// "Improve my deck" — 3-5 grounded swap suggestions.
+// "Improve my deck", 3-5 grounded swap suggestions.
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { getCurrentUser } from '@/lib/supabase/server'
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
-  // Deterministic shopping-preview across all cards to be ADDED —
+  // Deterministic shopping-preview across all cards to be ADDED ,
   // shows the user the missing-card cost of accepting every suggestion.
   const addEntries = verified.value.suggestions.map((sug) => {
     const card = cardById.get(sug.add_oracle_card_id) ?? null

@@ -1,6 +1,6 @@
 'use client'
 // Rules-aware simulation surface. Gated on
-// NEXT_PUBLIC_RULES_ENGINE_ENABLED — parent decides whether to render.
+// NEXT_PUBLIC_RULES_ENGINE_ENABLED, parent decides whether to render.
 //
 // This is a Phase 4B.2 v1: no AI interpretation, factual reporting
 // only. Every displayed number carries the engine name + version.
@@ -103,7 +103,7 @@ export default function RulesAwareSim({ deck }: { deck: ClientDeckMeta }) {
     <section>
       <div style={{ padding: 10, background: 'var(--amber-soft, rgba(232,169,75,0.10))', color: 'var(--amber, #a0813f)', border: '1px solid rgba(232,169,75,0.28)', borderRadius: 8, fontSize: 12, marginBottom: 10 }}>
         Phase 4B preview. Rules-aware simulation runs against a real MTG rules engine (Forge).
-        Numbers below describe THIS matchup and THIS engine version only — not a universal win rate.
+        Numbers below describe THIS matchup and THIS engine version only, not a universal win rate.
       </div>
 
       {decks.length === 0 && (
@@ -154,7 +154,7 @@ export default function RulesAwareSim({ deck }: { deck: ClientDeckMeta }) {
             {unsupported.map((c) => <li key={c.oracle_card_id}>{c.name}</li>)}
           </ul>
           <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)' }}>
-            Very recently released cards and Un-set jokes are the usual cause. We do not silently drop cards — remove them from both decks or wait for a Forge release that adds them.
+            Very recently released cards and Un-set jokes are the usual cause. We do not silently drop cards, remove them from both decks or wait for a Forge release that adds them.
           </div>
         </div>
       )}

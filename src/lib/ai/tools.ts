@@ -2,14 +2,14 @@
 //
 // Factual tools exposed to the AI. Each tool is a thin wrapper over an
 // existing Phase 3A/3B primitive. Every card the tools return has its
-// `oracle_card_id` recorded in `AuthorisedOracles` — the grounding
+// `oracle_card_id` recorded in `AuthorisedOracles`, the grounding
 // contract later rejects any AI-proposed Oracle ID that was not
 // authorised by a real tool call.
 //
-// Tools intentionally do NOT accept `deck_id` as an argument — that
+// Tools intentionally do NOT accept `deck_id` as an argument, that
 // would let the model target a different deck. The deck is bound at
 // construction time via `bindDeckTools(deck)`. Same principle for the
-// caller's user_id — never trusted from the model.
+// caller's user_id, never trusted from the model.
 
 import 'server-only'
 import { tool } from 'ai'
@@ -37,7 +37,7 @@ export type BoundTools = {
  *  return during a run. */
 export function bindDeckTools(deck: DeckContext): BoundTools {
   const authorised: AuthorisedOracles = new Set(
-    // Cards already in the deck count as authorised — the model may
+    // Cards already in the deck count as authorised, the model may
     // reference them (e.g. suggesting a swap that removes one).
     deck.commanders.concat(deck.main, deck.sideboard, deck.companion, deck.maybeboard)
       .map((c) => c.oracle_card_id)
@@ -51,7 +51,7 @@ export function bindDeckTools(deck: DeckContext): BoundTools {
           'Return the current deck state: name, format, commanders, main/sideboard/companion/maybeboard, curve, colour identity, type breakdown, capability counts, ownership summary, deck value at the user\'s valuation basis, and validation state.',
         inputSchema: z.object({}),
         execute: async () => {
-          // Compact view — omit fields the model can rederive:
+          // Compact view, omit fields the model can rederive:
           //   - per-card `colors` (subset of colour identity)
           //   - per-card `capabilities` (aggregate is in capabilityBreakdown)
           //   - per-card current_price when null
@@ -108,7 +108,7 @@ export function bindDeckTools(deck: DeckContext): BoundTools {
 
       searchLegalCards: tool({
         description:
-          'Search MTG cards legal in the current deck\'s format (auto-scoped) and — for Commander formats — inside the commander colour identity (auto-scoped). Structured filters ONLY: no free-text search. Returns up to 30 candidates with oracle_card_id, mana cost, type_line, colors, capabilities, owned quantity and price at the deck\'s valuation basis.',
+          'Search MTG cards legal in the current deck\'s format (auto-scoped) and, for Commander formats, inside the commander colour identity (auto-scoped). Structured filters ONLY: no free-text search. Returns up to 30 candidates with oracle_card_id, mana cost, type_line, colors, capabilities, owned quantity and price at the deck\'s valuation basis.',
         inputSchema: z.object({
           capabilities: z.array(z.string()).describe('Zero or more capability tags to require (AND). Examples: "card-draw", "ramp", "creature-removal", "board-wipe", "counter-spell", "tutor", "token-creation", "protection", "graveyard-interaction".').optional(),
           types: z.array(z.string()).describe('Optional card types to require. Examples: "Creature", "Instant", "Sorcery", "Enchantment", "Artifact", "Planeswalker", "Land".').optional(),
@@ -134,7 +134,7 @@ export function bindDeckTools(deck: DeckContext): BoundTools {
             missingOnly: Boolean(args.missingOnly),
             excludeInDeck: args.excludeInDeck ?? true,
             page: args.page ?? 1,
-            // Cap at 10 hits per call. Down from 15 — combined with the
+            // Cap at 10 hits per call. Down from 15, combined with the
             // colours/reasons trim below this cut live Improve input
             // tokens roughly in half.
             pageSize: 10,
@@ -266,7 +266,7 @@ export function bindDeckTools(deck: DeckContext): BoundTools {
   }
 }
 
-/** Same tools but with a limited scope — used for deck BUILDING (no
+/** Same tools but with a limited scope, used for deck BUILDING (no
  *  existing deck yet). Instead of a DeckContext we pass format +
  *  optional commander IDs. */
 export function bindBuilderTools(input: {
@@ -295,7 +295,7 @@ export function bindBuilderTools(input: {
     tools: {
       searchLegalCards: tool({
         description:
-          'Search cards legal in the target format (auto-scoped). For Commander with a chosen commander, colour identity is auto-scoped. Use structured filters — no free-text.',
+          'Search cards legal in the target format (auto-scoped). For Commander with a chosen commander, colour identity is auto-scoped. Use structured filters, no free-text.',
         inputSchema: z.object({
           capabilities: z.array(z.string()).optional(),
           types: z.array(z.string()).optional(),
@@ -307,7 +307,7 @@ export function bindBuilderTools(input: {
         }),
         execute: async (args) => {
           const ci = await commanderCI
-          // Delegate to a lightweight direct RPC call — reusing
+          // Delegate to a lightweight direct RPC call, reusing
           // searchLegalCards() would require a full DeckContext.
           const { data: rows, error } = await s.rpc('mtg_search_oracle_cards', {
             p_capabilities: args.capabilities && args.capabilities.length > 0 ? args.capabilities : null,
@@ -322,7 +322,7 @@ export function bindBuilderTools(input: {
           if (error) return { error: error.message }
           let hits = (rows ?? []) as any[]
 
-          // Owned filter — use the caller's collection via server client.
+          // Owned filter, use the caller's collection via server client.
           // getSupabaseServerClient() only called here so the tool
           // still works from Node scripts when ownedOnly=false.
           if (args.ownedOnly && hits.length > 0) {

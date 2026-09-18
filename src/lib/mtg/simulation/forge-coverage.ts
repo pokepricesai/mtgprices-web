@@ -11,7 +11,7 @@
 //   - lowercase, trimmed
 //
 // Split / DFC cards (name "Fire // Ice") are matched either as the
-// aggregate OR the primary face — Forge keys on both in practice.
+// aggregate OR the primary face, Forge keys on both in practice.
 
 import 'server-only'
 import corpus from './forge-corpus.json'
@@ -24,7 +24,7 @@ export function forgeNormalise(name: string): string {
     .replace(/æ/g, 'ae').replace(/Æ/g, 'AE')
     .replace(/[‘’′]/g, "'")
     .replace(/[“”]/g, '"')
-    .replace(/—/g, '--')
+    .replace(/,/g, '--')
     .trim()
     .toLowerCase()
 }

@@ -1,8 +1,8 @@
 // src/lib/mtg/simulation/library.ts
 //
-// SimCard + SimLibrary — the deck's simulation-ready representation.
+// SimCard + SimLibrary, the deck's simulation-ready representation.
 // Hydrated once from DB rows, then simulated in memory. Never mutated
-// during simulation — the runner clones or reshuffles indices.
+// during simulation, the runner clones or reshuffles indices.
 //
 // Key rule: commander(s) in the command zone are NOT in the library.
 // Sideboard / maybeboard are NOT in the library.
@@ -35,9 +35,9 @@ export type SimLibrary = {
   /** Flat array of SimCard references, one per COPY. This is what
    *  gets shuffled + drawn from. */
   cards: SimCard[]
-  /** Commander(s) — NOT in the library. Available in the command zone. */
+  /** Commander(s), NOT in the library. Available in the command zone. */
   commanders: SimCard[]
-  /** Companion — NOT in the library. Available outside. */
+  /** Companion, NOT in the library. Available outside. */
   companion: SimCard[]
   /** Total library size (sum of entry.quantity). */
   size: number

@@ -1,4 +1,4 @@
-// app/decks/page.tsx — user's deck library.
+// app/decks/page.tsx, user's deck library.
 
 import type { Metadata } from 'next'
 import Link from 'next/link'

@@ -32,7 +32,7 @@ export type CandidateRow = {
 
 export type CandidatePool = {
   candidates: CandidateRow[]
-  /** Every oracle_card_id in `candidates` — passed to Stage C as the
+  /** Every oracle_card_id in `candidates`, passed to Stage C as the
    *  authorised set. Anything outside this set is rejected. */
   authorisedIds: Set<string>
   /** Commander CI (or null if not enforced). Attached for logging. */
@@ -146,7 +146,7 @@ export async function retrieveCandidatePool(input: CandidateRetrievalInput): Pro
     })
   }
 
-  // Group 2: one call per type priority — pulls a spread of creatures /
+  // Group 2: one call per type priority, pulls a spread of creatures /
   // instants / sorceries so the model has structural variety.
   const perTypeLimit = 18
   for (const tp of input.plan.type_priorities ?? []) {
@@ -166,7 +166,7 @@ export async function retrieveCandidatePool(input: CandidateRetrievalInput): Pro
 
   // ── Hard filters (BEFORE model sees the pool) ────────────────────
 
-  // 1. Format legality — the RPC already filters, but double-check
+  // 1. Format legality, the RPC already filters, but double-check
   //    with a batch legality query to catch any edge cases (banned
   //    updates, restricted lists). We reject any row whose legality
   //    is banned/not_legal for the target format.
@@ -191,7 +191,7 @@ export async function retrieveCandidatePool(input: CandidateRetrievalInput): Pro
   }
   const droppedIllegal = (perGroupHits as any).droppedIllegal ?? 0
 
-  // 2. Commander colour-identity filter (belt + braces — the RPC
+  // 2. Commander colour-identity filter (belt + braces, the RPC
   //    accepts p_color_identity, but a mis-filed capability could
   //    still return an off-colour card).
   let droppedCiConflict = 0
@@ -207,7 +207,7 @@ export async function retrieveCandidatePool(input: CandidateRetrievalInput): Pro
   //    A per-card price cap is derived deterministically:
   //      per_card_cap = total_budget / minDeckSize / 2
   //    with a $50 hard floor to still allow the odd expensive staple
-  //    inside a $200 deck. This is a heuristic — the total-budget
+  //    inside a $200 deck. This is a heuristic, the total-budget
   //    check runs later during Stage D validation on the final pick.
   const currency = input.plan.budget_strategy?.currency ?? 'USD'
   if (candidates.length > 0) {
@@ -227,7 +227,7 @@ export async function retrieveCandidatePool(input: CandidateRetrievalInput): Pro
     droppedBudget = before - candidates.length
   }
 
-  // 4. Collection filter — attach owned_quantity for every card, then
+  // 4. Collection filter, attach owned_quantity for every card, then
   //    drop everything with 0 owned when collection_preference is
   //    'owned_only'. When 'prefer_owned', we KEEP everything but sort
   //    owned first below.
@@ -243,7 +243,7 @@ export async function retrieveCandidatePool(input: CandidateRetrievalInput): Pro
     }
   }
 
-  // 5. Sort — owned-first (when preferred), then rough price ascending
+  // 5. Sort, owned-first (when preferred), then rough price ascending
   //    (fill budget-friendly candidates before big-ticket staples).
   candidates.sort((a, b) => {
     if (collectionPref === 'prefer_owned' || collectionPref === 'owned_only') {
@@ -259,7 +259,7 @@ export async function retrieveCandidatePool(input: CandidateRetrievalInput): Pro
   if (candidates.length > maxCandidates) candidates = candidates.slice(0, maxCandidates)
 
   const authorisedIds = new Set(candidates.map((c) => c.oracle_card_id))
-  // Include commander IDs — Stage C emits them as `commanders[]`.
+  // Include commander IDs, Stage C emits them as `commanders[]`.
   for (const id of input.commanderOracleIds) authorisedIds.add(id)
 
   return {

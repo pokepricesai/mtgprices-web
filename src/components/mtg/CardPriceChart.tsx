@@ -14,7 +14,7 @@ export type MtgChartSeries = {
 }
 
 function formatUSD(v: number): string {
-  if (v == null || Number.isNaN(v)) return '—'
+  if (v == null || Number.isNaN(v)) return '-'
   if (v >= 1000) return '$' + (v / 1000).toFixed(1) + 'k'
   if (v >= 100)  return '$' + v.toFixed(0)
   return '$' + v.toFixed(2)

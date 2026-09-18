@@ -2,7 +2,7 @@
 // Single source of truth for "is the site publicly launched?".
 //
 // Defaults to `false` when the env var is absent or any value other than
-// the literal string 'true' — safer than defaulting to launched.
+// the literal string 'true', safer than defaulting to launched.
 
 export const SITE_LAUNCHED = process.env.SITE_LAUNCHED === 'true'
 

@@ -1,7 +1,7 @@
 'use client'
 // src/components/mtg/SetGridClient.tsx
 // Client-side filter + sort for a set's printings grid. Data is
-// pre-fetched by the server component and passed in as props — we do
+// pre-fetched by the server component and passed in as props, we do
 // not hit the DB from here.
 
 import Link from 'next/link'
@@ -51,7 +51,7 @@ const COLOR_CHOICES: { code: string; label: string; bg: string; fg: string }[] =
 const TYPES = ['Creature', 'Instant', 'Sorcery', 'Enchantment', 'Artifact', 'Planeswalker', 'Land', 'Battle']
 
 function fmtUSD(n: number | null): string {
-  if (n === null || !Number.isFinite(n)) return '—'
+  if (n === null || !Number.isFinite(n)) return '-'
   return `$${n.toFixed(2)}`
 }
 
@@ -289,7 +289,7 @@ export default function SetGridClient({ setCode, printings }: Props) {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, gap: 6 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: 11 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: dot, display: 'inline-block' }} aria-hidden />
-                  <span>#{p.collector_number ?? '—'}</span>
+                  <span>#{p.collector_number ?? '-'}</span>
                 </div>
                 <span style={{
                   color: p.price !== null ? 'var(--text)' : 'var(--text-muted)',

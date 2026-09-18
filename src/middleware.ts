@@ -1,7 +1,7 @@
 // src/middleware.ts
 // Refresh the Supabase session cookie on every request so both server
 // components and API routes see a fresh auth token. Does NOT block
-// unauthenticated traffic — route protection lives in the individual
+// unauthenticated traffic, route protection lives in the individual
 // server components that need it.
 
 import { NextResponse, type NextRequest } from 'next/server'
@@ -25,7 +25,7 @@ export async function middleware(request: NextRequest) {
     },
   })
 
-  // Refresh the auth token — this quietly updates the cookie if the
+  // Refresh the auth token, this quietly updates the cookie if the
   // access token is close to expiring.
   await supabase.auth.getUser()
 

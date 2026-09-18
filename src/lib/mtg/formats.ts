@@ -11,7 +11,7 @@ import type { FormatKey } from './formats.data'
 
 export type FormatCounts = { legal: number; banned: number; restricted: number }
 
-/** Per-format counts used on the /formats index. Cheap — three
+/** Per-format counts used on the /formats index. Cheap, three
  *  head-count queries per format. */
 export async function getFormatCounts(key: FormatKey): Promise<FormatCounts> {
   const supabase = getSupabaseServiceClient()

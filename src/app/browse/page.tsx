@@ -1,4 +1,4 @@
-// app/browse/page.tsx — list every non-digital MTG set.
+// app/browse/page.tsx, list every non-digital MTG set.
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { listSets } from '@/lib/mtg/sets'
@@ -83,7 +83,7 @@ export default async function BrowsePage() {
                 </div>
                 <div style={{ fontSize: 14, fontWeight: 700, marginTop: 6, lineHeight: 1.25 }}>{set.name}</div>
                 <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 4 }}>
-                  {set.released_at ?? '—'}
+                  {set.released_at ?? 'Release date unknown'}
                   {set.card_count ? <> · {set.card_count.toLocaleString()} cards</> : null}
                 </div>
               </Link>

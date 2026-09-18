@@ -1,4 +1,4 @@
-// app/set/[setCode]/page.tsx — one MTG set, filter/sort-enabled grid.
+// app/set/[setCode]/page.tsx, one MTG set, filter/sort-enabled grid.
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   if (!set) return { title: 'Set not found' }
   const canonical = `https://mtgprices.io/set/${set.code}`
   return {
-    title: `${set.name} — MTG prices`,
+    title: `${set.name}. MTG prices`,
     description: `Every card in ${set.name} with live paper prices, images and Scryfall metadata. Filter by rarity, colour, type and finish.`,
     alternates: { canonical },
     openGraph: { url: canonical },

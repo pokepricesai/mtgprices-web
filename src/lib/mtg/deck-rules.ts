@@ -51,10 +51,10 @@ export type ValidationResult = {
 }
 
 /** Extract the outer-level card types from a type line.
- *  "Legendary Creature — Human Wizard" → ["legendary","creature"]. */
+ *  "Legendary Creature, Human Wizard" → ["legendary","creature"]. */
 export function parseCardTypes(typeLine: string | null | undefined): string[] {
   if (!typeLine) return []
-  const beforeDash = typeLine.split('—')[0] ?? ''
+  const beforeDash = typeLine.split('-')[0] ?? ''
   return beforeDash.trim().toLowerCase().split(/\s+/).filter(Boolean)
 }
 
@@ -77,7 +77,7 @@ export function unionColorIdentity(cards: Pick<DeckCardForValidation, 'color_ide
  *      abilities on specific cards.
  *
  *  We surface uncertainty as WARNINGS rather than hard-fail the deck:
- *  "Two commanders in the command zone — verify this pairing is legal."
+ *  "Two commanders in the command zone, verify this pairing is legal."
  */
 export function partnerEligibility(cards: DeckCardForValidation[]): {
   simplePartner: number      // count of cards with keyword 'Partner'
@@ -101,7 +101,7 @@ export function partnerEligibility(cards: DeckCardForValidation[]): {
   return { simplePartner, namedPartner, background, isBackground, friendsForever, doctorsCompanion }
 }
 
-/** True if the card can legally be a Commander in some sense — a
+/** True if the card can legally be a Commander in some sense, a
  *  legendary creature, OR a card whose Oracle text says "can be your
  *  commander" (which covers a growing list of planeswalkers and a
  *  handful of legendary artifacts). */
@@ -134,7 +134,7 @@ export function validateDeck(input: {
     if (c.legality === 'banned') {
       issues.push({ kind: 'format_banned', severity: 'error', message: `${c.name} is banned in ${rule?.label ?? input.format}.`, cardName: c.name, oracle_card_id: c.oracle_card_id })
     } else if (c.legality === 'not_legal' || c.legality === 'restricted') {
-      // "restricted" is Vintage — legal in the deck but only 1 copy. Handle in copy check.
+      // "restricted" is Vintage, legal in the deck but only 1 copy. Handle in copy check.
       if (c.legality === 'not_legal') {
         issues.push({ kind: 'format_not_legal', severity: 'error', message: `${c.name} is not legal in ${rule?.label ?? input.format}.`, cardName: c.name, oracle_card_id: c.oracle_card_id })
       }
@@ -262,7 +262,7 @@ export function validateDeck(input: {
 }
 
 /** For UI: aggregate categories used by the stats panel. Purely
- *  descriptive — no strategic judgement. */
+ *  descriptive, no strategic judgement. */
 export function typeBreakdown(cards: DeckCardForValidation[]): Record<string, number> {
   const out: Record<string, number> = { creature: 0, instant: 0, sorcery: 0, enchantment: 0, artifact: 0, planeswalker: 0, battle: 0, land: 0 }
   for (const c of cards) {

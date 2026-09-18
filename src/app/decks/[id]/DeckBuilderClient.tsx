@@ -1,8 +1,8 @@
 'use client'
 // The main Deck Builder shell. Three columns on desktop:
-//   Left  — deck list grouped by zone/type
-//   Right — card search + quick capability filters
-//   Top   — deck header (name, format, count, save state, actions)
+//   Left , deck list grouped by zone/type
+//   Right, card search + quick capability filters
+//   Top  , deck header (name, format, count, save state, actions)
 //
 // Mobile collapses into stacked sections rather than trying to
 // miniaturise the desktop grid.
@@ -349,7 +349,7 @@ function AlternativesSheet({ deckId, oracleId, cardName, mode, onClose, onAdd }:
         .then(async (r) => {
           if (!r.ok) {
             const j = await r.json().catch(() => ({}))
-            setError(j.error === 'rate_limited' ? 'AI quota reached — try again tomorrow.' : (j.error ?? 'AI failed'))
+            setError(j.error === 'rate_limited' ? 'AI quota reached, try again tomorrow.' : (j.error ?? 'AI failed'))
             setData(null)
             return
           }
@@ -409,7 +409,7 @@ function AlternativesSheet({ deckId, oracleId, cardName, mode, onClose, onAdd }:
         )}
         {!loading && items.length === 0 && !data?.reason && (
           <div style={{ padding: 12, background: 'var(--bg-light)', borderRadius: 8, color: 'var(--text-muted)', fontSize: 13 }}>
-            No alternatives found. Deck format legality + commander identity are being enforced — try loosening those constraints on the search panel.
+            No alternatives found. Deck format legality + commander identity are being enforced, try loosening those constraints on the search panel.
           </div>
         )}
         {items.length > 0 && (
@@ -442,7 +442,7 @@ function AlternativesSheet({ deckId, oracleId, cardName, mode, onClose, onAdd }:
                   )}
                 </div>
                 <div style={{ fontSize: 12, textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
-                  {mode !== 'ai' && h.currentPrice ? `${h.currentPrice.currency === 'USD' ? '$' : '€'}${h.currentPrice.price.toFixed(2)}` : '—'}
+                  {mode !== 'ai' && h.currentPrice ? `${h.currentPrice.currency === 'USD' ? '$' : '€'}${h.currentPrice.price.toFixed(2)}` : '-'}
                 </div>
                 <button type="button" onClick={() => onAdd(h.oracle_card_id)} style={{
                   background: 'var(--primary)', color: '#fff', border: 'none',

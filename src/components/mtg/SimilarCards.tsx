@@ -1,5 +1,5 @@
 // src/components/mtg/SimilarCards.tsx
-// Server component — renders the "Find cards like this" strip on card
+// Server component, renders the "Find cards like this" strip on card
 // pages using the deterministic similarity from src/lib/mtg/finder.ts.
 
 import Link from 'next/link'
@@ -25,7 +25,7 @@ export default async function SimilarCards({ oracleId, currentPrintingId }: Prop
         </Link>
       </div>
       <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: 10 }}>
-        Ranked by shared capabilities, colour identity, mana value and type — never by strategic judgement.
+        Ranked by shared capabilities, colour identity, mana value and type. Never by strategic judgement.
       </div>
       <div style={{
         display: 'grid',

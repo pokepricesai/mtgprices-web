@@ -1,5 +1,5 @@
 // src/app/api/geo/route.ts
-// Block 2D — country detection endpoint.
+// Block 2D, country detection endpoint.
 //
 // Returns the ISO 3166-1 alpha-2 country derived from the Vercel
 // x-vercel-ip-country request header. Returns null in local

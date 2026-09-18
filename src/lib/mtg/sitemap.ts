@@ -15,7 +15,7 @@ export const SHARD_SIZE = 22_000
 
 /** Pull one shard's worth of card rows from mtg_printings.
  *  Deterministic order (id ASC) so a printing is always in the same
- *  shard as long as it exists — good for search-engine polling. */
+ *  shard as long as it exists, good for search-engine polling. */
 export async function fetchCardShard(shard: number): Promise<
   { setCode: string; collector: string; name: string; released_at: string | null }[]
 > {

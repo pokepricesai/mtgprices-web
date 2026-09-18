@@ -1,4 +1,4 @@
-// app/collection/import/page.tsx — CSV import for the collection.
+// app/collection/import/page.tsx, CSV import for the collection.
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -33,7 +33,7 @@ export default async function ImportPage() {
         Paste or upload a CSV exported from Moxfield, Deckbox, Archidekt, or a plain
         <code style={{ margin: '0 4px', padding: '1px 6px', background: 'var(--bg-light)', borderRadius: 4, fontSize: 12 }}>name, set, collector_number, quantity, condition, finish</code>
         file. We match on set code + collector number first, then card name.
-        Anything ambiguous is flagged — never silently imported.
+        Anything ambiguous is flagged, never silently imported.
       </p>
       <ImportClient />
     </div>

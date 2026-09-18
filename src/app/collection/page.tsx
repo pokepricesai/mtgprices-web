@@ -1,4 +1,4 @@
-// app/collection/page.tsx — user collection surface.
+// app/collection/page.tsx, user collection surface.
 // RLS enforces "own rows only" server-side; if we lose auth we redirect.
 
 import type { Metadata } from 'next'
@@ -92,7 +92,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
             <BreakdownTile title="Finish" entries={summary.finishBreakdown} />
           </div>
           <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8, fontStyle: 'italic' }}>
-            Valuation basis: <strong>{summary.basis.label}</strong> — {summary.basis.description}
+            Valuation basis: <strong>{summary.basis.label}</strong>. {summary.basis.description}
             {' · '}<Link href="/account" style={{ color: 'var(--primary)' }}>change basis</Link>
           </div>
         </section>
@@ -157,7 +157,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
                     </div>
                     {(h.acquiredTotalCents != null || h.acquired_currency) && (
                       <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                        Acquired {h.acquired_price_cents != null ? `${currencySymbol(h.acquired_currency ?? currency)}${(h.acquired_price_cents / 100).toFixed(2)}/copy` : '—'}
+                        Acquired {h.acquired_price_cents != null ? `${currencySymbol(h.acquired_currency ?? currency)}${(h.acquired_price_cents / 100).toFixed(2)}/copy` : '-'}
                         {h.acquired_at ? ` · ${h.acquired_at}` : ''}
                       </div>
                     )}
@@ -211,7 +211,7 @@ function BreakdownTile({ title, entries }: { title: string; entries: Record<stri
     <div style={{ padding: '12px 14px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12 }}>
       <div className="label-mono" style={{ marginBottom: 8 }}>{title}</div>
       {keys.length === 0 ? (
-        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>—</div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>-</div>
       ) : (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {keys.map((k) => (

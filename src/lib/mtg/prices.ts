@@ -24,7 +24,7 @@ export type MtgPricePoint = {
   price: number
 }
 
-/** Preferred USD-paper-retail order — used to pick a single "headline"
+/** Preferred USD-paper-retail order, used to pick a single "headline"
  *  price when we want one number. This is a display convention only
  *  and does NOT imply any commercial redistribution decision. */
 const PREFERRED_PROVIDER_ORDER = [

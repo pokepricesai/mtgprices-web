@@ -14,7 +14,7 @@ export function shuffleInPlace<T>(arr: T[], rng: PRNG): T[] {
   return arr
 }
 
-/** Non-destructive shuffle — returns a fresh array. */
+/** Non-destructive shuffle, returns a fresh array. */
 export function shuffle<T>(arr: readonly T[], rng: PRNG): T[] {
   const copy = arr.slice()
   return shuffleInPlace(copy, rng)

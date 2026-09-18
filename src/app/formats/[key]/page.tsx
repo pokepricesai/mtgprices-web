@@ -1,4 +1,4 @@
-// app/formats/[key]/page.tsx — single-format page.
+// app/formats/[key]/page.tsx, single-format page.
 // Shows what MTGPrices knows factually about the format from
 // mtg_oracle_legalities: legal / banned / restricted counts, a preview
 // of banned and restricted cards, and entry points into search filtered
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   if (!f) return { title: 'Format not found' }
   const canonical = `https://mtgprices.io/formats/${f.key}`
   return {
-    title: `${f.label} — MTG format`,
+    title: `${f.label}, MTG format`,
     description: `${f.blurb} Card legality, bans and restrictions for ${f.label} on MTGPrices.io.`,
     alternates: { canonical },
     openGraph: { url: canonical },

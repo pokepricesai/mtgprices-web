@@ -1,43 +1,43 @@
 // src/lib/mtg/simulation/mana.ts
 //
 // Conservative mana-source classifier for Phase 4A. The goal is honest
-// modelling — do NOT claim a mana rock is equivalent to an untapped
+// modelling, do NOT claim a mana rock is equivalent to an untapped
 // coloured land. We surface distinct categories so the UI can show
 // each separately and users can read their deck's mana base clearly.
 //
 // Categories (mutually exclusive, ordered from most-guaranteed to
 // least-guaranteed):
 //
-//   basic_land            — Basic Plains / Island / Swamp / Mountain /
+//   basic_land           , Basic Plains / Island / Swamp / Mountain /
 //                           Forest. Guaranteed produces its colour(s),
 //                           always enters untapped.
-//   nonbasic_untapped     — Non-basic land with a produced_mana list AND
+//   nonbasic_untapped    , Non-basic land with a produced_mana list AND
 //                           Oracle text strongly implies it enters
 //                           untapped in this context (Shocklands,
 //                           dual lands, City of Brass, etc). We ONLY
 //                           mark these when the classification is
-//                           unambiguous — anything questionable falls
+//                           unambiguous, anything questionable falls
 //                           to nonbasic_conditional.
-//   nonbasic_conditional  — Non-basic land with produced_mana but
+//   nonbasic_conditional , Non-basic land with produced_mana but
 //                           requires conditions to enter untapped (tap
 //                           lands, "enters tapped unless…" lands, check
 //                           lands, fetch lands). Still a real land for
 //                           the land-drop count, but NOT counted as an
 //                           untapped-turn-1 coloured source without
 //                           further modelling.
-//   colourless_land       — Land that produces only colourless mana
+//   colourless_land      , Land that produces only colourless mana
 //                           (Wastes, utility lands). Counts for land
 //                           drops; does not produce colour.
-//   mana_rock             — Non-land, non-creature that produces mana
+//   mana_rock            , Non-land, non-creature that produces mana
 //                           (Sol Ring, Signets). Requires being cast.
-//   mana_creature         — Creature that produces mana (Llanowar Elves,
+//   mana_creature        , Creature that produces mana (Llanowar Elves,
 //                           mana dorks). Requires being cast + a turn
 //                           to activate in most cases.
-//   ramp_spell            — Non-land ramp effect that puts a land into
+//   ramp_spell           , Non-land ramp effect that puts a land into
 //                           play or produces mana (Cultivate, Rampant
 //                           Growth). Counts as ramp capability, not a
 //                           direct untapped source.
-//   other                 — Everything else — NOT a mana source.
+//   other                , Everything else, NOT a mana source.
 //
 // The user's UI shows all categories with their assumption explicitly
 // stated. We never silently roll them together.
@@ -56,7 +56,7 @@ export type ManaSourceCategory =
 
 export type Classification = {
   category: ManaSourceCategory
-  colours: string[]                // e.g. ['U','R'] — colours PRODUCED (empty for colourless_land or other)
+  colours: string[]                // e.g. ['U','R'], colours PRODUCED (empty for colourless_land or other)
   is_land: boolean
   enters_tapped_default: boolean   // best-effort read from oracle_text
   reason: string                    // short explanation of the classification
@@ -97,7 +97,7 @@ export function classifyManaSource(c: ClassifyManaInput): Classification {
       colours: colour ? [colour] : produced.length > 0 ? produced : [],
       is_land: true,
       enters_tapped_default: false,
-      reason: 'Basic land — always untapped, always produces its named colour.',
+      reason: 'Basic land, always untapped, always produces its named colour.',
     }
   }
 
@@ -127,10 +127,10 @@ export function classifyManaSource(c: ClassifyManaInput): Classification {
       }
     }
     // Untapped and produces colours. This includes dual lands, shock
-    // lands (which have a life-payment CONDITION to enter untapped —
+    // lands (which have a life-payment CONDITION to enter untapped ,
     // we still call it untapped since the choice belongs to the
     // player), fetch lands (which fetch other lands), City of Brass
-    // etc. Fetch lands specifically produce nothing directly — they
+    // etc. Fetch lands specifically produce nothing directly, they
     // sacrifice for another land. Detect and downgrade.
     if (/\bsearch your library for a .* land\b/.test(text) && /\bsacrifice\b/.test(text)) {
       return {
@@ -138,7 +138,7 @@ export function classifyManaSource(c: ClassifyManaInput): Classification {
         colours: colouredProduction,
         is_land: true,
         enters_tapped_default: false,
-        reason: 'Fetch land — untapped, but does not directly produce mana until it fetches a land which may itself enter tapped.',
+        reason: 'Fetch land, untapped, but does not directly produce mana until it fetches a land which may itself enter tapped.',
       }
     }
     return {
@@ -183,7 +183,7 @@ export function classifyManaSource(c: ClassifyManaInput): Classification {
       colours: [],
       is_land: false,
       enters_tapped_default: false,
-      reason: 'Ramp spell — accelerates mana but not itself an untapped source turn 1.',
+      reason: 'Ramp spell, accelerates mana but not itself an untapped source turn 1.',
     }
   }
 
@@ -213,14 +213,14 @@ function normaliseProduced(p: string[] | null): string[] {
 function detectEntersTapped(text: string): boolean {
   if (!text) return false
   // Shockland idiom: "As X enters, you may pay N life. If you don't,
-  // it enters tapped." — treat as UNTAPPED by default (players nearly
+  // it enters tapped.", treat as UNTAPPED by default (players nearly
   // always pay). Detect and short-circuit.
   if (/as [^.]* enters,? you may pay \d+ life\.?\s*if you don'?t,? it enters (?:the battlefield )?tapped/i.test(text)) {
     return false
   }
   // Direct "enters tapped" or "enters the battlefield tapped".
   if (/\benters (?:the battlefield )?tapped\b/.test(text)) return true
-  // Check-land / "enters tapped unless you control a Plains" — still
+  // Check-land / "enters tapped unless you control a Plains", still
   // enters tapped by default under our conservative model, since we
   // don't know what else the player controls at random opening-hand
   // time.
@@ -309,7 +309,7 @@ export function countManaSymbols(cost: string | null | undefined): Record<'W'|'U
 }
 
 /** Aggregate coloured mana pressure across a deck's main + commanders
- *  (excluding lands themselves — a land's own mana cost is zero). */
+ *  (excluding lands themselves, a land's own mana cost is zero). */
 export function aggregateColourPressure(
   entries: Array<{ mana_cost: string | null; quantity: number; is_land: boolean }>,
 ): Record<'W'|'U'|'B'|'R'|'G', number> {

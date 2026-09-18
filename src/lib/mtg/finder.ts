@@ -1,6 +1,6 @@
 // src/lib/mtg/finder.ts
 // Server-only Card Finder engine. Filters use only real DB constraints
-// — capabilities, colours, colour identity, mana value, format
+//, capabilities, colours, colour identity, mana value, format
 // legality, rarity, price. Never freely invents card recommendations.
 
 import 'server-only'
@@ -19,7 +19,7 @@ export type FinderQuery = {
   name?: string
   types?: string[]                // "Creature", "Instant", "Sorcery", "Enchantment", "Artifact", "Planeswalker", "Land", "Battle"
   caps?: CardCapability[]         // multi-cap AND
-  colors?: string[]               // WUBRG — cards' colors overlap ANY of these
+  colors?: string[]               // WUBRG, cards' colors overlap ANY of these
   colorless?: boolean             // include colourless
   colorIdentity?: string[]        // colour identity is a SUBSET of these letters
   legalIn?: FormatKey
@@ -40,9 +40,9 @@ export type FinderQuery = {
   currency?: FinderCurrency
   priceMax?: number
   priceMin?: number
-  budgetPreference?: boolean      // "cheap"/"budget" — no hard cap, sort ascending
+  budgetPreference?: boolean      // "cheap"/"budget", no hard cap, sort ascending
 
-  // Exclusions — used by deck-context search to hide cards already in
+  // Exclusions, used by deck-context search to hide cards already in
   // the deck (or to hide a specific card when finding alternatives).
   excludeOracleIds?: string[]
 
@@ -163,7 +163,7 @@ export async function findCards(query: FinderQuery, opts: { page?: number; pageS
   if (rpcErr) { console.error('findCards rpc err:', rpcErr); return emptyResult(query, page, pageSize) }
   let oracleRows = (rpcOracles ?? []) as OracleRow[]
 
-  // Client-side filter for a second/third type filter — RPC accepts a
+  // Client-side filter for a second/third type filter, RPC accepts a
   // single primary type substring. Rare enough that we keep it simple.
   if (query.types && query.types.length > 1) {
     const remaining = query.types.slice(1).map((t) => t.toLowerCase())
@@ -180,7 +180,7 @@ export async function findCards(query: FinderQuery, opts: { page?: number; pageS
   for (const r of oracleRows) oracleById.set(r.id, r)
 
   // ── STEP 3: freshest printing per oracle ─────────────────────
-  // Chunk the .in(oracle_ids, [...]) — PostgREST has a URL-size
+  // Chunk the .in(oracle_ids, [...]), PostgREST has a URL-size
   // header cap around ~16KB. 200 UUIDs (36 chars each) blows it
   // out. Chunk to 60 IDs per request. Each chunk is a separate
   // round-trip; run them in parallel.
@@ -236,7 +236,7 @@ export async function findCards(query: FinderQuery, opts: { page?: number; pageS
     return buildHit(o, p, cheapest, query)
   })
 
-  // Hard price constraints — currency-aware. Only cards that HAVE a
+  // Hard price constraints, currency-aware. Only cards that HAVE a
   // matching-currency price survive when a price filter is set.
   const hasPriceFilter =
     typeof query.priceMax === 'number' || typeof query.priceMin === 'number' || Boolean(query.finish)
@@ -474,7 +474,7 @@ export type SimilarHit = {
 }
 
 /** Deterministic similarity. We do NOT call cards strategically
- *  equivalent — we only report the factual dimensions that overlap:
+ *  equivalent, we only report the factual dimensions that overlap:
  *  shared capabilities, colour-identity overlap, matching type family,
  *  mana-value proximity, keyword overlap. */
 export async function findSimilar(oracleId: string, limit = 12): Promise<SimilarHit[]> {

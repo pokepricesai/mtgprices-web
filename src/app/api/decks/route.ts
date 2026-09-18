@@ -1,5 +1,5 @@
 // app/api/decks/route.ts
-// GET — list the caller's decks (minimal shape for pickers).
+// GET, list the caller's decks (minimal shape for pickers).
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { getCurrentUser } from '@/lib/supabase/server'

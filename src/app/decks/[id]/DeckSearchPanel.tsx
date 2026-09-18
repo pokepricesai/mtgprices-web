@@ -188,7 +188,7 @@ export default function DeckSearchPanel({ deckId, deckFormat, commanderColorIden
         ))}
         {total > hits.length && (
           <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8, textAlign: 'center' }}>
-            {total} matches — showing {hits.length}.
+            {total} matches, showing {hits.length}.
           </div>
         )}
       </div>

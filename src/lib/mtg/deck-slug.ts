@@ -5,7 +5,7 @@
 //   - readable (derived from the deck name)
 //   - URL-safe (kebab-case, lowercase, ASCII only)
 //   - collision-safe against the other PUBLIC decks (private decks can
-//     share slugs — they're never routed by slug)
+//     share slugs, they're never routed by slug)
 //
 // Uniqueness is enforced by a partial unique index (see the RLS
 // migration) but generation itself has to avoid obvious collisions; we
@@ -55,13 +55,13 @@ export async function generatePublicDeckSlug(
     const { data } = await q.limit(1)
     if (!data || data.length === 0) return c
   }
-  // Extreme fallback — very high entropy suffix so this genuinely
+  // Extreme fallback, very high entropy suffix so this genuinely
   // never collides in practice.
   return `${base}-${randomSuffix(10)}`
 }
 
 /** Client-side / API-side validation of a user-supplied slug string.
- *  Doesn't touch the DB — call generatePublicDeckSlug for uniqueness. */
+ *  Doesn't touch the DB, call generatePublicDeckSlug for uniqueness. */
 export function validateSlugString(candidate: string): { ok: true; slug: string } | { ok: false; error: string } {
   const trimmed = candidate.trim().toLowerCase()
   if (trimmed.length === 0) return { ok: false, error: 'Slug required.' }

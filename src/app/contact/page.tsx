@@ -13,7 +13,7 @@ export default function ContactPage() {
       <div className="label-mono">Contact</div>
       <h1 style={{ marginTop: 6, fontSize: 30 }}>Say hello</h1>
       <p style={{ color: 'var(--text-muted)', marginTop: 6, fontSize: 15 }}>
-        Feedback, corrections, dealer partnership enquiries — all welcome.
+        Feedback, corrections, dealer partnership enquiries. All welcome.
       </p>
 
       <div

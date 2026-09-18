@@ -98,7 +98,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }, { status: 422 })
   }
 
-  // Snapshot with names — worker needs them to export .dck.
+  // Snapshot with names, worker needs them to export .dck.
   const [printA, printB] = await Promise.all([
     printingsFor(cardsA.map((c) => c.oracle_card_id)),
     printingsFor(cardsB.map((c) => c.oracle_card_id)),
@@ -157,7 +157,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         }).catch((err) => console.error('waitUntil fetch to worker failed:', err?.message))
       )
     } else {
-      console.error('waitUntil fallback disabled — RULES_WORKER_URL or WORKER_TRIGGER_SECRET not set')
+      console.error('waitUntil fallback disabled, RULES_WORKER_URL or WORKER_TRIGGER_SECRET not set')
     }
   }
 

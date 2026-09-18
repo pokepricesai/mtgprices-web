@@ -1,13 +1,13 @@
 // src/lib/ai/rate-limit.ts
 //
-// Pre-launch AI quotas. Conservative defaults (see AI_LIMITS) — a user
+// Pre-launch AI quotas. Conservative defaults (see AI_LIMITS), a user
 // gets a small daily allowance across the four operations. Values are
 // env-controlled so they can be tuned without redeploy.
 
 import 'server-only'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
 
-// Pre-launch defaults — conservative until we have real usage data.
+// Pre-launch defaults, conservative until we have real usage data.
 // Improve/Build are the expensive ops (~$0.05–$0.30 each on Sonnet 5).
 // Analyse/Replace are cheap (~$0.02). The dailyCents cap backstops
 // any misbehaving loop that keeps spending inside its ops budget.

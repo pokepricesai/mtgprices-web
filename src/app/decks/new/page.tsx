@@ -1,4 +1,4 @@
-// app/decks/new/page.tsx — new deck setup.
+// app/decks/new/page.tsx, new deck setup.
 
 import type { Metadata } from 'next'
 import Link from 'next/link'

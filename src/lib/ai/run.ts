@@ -27,7 +27,7 @@ export type RunResult = {
 }
 
 // Test-only seam. Unit tests replace runAi's underlying call with a
-// canned response. Production paths never touch this — no route or
+// canned response. Production paths never touch this, no route or
 // UI calls the setter. Setting a mock via __setAiRunMock also intercepts
 // runAiObject (the mock text is JSON-parsed to produce the `value`).
 let __mockRunner: ((input: any) => Promise<RunResult>) | null = null
@@ -109,7 +109,7 @@ export async function runAiObject<T>(input: {
     ok: false, text: '', tokensIn: 0, tokensOut: 0, tokensReasoning: 0,
     latencyMs: 0, provider, model, estimatedCostCents: 0, value: null as T | null,
   }
-  // Test seam — same mock hook as runAi. Parse the canned text
+  // Test seam, same mock hook as runAi. Parse the canned text
   // through the schema so the caller still gets `value`.
   if (__mockRunner) {
     const canned = await __mockRunner(input)
@@ -163,7 +163,7 @@ export async function runAiObject<T>(input: {
  *   2. A ```json ... ``` fenced block.
  *   3. Every '{ ... }' span starting at the first '{', trying larger
  *      closes first (some models emit incidental braces in reasoning
- *      text before the real JSON — the naive first-to-last approach
+ *      text before the real JSON, the naive first-to-last approach
  *      falls into that trap). */
 export function extractJson(raw: string): unknown | null {
   const trimmed = raw.trim()

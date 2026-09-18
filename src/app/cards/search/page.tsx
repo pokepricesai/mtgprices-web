@@ -1,4 +1,4 @@
-// app/cards/search/page.tsx — MTGPrices multi-filter card search.
+// app/cards/search/page.tsx, MTGPrices multi-filter card search.
 // Every filter maps to indexed DB columns (name/type/color/legality/rarity).
 // Oracle-text search hits an ilike scan on ~40k rows and is bounded to
 // 300 candidates before printings lookup, which keeps latency reasonable.
@@ -180,7 +180,7 @@ export default async function CardsSearchPage({ searchParams }: { searchParams: 
       {hits.length > 0 && (
         <>
           <div style={{ marginBottom: 12, color: 'var(--text-muted)', fontSize: 13 }}>
-            Showing {hits.length} card{hits.length === 1 ? '' : 's'} — freshest English printing per unique card.
+            Showing {hits.length} card{hits.length === 1 ? '' : 's'}. Freshest English printing per unique card.
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
             {hits.map((h) => {

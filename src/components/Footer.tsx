@@ -92,8 +92,8 @@ export default function Footer() {
                 margin: 0,
               }}
             >
-              Live Magic: The Gathering card prices, printings and history — paired with a
-              format-aware Deck Builder, Card Finder, Test Your Deck and Collection tools.
+              Live Magic: The Gathering card prices, printings and history. Paired with a
+              format aware Deck Builder, Card Finder, Test Your Deck and Collection tools.
             </p>
           </div>
 
@@ -125,7 +125,7 @@ export default function Footer() {
             and not affiliated with, endorsed, sponsored, or specifically approved by Wizards of the
             Coast. Catalogue and imagery via Scryfall; card and price data via MTGJSON;
             retail price feeds attributed to their respective providers (TCGplayer, Card Kingdom,
-            Cardmarket, ManaPool, Cardhoarder). Informational only — not financial advice.
+            Cardmarket, ManaPool, Cardhoarder). Informational only. Not financial advice.
           </p>
           <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>
             © {new Date().getFullYear()} MTGPrices.io

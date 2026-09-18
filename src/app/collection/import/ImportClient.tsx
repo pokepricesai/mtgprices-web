@@ -156,14 +156,14 @@ export default function ImportClient() {
             {preview.resolved.length > 20 && <li style={{ color: 'var(--text-muted)' }}>… and {preview.resolved.length - 20} more.</li>}
           </PreviewBlock>
           {preview.ambiguous.length > 0 && (
-            <PreviewBlock title="Ambiguous — skipped" tone="warn" count={preview.ambiguous.length}>
+            <PreviewBlock title="Ambiguous (skipped)" tone="warn" count={preview.ambiguous.length}>
               {preview.ambiguous.map((r) => (
                 <li key={r.index}><strong>{r.name}</strong>: {r.reason}. Candidates: {r.candidates.length}</li>
               ))}
             </PreviewBlock>
           )}
           {preview.unresolved.length > 0 && (
-            <PreviewBlock title="Unresolved — skipped" tone="err" count={preview.unresolved.length}>
+            <PreviewBlock title="Unresolved (skipped)" tone="err" count={preview.unresolved.length}>
               {preview.unresolved.map((r) => (
                 <li key={r.index}><strong>{r.name}</strong>: {r.reason}</li>
               ))}

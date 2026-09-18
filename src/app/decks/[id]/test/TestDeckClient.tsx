@@ -1,7 +1,7 @@
 'use client'
 // Test-your-deck lab: four sections (Opening Hands / Simulate / Mana /
 // Playtest) driven from a single hydrated ClientSimLibrary. All
-// simulation runs in-browser — no round trips.
+// simulation runs in-browser, no round trips.
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
@@ -17,7 +17,7 @@ type Section = 'hands' | 'sim' | 'mana' | 'playtest' | 'rules'
 const RULES_ENABLED = process.env.NEXT_PUBLIC_RULES_ENGINE_ENABLED === 'true'
 
 const NAV_BASE: Array<{ key: Section; label: string; description: string }> = [
-  { key: 'hands', label: 'Opening Hands', description: 'Draw, mulligan, keep — feel your opener' },
+  { key: 'hands', label: 'Opening Hands', description: 'Draw, mulligan, keep, feel your opener' },
   { key: 'sim', label: 'Simulate', description: '100 / 1,000 / 10,000-game statistics' },
   { key: 'mana', label: 'Mana', description: 'Colour sources vs mana-cost pressure' },
   { key: 'playtest', label: 'Playtest', description: 'Manual goldfish sandbox' },

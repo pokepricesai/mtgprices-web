@@ -76,7 +76,7 @@ export default function AddToCollection({ finishes, cardName, compact = false }:
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       setSaving(false)
-      setStatus({ kind: 'err', msg: 'Session expired — refresh and sign in again.' })
+      setStatus({ kind: 'err', msg: 'Session expired. Refresh and sign in again.' })
       return
     }
 

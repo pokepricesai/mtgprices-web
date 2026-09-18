@@ -109,18 +109,19 @@ export default function Navbar() {
   return (
     <nav
       style={{
-        background: 'var(--surface)',
+        background: 'rgba(255,255,255,0.94)',
+        backdropFilter: 'saturate(1.1) blur(8px)',
+        WebkitBackdropFilter: 'saturate(1.1) blur(8px)',
         borderBottom: '1px solid var(--border)',
-        padding: '0 20px',
-        height: 64,
+        padding: '0 24px',
+        height: 68,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        gap: 14,
-        boxShadow: '0 1px 0 rgba(232,169,75,0.15), 0 2px 8px rgba(20,33,61,0.03)',
+        gap: 16,
       }}
     >
       {/* Logo lockup */}
@@ -130,16 +131,16 @@ export default function Navbar() {
         style={{
           display: 'flex', alignItems: 'center', gap: 10,
           textDecoration: 'none', flexShrink: 0,
-          height: 44,
+          height: 48,
         }}
       >
         <Image
           src="/logo.png"
           alt="MTGPrices"
-          width={180}
-          height={54}
+          width={200}
+          height={60}
           priority
-          style={{ height: 40, width: 'auto' }}
+          style={{ height: 44, width: 'auto' }}
         />
       </Link>
 
@@ -166,7 +167,7 @@ export default function Navbar() {
             className={`nav-link${toolsOpen ? ' active' : ''}`}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: toolsOpen ? 'var(--accent-soft)' : 'transparent',
+              background: 'transparent',
               border: 'none', cursor: 'pointer', font: 'inherit',
               color: toolsOpen ? 'var(--gold-600)' : 'var(--text)',
             }}
@@ -237,27 +238,21 @@ export default function Navbar() {
       </form>
 
       {/* Account cluster */}
-      <div className="nav-account-cluster" style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+      <div className="nav-account-cluster" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
         <Link
           href="/collection"
-          className="nav-collection"
+          className={`nav-link${isActive('/collection') ? ' active' : ''}`}
           aria-label="Collection"
-          style={{
-            padding: '7px 12px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-            background: isActive('/collection') ? 'var(--accent-soft)' : 'transparent',
-            color: isActive('/collection') ? 'var(--gold-600)' : 'var(--text)',
-            border: `1px solid ${isActive('/collection') ? 'var(--accent-border)' : 'var(--border)'}`,
-            textDecoration: 'none',
-          }}
+          style={{ padding: '10px 12px' }}
         >Collection</Link>
         <Link
           href={signedIn ? '/account' : `/login?next=${encodeURIComponent(pathname)}`}
           className="btn btn-sm"
           style={{
-            background: signedIn ? 'var(--primary-soft)' : 'linear-gradient(135deg, var(--arcane-400), var(--arcane-500))',
-            color: signedIn ? 'var(--primary-strong)' : '#FFFFFF',
-            border: signedIn ? '1px solid var(--primary-border)' : '1px solid var(--arcane-500)',
-            boxShadow: signedIn ? 'none' : '0 2px 4px rgba(14,47,94,0.15)',
+            background: signedIn ? 'var(--surface)' : 'linear-gradient(135deg, var(--gold-300), var(--gold-400))',
+            color: signedIn ? 'var(--text)' : '#2A1A05',
+            border: signedIn ? '1px solid var(--border-strong)' : '1px solid var(--gold-400)',
+            boxShadow: signedIn ? 'none' : '0 2px 4px rgba(168,104,28,0.20), inset 0 1px 0 rgba(255,255,255,0.3)',
           }}
         >{signedIn ? 'Account' : 'Sign in'}</Link>
       </div>
@@ -281,10 +276,10 @@ export default function Navbar() {
           aria-modal="true"
           aria-label="Site menu"
           style={{
-            position: 'absolute', top: 64, left: 0, right: 0,
+            position: 'absolute', top: 68, left: 0, right: 0,
             background: 'var(--surface)', borderBottom: '1px solid var(--border)',
             padding: '16px 20px 24px', boxShadow: 'var(--shadow-lg)',
-            zIndex: 99, maxHeight: 'calc(100vh - 64px)', overflowY: 'auto',
+            zIndex: 99, maxHeight: 'calc(100vh - 68px)', overflowY: 'auto',
           }}
         >
           <form onSubmit={submitSearch} style={{ marginBottom: 14 }}>

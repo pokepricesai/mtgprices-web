@@ -1,8 +1,8 @@
-// app/card-finder/page.tsx — Smart Card Finder / Deep Search.
+// app/card-finder/page.tsx, Smart Card Finder / Deep Search.
 //
 // Two modes:
-//   - "play"       Find for Play — capability / colour / MV / legality driven.
-//   - "collecting" Find for Collecting — set / era / rarity / finish / price driven.
+//   - "play"       Find for Play, capability / colour / MV / legality driven.
+//   - "collecting" Find for Collecting, set / era / rarity / finish / price driven.
 //
 // The NL box on top parses to a FinderQuery deterministically. Every
 // filter maps to a real DB constraint. Never invents cards.
@@ -23,7 +23,7 @@ export const dynamic = 'force-dynamic'
 const SITE_URL = 'https://mtgprices.io'
 
 export const metadata: Metadata = {
-  title: 'Card Finder — deep search',
+  title: 'Card Finder, deep search',
   description: 'Find MTG cards by what they do: capabilities, colour, format legality, price. Plus deep collector search across set, era, rarity, finish and printing.',
   alternates: { canonical: `${SITE_URL}/card-finder` },
   openGraph: { url: `${SITE_URL}/card-finder` },
@@ -63,11 +63,11 @@ function asList(v: string | undefined): string[] {
 }
 
 function paramsToQuery(sp: SearchParams): { query: FinderQuery; suggestions: string[]; warnings: string[] } {
-  // NL first — parse "q" into a query.
+  // NL first, parse "q" into a query.
   const parsed = sp.q ? parseFinderText(sp.q) : { query: {} as FinderQuery, suggestions: [] as string[], warnings: [] as string[] }
   const q: FinderQuery = { ...parsed.query }
 
-  // Structured overrides — always take precedence when explicitly set.
+  // Structured overrides, always take precedence when explicitly set.
   const capsList = asList(sp.caps).filter((c): c is CardCapability => (CAPABILITY_TAGS as readonly string[]).includes(c))
   if (capsList.length > 0) q.caps = capsList
   const colors = asList(sp.colors)
@@ -124,7 +124,7 @@ export default async function CardFinderPage({ searchParams }: { searchParams: P
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: 15, marginTop: 6, maxWidth: 760, lineHeight: 1.55 }}>
           {mode === 'play'
-            ? 'Describe what a card should do. Filters map to structured constraints — no invented recommendations.'
+            ? 'Describe what a card should do. Filters map to structured constraints, no invented recommendations.'
             : 'Find cards by set, era, rarity, finish, artist and price. Cheapest printings surface first when you say so.'}
         </p>
       </div>
@@ -172,7 +172,7 @@ export default async function CardFinderPage({ searchParams }: { searchParams: P
               <strong style={{ color: 'var(--text)' }}>{result.total.toLocaleString()}</strong>
               {' '}match{result.total === 1 ? '' : 'es'}
               {result.total > result.hits.length + (result.page - 1) * result.pageSize
-                ? ' — showing this page'
+                ? ', showing this page'
                 : ''}
             </span>
             <span>Page {result.page} / {pageCount}</span>
@@ -240,7 +240,7 @@ const RARITY_COLOR: Record<string, string> = {
 }
 
 function fmtPrice(p: FinderHit['cheapest']): string {
-  if (!p) return '—'
+  if (!p) return '-'
   const sym = p.currency === 'USD' ? '$' : p.currency === 'EUR' ? '€' : ''
   return `${sym}${p.price.toFixed(2)}`
 }

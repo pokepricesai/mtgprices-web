@@ -1,5 +1,5 @@
 // src/components/mtg/CardFaces.tsx
-// Renders the face-level rules text section — one card can have 1..N faces.
+// Renders the face-level rules text section, one card can have 1..N faces.
 
 import ManaCost from './ManaCost'
 import OracleText from './OracleText'
@@ -11,12 +11,12 @@ type Props = {
 }
 
 const LAYOUT_HEADING: Record<string, string> = {
-  split: 'Split — cast either half',
+  split: 'Split. Cast either half',
   flip: 'Flip card',
-  transform: 'Two-faced — transforms during play',
-  modal_dfc: 'Modal double-faced — choose one to play',
-  adventure: 'Adventure — cast the adventure, then the creature',
-  meld: 'Meld — combines with another card',
+  transform: 'Two faced. Transforms during play',
+  modal_dfc: 'Modal double faced. Choose one to play',
+  adventure: 'Adventure. Cast the adventure, then the creature',
+  meld: 'Meld. Combines with another card',
   saga: 'Saga',
   class: 'Class',
   case: 'Case',

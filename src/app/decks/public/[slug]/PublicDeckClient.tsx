@@ -1,6 +1,6 @@
 'use client'
 
-// Public deck page renderer. Consumes ONLY a PublicDeckPayload — the
+// Public deck page renderer. Consumes ONLY a PublicDeckPayload, the
 // projection function has already stripped owner-specific fields.
 // Never fetches or references the owner's collection, private notes,
 // or acquired prices.
@@ -94,7 +94,7 @@ export default function PublicDeckClient({ payload }: Props) {
             <StatRow label="Colour identity" value={payload.colorIdentity.join('') || 'C'} />
             <StatRow
               label={`Deck value (${payload.pricing.basis.provider}, ${payload.pricing.basis.currency})`}
-              value={payload.pricing.deckValue > 0 ? `${currencyPrefix(payload.pricing.basis.currency)}${payload.pricing.deckValue.toFixed(2)}` : '—'}
+              value={payload.pricing.deckValue > 0 ? `${currencyPrefix(payload.pricing.basis.currency)}${payload.pricing.deckValue.toFixed(2)}` : '-'}
               subValue={payload.pricing.entriesWithoutPrice > 0 ? `${payload.pricing.entriesWithoutPrice} without price` : undefined}
             />
             <StatRow

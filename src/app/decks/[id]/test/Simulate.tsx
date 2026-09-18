@@ -1,5 +1,5 @@
 'use client'
-// Monte Carlo dashboard. All simulation is browser-side — no round
+// Monte Carlo dashboard. All simulation is browser-side, no round
 // trips, no AI. Every probability is annotated with iteration count
 // and assumptions.
 
@@ -30,7 +30,7 @@ export default function Simulate({ deck, library, cardIndex }: {
   const [running, setRunning] = useState(false)
 
   // Build a runnable SimLibrary from the projected client library (we
-  // reuse buildSimLibrary since ClientSimCard is a superset — the
+  // reuse buildSimLibrary since ClientSimCard is a superset, the
   // classifier already ran server-side and lives on `classification`).
   const runnableLib = useMemo(() => {
     return buildSimLibrary({
@@ -73,8 +73,8 @@ export default function Simulate({ deck, library, cardIndex }: {
     }, 0)
   }
 
-  // Card options for the "track this card" dropdown — one entry per
-  // distinct oracle in the library (commanders excluded — they aren't
+  // Card options for the "track this card" dropdown, one entry per
+  // distinct oracle in the library (commanders excluded, they aren't
   // in the shuffle).
   const cardOptions = useMemo(() => {
     return library.entries.map((e) => ({ id: e.card.oracle_card_id, name: e.card.name, quantity: e.quantity }))
@@ -103,7 +103,7 @@ export default function Simulate({ deck, library, cardIndex }: {
         </Field>
         <Field label="Track a specific card">
           <select value={trackId} onChange={(e) => setTrackId(e.target.value)} style={select}>
-            <option value="">— none —</option>
+            <option value="">, none ,</option>
             {cardOptions.map((c) => (
               <option key={c.id} value={c.id}>{c.name}{c.quantity > 1 ? ` (${c.quantity})` : ''}</option>
             ))}
@@ -167,7 +167,7 @@ function Results({ r, cardIndex, trackId }: { r: MCResult; cardIndex: Map<string
   return (
     <div>
       <div style={{ padding: 10, background: 'var(--bg-light)', borderRadius: 8, border: '1px solid var(--border)', marginBottom: 12, fontSize: 12, color: 'var(--text-muted)' }}>
-        <b style={{ color: 'var(--text)' }}>Based on {r.spec.iterations.toLocaleString()} simulated draws</b> — {r.spec.play === 'play' ? 'on the play' : 'on the draw'}. {r.spec.firstPlayerDrawsOnTurn1 ? 'First player draws turn 1.' : 'First player skips turn-1 draw.'} Library {r.spec.librarySize} cards. Wall {r.wallMs}ms.
+        <b style={{ color: 'var(--text)' }}>Based on {r.spec.iterations.toLocaleString()} simulated draws</b>, {r.spec.play === 'play' ? 'on the play' : 'on the draw'}. {r.spec.firstPlayerDrawsOnTurn1 ? 'First player draws turn 1.' : 'First player skips turn-1 draw.'} Library {r.spec.librarySize} cards. Wall {r.wallMs}ms.
         <br />
         {r.spec.assumptions.map((a, i) => <span key={i}>• {a}<br /></span>)}
       </div>
@@ -179,7 +179,7 @@ function Results({ r, cardIndex, trackId }: { r: MCResult; cardIndex: Map<string
       </div>
 
       <h3 style={h3}>Land-drop availability by turn</h3>
-      <PctTable rows={r.landDropByTurn.map((x) => ({ label: `by turn ${x.turn}`, value: x.p }))} tail={`P(≥ T lands available by end of turn T). Cards seen, not cards cast — see the Mana tab for colour / untapped analysis.`} />
+      <PctTable rows={r.landDropByTurn.map((x) => ({ label: `by turn ${x.turn}`, value: x.p }))} tail={`P(≥ T lands available by end of turn T). Cards seen, not cards cast, see the Mana tab for colour / untapped analysis.`} />
 
       {r.cardByTurn && (
         <>

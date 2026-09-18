@@ -94,7 +94,7 @@ const CAP_PHRASES: [string, CardCapability][] = [
   ['protection',              'protection'],
   ['indestructible',          'protection'],
   ['hexproof',                'protection'],
-  ['removal',                 'creature-removal'], // fall-through — spec called for creature removal being the default
+  ['removal',                 'creature-removal'], // fall-through, spec called for creature removal being the default
 ]
 
 const BUDGET_WORDS = ['cheap', 'budget', 'affordable', 'inexpensive', 'low cost', 'low-cost']
@@ -141,7 +141,7 @@ export function parseFinderText(input: string): ParseResult {
     suggestions.push('Colourless')
   }
 
-  // ── Commander identity — "commander with X" ──────────────
+  // ── Commander identity, "commander with X" ──────────────
   const cmdColourMatch = text.match(/\bcommander (?:in|for) (mono[- ]?)?(white|blue|black|red|green|azorius|dimir|rakdos|gruul|selesnya|orzhov|izzet|golgari|boros|simic|bant|esper|grixis|jund|naya)\b/)
   if (cmdColourMatch) {
     const clr = COLOR_WORDS[cmdColourMatch[2]]
@@ -228,7 +228,7 @@ export function parseFinderText(input: string): ParseResult {
     query.priceMax = parseFloat(priceEur[1])
     suggestions.push(`Price ≤ €${query.priceMax.toFixed(2)}`)
   }
-  // GBP — not silently converted.
+  // GBP, not silently converted.
   if (/[£]\s*\d/.test(text) || /\bgbp\b/.test(text) || /\bpound(s)?\b/.test(text)) {
     warnings.push('GBP prices are not yet available. MTGPrices currently indexes USD (TCGplayer, Card Kingdom, ManaPool) and EUR (Cardmarket). Try "$5" or "€5" instead.')
   }
@@ -255,7 +255,7 @@ export function parseFinderText(input: string): ParseResult {
   }
 
   // ── Free-text card-name fallback: none. Card Finder is
-  //    intentionally NOT a name search — /cards/search does that.
+  //    intentionally NOT a name search, /cards/search does that.
 
   return { query, suggestions, warnings }
 }

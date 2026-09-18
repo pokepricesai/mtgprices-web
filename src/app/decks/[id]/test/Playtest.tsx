@@ -1,5 +1,5 @@
 'use client'
-// Manual goldfish sandbox. The system does NOT enforce Magic rules —
+// Manual goldfish sandbox. The system does NOT enforce Magic rules ,
 // the player controls legal play. Zones + basic actions only.
 
 import { useMemo, useState } from 'react'
@@ -71,7 +71,7 @@ export default function Playtest({ deck, library, cardIndex }: {
   }
 
   function nextTurn() {
-    // Untap all permanents. Draw 1 (skip on turn 1 if on the play — but
+    // Untap all permanents. Draw 1 (skip on turn 1 if on the play, but
     // for the goldfish sandbox we just draw every turn to make life
     // easier. Users who want strict rule compliance can Undo.)
     const untapped = state.battlefield.map((p) => ({ ...p, tapped: false }))
@@ -240,7 +240,7 @@ export default function Playtest({ deck, library, cardIndex }: {
         </div>
       </ZoneShell>
 
-      {/* Grave / Exile — compact */}
+      {/* Grave / Exile, compact */}
       {state.graveyard.length > 0 && (
         <ZoneShell title={`Graveyard (${state.graveyard.length})`}>
           <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
@@ -264,7 +264,7 @@ export default function Playtest({ deck, library, cardIndex }: {
       </ZoneShell>
 
       <div style={{ marginTop: 20, fontSize: 11, color: 'var(--text-muted)' }}>
-        Playtest sandbox — the app doesn't enforce Magic rules. Move cards freely.
+        Playtest sandbox, the app doesn't enforce Magic rules. Move cards freely.
         Turn draws 1 card automatically; if you're playing "on the play, turn 1", just undo the draw.
         Session state is browser-only; nothing is saved.
       </div>

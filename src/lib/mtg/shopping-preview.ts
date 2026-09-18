@@ -80,7 +80,7 @@ export async function buildShoppingPreview(
   // Ownership from caller session (RLS-scoped).
   const owned = await callerOwnedTotals(oracleIds)
 
-  // Batch price at the chosen basis — cheapest per Oracle.
+  // Batch price at the chosen basis, cheapest per Oracle.
   const price = await batchCheapestPriceAtBasis(oracleIds, b)
 
   const lines: ShoppingPreviewLine[] = oracleIds.map((id) => {

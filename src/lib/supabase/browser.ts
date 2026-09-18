@@ -1,6 +1,6 @@
 // src/lib/supabase/browser.ts
 // Browser-side Supabase client for auth flows + user-scoped writes.
-// Uses the ANON key which is safe to ship — access is gated by RLS.
+// Uses the ANON key which is safe to ship, access is gated by RLS.
 // Every write against user-scoped tables (mtg_collection_items, etc.)
 // runs with the caller's `auth.uid()`.
 

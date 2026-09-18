@@ -1,7 +1,7 @@
-// app/page.tsx — MTGPrices branded homepage.
-// Communicates the two-audience product (Collect + Play) with a strong
-// arcane brand hero, live product previews (Deck Intelligence + Market
-// Pulse), and real data modules (latest set, top movers, formats).
+// app/page.tsx. MTGPrices branded homepage.
+// Communicates the two-audience product (Collect + Play) with a light,
+// browseable hero, live product previews (Deck Intelligence + Market
+// Pulse) and real data modules (latest set, top movers, formats).
 // Every link resolves to a live route; anything not yet shipped is
 // omitted rather than presented as a dead link.
 
@@ -57,9 +57,9 @@ export default async function HomePage() {
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
+/* ═════════════════════════════════════════════════════════════════════
    HERO
-   ═══════════════════════════════════════════════════════════════════════ */
+   ═════════════════════════════════════════════════════════════════════ */
 
 function Hero({
   counts, latestSet, movers,
@@ -71,58 +71,46 @@ function Hero({
   const heroPulse = movers?.active[0] ?? movers?.risers[0] ?? null
 
   return (
-    <section className="arcane-band" style={{ padding: '60px 24px 72px', position: 'relative' }}>
-      {/* Decorative starfield */}
+    <section className="hero-shell" style={{ padding: '56px 24px 68px', position: 'relative' }}>
       <div className="spark-field" aria-hidden />
-      {/* Faint card silhouettes anchoring the corners */}
-      <div aria-hidden style={{ position: 'absolute', top: 40, left: -60, color: '#F1E9D2', transform: 'rotate(-14deg)' }}>
-        <span className="card-silhouette" style={{ position: 'relative' }} />
-      </div>
-      <div aria-hidden style={{ position: 'absolute', top: 90, left: 80, color: '#F1E9D2', transform: 'rotate(6deg)', opacity: 0.7 }}>
-        <span className="card-silhouette" style={{ position: 'relative', width: 90, height: 130 }} />
-      </div>
-      <div aria-hidden style={{ position: 'absolute', bottom: -40, right: -50, color: '#F1E9D2', transform: 'rotate(12deg)' }}>
-        <span className="card-silhouette" style={{ position: 'relative' }} />
-      </div>
 
       <div style={{ maxWidth: 1180, margin: '0 auto', position: 'relative' }}>
-        <div className="hero-grid" style={{ display: 'grid', gap: 36, alignItems: 'center' }}>
-          {/* Left: brand + copy + search + chips */}
+        <div className="hero-grid" style={{ display: 'grid', gap: 40, alignItems: 'center' }}>
+          {/* Left: brand copy + search + chips */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-              <span className="chip chip-gold" style={{ background: 'rgba(232,169,75,0.14)', color: '#F5E4B4', borderColor: 'rgba(232,169,75,0.35)' }}>
-                <span className="gem gem-gold" aria-hidden />
-                Public preview · v1
-              </span>
-            </div>
+            <span
+              className="chip chip-gold"
+              style={{ marginBottom: 20, background: 'rgba(232,169,75,0.12)' }}
+            >
+              <span className="gem gem-gold" aria-hidden />
+              Public preview
+            </span>
 
             <h1
               className="display"
               style={{
-                fontSize: 'clamp(38px, 5.4vw, 68px)',
+                fontSize: 'clamp(38px, 5.4vw, 64px)',
                 margin: 0,
-                lineHeight: 1.02,
+                lineHeight: 1.04,
                 fontWeight: 700,
-                color: '#FBF3DE',
+                color: 'var(--text-strong)',
                 letterSpacing: '-0.02em',
               }}
             >
-              Know every card.
-              <br />
-              <span className="gold-text">Build better decks.</span>
+              Know every card. Build better decks.
             </h1>
 
             <p style={{
-              color: '#C9D3E5', fontSize: 18, lineHeight: 1.55, marginTop: 22,
+              color: 'var(--text-muted)', fontSize: 17.5, lineHeight: 1.6, marginTop: 20,
               maxWidth: 620,
             }}>
               Live pricing, printings and rules for {counts.oracles.toLocaleString()} Magic cards
-              across {counts.sets.toLocaleString()} sets — paired with a format-aware Deck Builder,
-              Card Finder and Test Your Deck. One place to find it, price it, build it, test it.
+              across {counts.sets.toLocaleString()} sets. One place to find a card, price it,
+              build with it and test the list.
             </p>
 
             <div style={{ marginTop: 26, maxWidth: 680 }}>
-              <HomeSearch placeholder="Search cards, sets, types, abilities…" />
+              <HomeSearch placeholder="Search cards, sets, types, abilities" />
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
@@ -137,13 +125,13 @@ function Hero({
                   key={q.label}
                   href={q.href}
                   style={{
-                    fontSize: 13, fontWeight: 600, padding: '7px 14px',
+                    fontSize: 13, fontWeight: 600, padding: '8px 14px',
                     borderRadius: 999,
-                    background: 'rgba(255,255,255,0.06)',
-                    color: '#F1E9D2',
-                    border: '1px solid rgba(255,255,255,0.10)',
+                    background: 'var(--surface)',
+                    color: 'var(--text)',
+                    border: '1px solid var(--border)',
                     textDecoration: 'none',
-                    transition: 'background 150ms ease, border-color 150ms ease',
+                    transition: 'background 150ms ease, border-color 150ms ease, color 150ms ease',
                   }}
                 >{q.label}</Link>
               ))}
@@ -154,7 +142,7 @@ function Hero({
               <TrustChip label="Live pricing" />
               <TrustChip label={`${formatBig(counts.printings)}+ printings`} />
               <TrustChip label="Every format legality" />
-              <TrustChip label="Deck Builder + Test" />
+              <TrustChip label="Deck Builder and Test" />
               <TrustChip label="No login to browse" />
             </div>
           </div>
@@ -180,10 +168,10 @@ function Hero({
 function TrustChip({ label }: { label: string }) {
   return (
     <span style={{
-      fontSize: 11.5, fontWeight: 700, padding: '5px 11px', borderRadius: 999,
-      color: '#F1E9D2',
-      background: 'rgba(232,169,75,0.10)',
-      border: '1px solid rgba(232,169,75,0.28)',
+      fontSize: 12, fontWeight: 600, padding: '5px 11px', borderRadius: 999,
+      color: 'var(--text)',
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
       letterSpacing: '0.02em',
     }}>{label}</span>
   )
@@ -199,13 +187,12 @@ function DeckIntelligenceCard() {
   return (
     <div
       style={{
-        background: 'linear-gradient(180deg, rgba(255,253,246,0.98) 0%, rgba(251,243,222,0.94) 100%)',
-        border: '1px solid rgba(232,169,75,0.35)',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
         borderRadius: 18,
-        padding: 20,
+        padding: 22,
         color: 'var(--text)',
-        position: 'relative',
-        boxShadow: 'var(--shadow-md)',
+        boxShadow: '0 8px 24px rgba(20,33,61,0.06), 0 1px 3px rgba(20,33,61,0.04)',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -215,10 +202,10 @@ function DeckIntelligenceCard() {
         </div>
         <span className="chip chip-gold" style={{ fontSize: 10.5 }}>Preview</span>
       </div>
-      <h3 style={{ margin: 0, fontSize: 20, lineHeight: 1.25 }}>Take a list from idea to tested deck.</h3>
-      <p style={{ marginTop: 8, color: 'var(--text-muted)', fontSize: 13.5, lineHeight: 1.5 }}>
-        Format-aware Deck Builder, capability-based card search and a rules-aware Test Your
-        Deck flow — grounded in the live database, no invented cards.
+      <h3 style={{ margin: 0, fontSize: 20, lineHeight: 1.25 }}>From an idea to a tested list.</h3>
+      <p style={{ marginTop: 8, color: 'var(--text-muted)', fontSize: 13.5, lineHeight: 1.55 }}>
+        Format aware Deck Builder, capability based card search and a rules aware Test Your Deck
+        flow. All grounded in the live database, no invented cards.
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 14 }}>
         {actions.map((a) => (
@@ -252,13 +239,12 @@ function MarketPulseCard({
   return (
     <div
       style={{
-        background: 'linear-gradient(180deg, rgba(255,253,246,0.98) 0%, rgba(244,238,222,0.94) 100%)',
-        border: '1px solid var(--border-strong)',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
         borderRadius: 18,
-        padding: 20,
+        padding: 22,
         color: 'var(--text)',
-        position: 'relative',
-        boxShadow: 'var(--shadow-md)',
+        boxShadow: '0 8px 24px rgba(20,33,61,0.06), 0 1px 3px rgba(20,33,61,0.04)',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -266,7 +252,7 @@ function MarketPulseCard({
           <span className="gem" aria-hidden />
           <span className="label-mono" style={{ color: 'var(--primary-strong)' }}>Market Pulse</span>
         </div>
-        <span className="chip chip-arcane" style={{ fontSize: 10.5 }}>USD · Paper · TCGplayer</span>
+        <span className="chip chip-arcane" style={{ fontSize: 10.5 }}>USD paper, TCGplayer</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
         <MiniStat label="Printings" value={formatBig(counts.printings)} />
@@ -287,7 +273,7 @@ function MarketPulseCard({
             <img src={mover.image_uri_small} alt="" style={{ width: 40, height: 56, borderRadius: 4, objectFit: 'cover' }} />
           ) : <span style={{ width: 40, height: 56, borderRadius: 4, background: 'var(--bg-strong)' }} />}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="label-mono" style={{ color: 'var(--gold-600)' }}>Most active · {mover.period_days}d</div>
+            <div className="label-mono" style={{ color: 'var(--gold-600)' }}>Most active over {mover.period_days}d</div>
             <div style={{ fontWeight: 700, fontSize: 14, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {mover.name}
             </div>
@@ -302,7 +288,7 @@ function MarketPulseCard({
         </Link>
       ) : (
         <div style={{ padding: '12px 14px', borderRadius: 12, background: 'var(--bg-light)', border: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 13 }}>
-          Movers appear once we have 3+ days of comparable observations.
+          Movers appear once we have three or more days of comparable observations.
         </div>
       )}
     </div>
@@ -316,33 +302,35 @@ function LatestSetCard({ set }: { set: MtgSet }) {
       className="card-hover card-hover-gold"
       style={{
         display: 'flex', alignItems: 'center', gap: 14,
-        padding: 16, borderRadius: 14,
-        background: 'linear-gradient(135deg, rgba(20,33,61,0.86) 0%, rgba(10,30,63,0.86) 100%)',
-        border: '1px solid rgba(232,169,75,0.35)',
-        color: '#F6EED9', textDecoration: 'none',
+        padding: 18, borderRadius: 16,
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        color: 'var(--text)', textDecoration: 'none',
+        boxShadow: '0 6px 18px rgba(20,33,61,0.05), 0 1px 2px rgba(20,33,61,0.03)',
       }}
     >
       <div style={{
         width: 46, height: 46, borderRadius: 12,
-        background: 'rgba(232,169,75,0.18)', border: '1px solid rgba(232,169,75,0.35)',
+        background: 'var(--accent-soft)', border: '1px solid var(--accent-border)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        color: 'var(--gold-600)',
       }}>
         {set.icon_svg_uri ? (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={set.icon_svg_uri} alt="" style={{ width: 24, height: 24, filter: 'brightness(0) invert(0.9) sepia(0.5) saturate(4) hue-rotate(0deg)' }} />
-        ) : <span style={{ color: '#E8A94B', fontWeight: 800 }}>{set.code.toUpperCase()}</span>}
+          <img src={set.icon_svg_uri} alt="" style={{ width: 24, height: 24 }} />
+        ) : <span style={{ fontWeight: 800 }}>{set.code.toUpperCase()}</span>}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div className="label-mono" style={{ color: '#E8A94B' }}>Latest set</div>
-        <div style={{ fontWeight: 700, fontSize: 16, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div className="label-mono" style={{ color: 'var(--gold-600)' }}>Latest set</div>
+        <div style={{ fontWeight: 700, fontSize: 16, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-strong)' }}>
           {set.name}
         </div>
-        <div style={{ fontSize: 12, color: '#B7C6DE' }}>
-          {set.released_at ?? '—'}
-          {set.card_count ? ` · ${set.card_count.toLocaleString()} cards` : ''}
+        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          {set.released_at ?? 'Release date unknown'}
+          {set.card_count ? `, ${set.card_count.toLocaleString()} cards` : ''}
         </div>
       </div>
-      <span aria-hidden style={{ fontSize: 20, color: '#E8A94B' }}>›</span>
+      <span aria-hidden style={{ fontSize: 20, color: 'var(--gold-500)' }}>›</span>
     </Link>
   )
 }
@@ -379,9 +367,9 @@ function ChangeBadge({ pct }: { pct: number }) {
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
+/* ═════════════════════════════════════════════════════════════════════
    MARKET PULSE (full section)
-   ═══════════════════════════════════════════════════════════════════════ */
+   ═════════════════════════════════════════════════════════════════════ */
 
 function MarketPulseSection({ movers }: { movers: Awaited<ReturnType<typeof getMarketMovers>> }) {
   if (!movers) return null
@@ -394,8 +382,8 @@ function MarketPulseSection({ movers }: { movers: Awaited<ReturnType<typeof getM
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
         <SectionHeader
           eyebrow="Market pulse"
-          title={<>This week in the market</>}
-          subtitle={`Paper USD retail via ${movers.provider}. ${movers.windowDays}-day window. Only observations flagged clean are counted.`}
+          title={<>This week in the market.</>}
+          subtitle={`Paper USD retail via ${movers.provider}. ${movers.windowDays} day window. Only observations flagged clean are counted.`}
         />
 
         <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', marginTop: 24 }}>
@@ -407,8 +395,8 @@ function MarketPulseSection({ movers }: { movers: Awaited<ReturnType<typeof getM
         </div>
 
         <div style={{ marginTop: 20, fontSize: 12, color: 'var(--text-muted)' }}>
-          Movers require ≥ 3 days of observations and a headline price ≥ $2 to reduce noise.
-          Not financial advice.
+          Movers require at least three days of observations and a headline price of $2 or more to
+          reduce noise. Not financial advice.
         </div>
       </div>
     </section>
@@ -423,10 +411,11 @@ function MoverTile({ kind, mover }: { kind: 'riser' | 'faller' | 'active'; mover
       href={mover.card_href}
       className="card-hover card-hover-gold"
       style={{
-        display: 'block', padding: 16, borderRadius: 14,
+        display: 'block', padding: 18, borderRadius: 16,
         background: 'var(--surface)', border: '1px solid var(--border)',
         textDecoration: 'none', color: 'var(--text)',
         position: 'relative', overflow: 'hidden',
+        boxShadow: '0 4px 14px rgba(20,33,61,0.04)',
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
@@ -441,8 +430,8 @@ function MoverTile({ kind, mover }: { kind: 'riser' | 'faller' | 'active'; mover
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.2 }}>{mover.name}</div>
           <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 2 }}>
-            {mover.set_name}{mover.collector_number ? ` · #${mover.collector_number}` : ''}
-            {mover.finish !== 'nonfoil' ? ` · ${mover.finish}` : ''}
+            {mover.set_name}{mover.collector_number ? `, #${mover.collector_number}` : ''}
+            {mover.finish !== 'nonfoil' ? `, ${mover.finish}` : ''}
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 8 }}>
             <span style={{ fontSize: 20, fontWeight: 800, fontFamily: 'ui-monospace, SFMono-Regular, monospace' }}>
@@ -451,7 +440,7 @@ function MoverTile({ kind, mover }: { kind: 'riser' | 'faller' | 'active'; mover
             <ChangeBadge pct={mover.pct_delta} />
           </div>
           <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 4 }}>
-            from ${mover.start_price.toFixed(2)} · USD paper retail
+            from ${mover.start_price.toFixed(2)}. USD paper retail.
           </div>
         </div>
       </div>
@@ -459,9 +448,9 @@ function MoverTile({ kind, mover }: { kind: 'riser' | 'faller' | 'active'; mover
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
+/* ═════════════════════════════════════════════════════════════════════
    START EXPLORING
-   ═══════════════════════════════════════════════════════════════════════ */
+   ═════════════════════════════════════════════════════════════════════ */
 
 type ExploreCard = {
   eyebrow: string
@@ -477,7 +466,7 @@ const EXPLORE: ExploreCard[] = [
   {
     eyebrow: 'Cards & Sets',
     title: 'Explore every printing',
-    body: 'Search the full Scryfall + MTGJSON catalogue — Oracle text, printings, finishes, price history, format legality and rulings.',
+    body: 'Search the full Scryfall and MTGJSON catalogue. Oracle text, printings, finishes, price history, format legality and rulings.',
     href: '/cards/search',
     cta: 'Search cards',
     accent: 'gold',
@@ -486,7 +475,7 @@ const EXPLORE: ExploreCard[] = [
   {
     eyebrow: 'Card Finder',
     title: 'Find cards for your deck',
-    body: 'Capability-based search — colour, mana value, format, price, keyword. Every result cites the constraint it satisfied.',
+    body: 'Capability based search across colour, mana value, format, price and keyword. Every result cites the constraint it satisfied.',
     href: '/card-finder',
     cta: 'Open Card Finder',
     accent: 'arcane',
@@ -495,7 +484,7 @@ const EXPLORE: ExploreCard[] = [
   {
     eyebrow: 'Deck Builder',
     title: 'Build a deck',
-    body: 'Manual, format-aware, commander-first. Colour identity, mana curve, capabilities and owned-vs-missing next to the list.',
+    body: 'Manual, format aware, commander first. Colour identity, mana curve, capabilities and owned vs missing next to the list.',
     href: '/decks/new',
     cta: 'Start a deck',
     accent: 'ember',
@@ -513,7 +502,7 @@ const EXPLORE: ExploreCard[] = [
   {
     eyebrow: 'Collection',
     title: 'Track what you own',
-    body: 'Import, quantities, finishes, valuation basis of your choice. Feeds directly into Deck Builder and the shopping list.',
+    body: 'Import, quantities, finishes and the valuation basis of your choice. Feeds directly into Deck Builder and the shopping list.',
     href: '/collection',
     cta: 'Open Collection',
     accent: 'dusk',
@@ -522,7 +511,7 @@ const EXPLORE: ExploreCard[] = [
   {
     eyebrow: 'Formats',
     title: 'Explore formats',
-    body: 'Standard, Modern, Pioneer, Commander, Legacy, Pauper — legality, ban / restricted lists, and format-specific card pools.',
+    body: 'Standard, Modern, Pioneer, Commander, Legacy, Pauper. Legality, ban or restricted lists and format specific card pools.',
     href: '/formats',
     cta: 'Browse formats',
     accent: 'arcane',
@@ -532,7 +521,7 @@ const EXPLORE: ExploreCard[] = [
 
 function StartExploringSection() {
   return (
-    <section style={{ padding: '72px 24px', background: 'var(--bg)' }}>
+    <section style={{ padding: '76px 24px', background: 'var(--surface)' }}>
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
         <SectionHeader
           eyebrow="Start exploring"
@@ -560,39 +549,36 @@ function ExploreCardTile({ card }: { card: ExploreCard }) {
     ivy: 'chip-ivy',
     dusk: 'chip-dusk',
   }
-  const accentToGlow: Record<ExploreCard['accent'], string> = {
-    gold: 'linear-gradient(135deg, rgba(232,169,75,0.10), rgba(232,169,75,0) 65%)',
-    arcane: 'linear-gradient(135deg, rgba(35,95,174,0.10), rgba(35,95,174,0) 65%)',
-    ember: 'linear-gradient(135deg, rgba(232,90,44,0.10), rgba(232,90,44,0) 65%)',
-    ivy: 'linear-gradient(135deg, rgba(42,132,89,0.10), rgba(42,132,89,0) 65%)',
-    dusk: 'linear-gradient(135deg, rgba(74,58,85,0.12), rgba(74,58,85,0) 65%)',
+  const accentIconColor: Record<ExploreCard['accent'], string> = {
+    gold: 'var(--gold-500)',
+    arcane: 'var(--arcane-400)',
+    ember: 'var(--ember-500)',
+    ivy: 'var(--green)',
+    dusk: '#4A3A55',
   }
   return (
     <Link
       href={card.href}
-      className="card-hover rune-tl"
+      className="card-hover card-hover-gold"
       style={{
         position: 'relative',
         display: 'flex', flexDirection: 'column',
-        padding: 22, borderRadius: 16, minHeight: 200,
-        background: `${accentToGlow[card.accent]}, var(--surface)`,
+        padding: 24, borderRadius: 18, minHeight: 210,
+        background: 'var(--surface)',
         border: '1px solid var(--border)',
         color: 'var(--text)', textDecoration: 'none',
         overflow: 'hidden',
+        boxShadow: '0 4px 14px rgba(20,33,61,0.04)',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <span className={`chip ${accentToChip[card.accent]}`}>{card.eyebrow}</span>
         <span aria-hidden style={{
           fontSize: 22, opacity: 0.85,
-          color: card.accent === 'gold' ? 'var(--gold-500)'
-            : card.accent === 'arcane' ? 'var(--arcane-400)'
-            : card.accent === 'ember' ? 'var(--ember-500)'
-            : card.accent === 'ivy' ? 'var(--green)'
-            : '#4A3A55',
+          color: accentIconColor[card.accent],
         }}>{card.icon}</span>
       </div>
-      <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.15, color: 'var(--text-strong)' }}>
+      <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2, color: 'var(--text-strong)' }}>
         {card.title}
       </div>
       <p style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.55, flex: 1 }}>
@@ -605,41 +591,42 @@ function ExploreCardTile({ card }: { card: ExploreCard }) {
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
+/* ═════════════════════════════════════════════════════════════════════
    PLAYERS + COLLECTORS
-   ═══════════════════════════════════════════════════════════════════════ */
+   ═════════════════════════════════════════════════════════════════════ */
 
 function PlayersAndCollectorsSection() {
   return (
-    <section style={{ padding: '72px 24px', background: 'var(--surface)' }}>
+    <section style={{ padding: '76px 24px', background: 'var(--bg)' }}>
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
         <SectionHeader
           eyebrow="Built for both"
           title={<>For collectors <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>and</span> for players.</>}
-          subtitle="Half of MTG is the object. Half is the game. MTGPrices is designed for both — the same catalogue powers your collection and your deck."
+          subtitle="Half of MTG is the object. Half is the game. MTGPrices is built for both, and the same catalogue powers your collection and your deck."
         />
 
         <div className="split-grid" style={{ display: 'grid', gap: 22, marginTop: 32 }}>
           <div style={{
-            padding: 28, borderRadius: 20,
-            background: 'linear-gradient(160deg, rgba(232,169,75,0.10) 0%, rgba(232,169,75,0) 55%), var(--bg-light)',
-            border: '1px solid var(--accent-border)',
+            padding: 30, borderRadius: 22,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
             position: 'relative', overflow: 'hidden',
-          }} className="rune-br">
+            boxShadow: '0 6px 18px rgba(20,33,61,0.05)',
+          }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
               <span className="gem gem-gold" aria-hidden />
               <span className="label-mono" style={{ color: 'var(--gold-600)' }}>For Collectors</span>
             </div>
-            <h3 className="display" style={{ margin: 0, fontSize: 30, lineHeight: 1.1, color: 'var(--text-strong)' }}>
+            <h3 className="display" style={{ margin: 0, fontSize: 30, lineHeight: 1.15, color: 'var(--text-strong)' }}>
               Every printing, every finish, every history.
             </h3>
             <ul style={{ listStyle: 'none', padding: 0, margin: '20px 0 0', display: 'grid', gap: 10 }}>
               {[
-                'Live paper + digital pricing from TCGplayer, Card Kingdom, Cardmarket, ManaPool and Cardhoarder',
-                '90-day price history and per-printing charts',
+                'Live paper and digital pricing from TCGplayer, Card Kingdom, Cardmarket, ManaPool and Cardhoarder',
+                '90 day price history and per printing charts',
                 'Every English printing, every finish (nonfoil, foil, etched)',
-                'Collection with currency-aware valuation and Reserved List badges',
-                'Cheapest-printing lookup when you want the game piece, not the collector piece',
+                'Collection with currency aware valuation and Reserved List badges',
+                'Cheapest printing lookup when you want the game piece, not the collector piece',
               ].map((line) => <FeatureLine key={line} text={line} kind="gold" />)}
             </ul>
             <div style={{ display: 'flex', gap: 10, marginTop: 24, flexWrap: 'wrap' }}>
@@ -649,25 +636,26 @@ function PlayersAndCollectorsSection() {
           </div>
 
           <div style={{
-            padding: 28, borderRadius: 20,
-            background: 'linear-gradient(160deg, rgba(35,95,174,0.10) 0%, rgba(35,95,174,0) 55%), var(--bg-light)',
-            border: '1px solid var(--primary-border)',
+            padding: 30, borderRadius: 22,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
             position: 'relative', overflow: 'hidden',
-          }} className="rune-br">
+            boxShadow: '0 6px 18px rgba(20,33,61,0.05)',
+          }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
               <span className="gem" aria-hidden />
               <span className="label-mono" style={{ color: 'var(--primary-strong)' }}>For Players</span>
             </div>
-            <h3 className="display" style={{ margin: 0, fontSize: 30, lineHeight: 1.1, color: 'var(--text-strong)' }}>
+            <h3 className="display" style={{ margin: 0, fontSize: 30, lineHeight: 1.15, color: 'var(--text-strong)' }}>
               Deckbuilding grounded in real rules.
             </h3>
             <ul style={{ listStyle: 'none', padding: 0, margin: '20px 0 0', display: 'grid', gap: 10 }}>
               {[
-                'Format-aware Deck Builder — Commander colour identity, curve, capability mix',
+                'Format aware Deck Builder with Commander colour identity, curve and capability mix',
                 'Card Finder searches by what a card does, not just its name',
                 'Oracle text, rulings and legality on every card page',
-                'Test Your Deck — opening hands, mulligans, draw odds, mana feasibility',
-                'AI deck intelligence retrieval-grounded on the live database (no invented cards)',
+                'Test Your Deck with opening hands, mulligans, draw odds and mana feasibility',
+                'AI deck intelligence retrieval grounded on the live database, no invented cards',
               ].map((line) => <FeatureLine key={line} text={line} kind="arcane" />)}
             </ul>
             <div style={{ display: 'flex', gap: 10, marginTop: 24, flexWrap: 'wrap' }}>
@@ -697,30 +685,30 @@ function FeatureLine({ text, kind }: { text: string; kind: 'gold' | 'arcane' }) 
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
+/* ═════════════════════════════════════════════════════════════════════
    DECK LAB
-   ═══════════════════════════════════════════════════════════════════════ */
+   ═════════════════════════════════════════════════════════════════════ */
 
 function DeckLabSection() {
   const steps = [
-    { n: 'I',   title: 'Find',    body: 'Card Finder + capabilities. Search by what a card does.', href: '/card-finder?mode=play' },
-    { n: 'II',  title: 'Build',   body: 'Format-aware Deck Builder. Curve, colour identity, capability breakdown.', href: '/decks/new' },
+    { n: 'I',   title: 'Find',    body: 'Card Finder plus capabilities. Search by what a card does.', href: '/card-finder?mode=play' },
+    { n: 'II',  title: 'Build',   body: 'Format aware Deck Builder. Curve, colour identity, capability breakdown.', href: '/decks/new' },
     { n: 'III', title: 'Analyse', body: 'Owned vs missing, deck value, capability gaps.', href: '/decks' },
     { n: 'IV',  title: 'Test',    body: 'Opening hands, mulligans, draw odds and mana feasibility.', href: '/decks' },
     { n: 'V',   title: 'Complete', body: 'Cheapest missing printings from real market prices.', href: '/collection' },
   ]
   return (
-    <section className="arcane-band" style={{ padding: '80px 24px', position: 'relative' }}>
+    <section className="feature-shell" style={{ padding: '80px 24px', position: 'relative' }}>
       <div className="spark-field" aria-hidden />
       <div style={{ maxWidth: 1180, margin: '0 auto', position: 'relative' }}>
         <div style={{ textAlign: 'center', maxWidth: 720, margin: '0 auto 40px' }}>
-          <div className="label-mono" style={{ color: '#E8A94B', marginBottom: 10 }}>Deck Lab</div>
-          <h2 className="display" style={{ margin: 0, fontSize: 'clamp(30px, 3.4vw, 44px)', color: '#FBF3DE', lineHeight: 1.1 }}>
+          <div className="label-mono" style={{ color: 'var(--gold-600)', marginBottom: 10 }}>Deck Lab</div>
+          <h2 className="display" style={{ margin: 0, fontSize: 'clamp(30px, 3.4vw, 44px)', color: 'var(--text-strong)', lineHeight: 1.15 }}>
             Take a deck from idea to tested list.
           </h2>
-          <p style={{ marginTop: 12, color: '#C9D3E5', fontSize: 16, lineHeight: 1.55 }}>
-            Every stage is a real product surface — not marketing. Follow the arc, or jump
-            straight to any step.
+          <p style={{ marginTop: 12, color: 'var(--text-muted)', fontSize: 16, lineHeight: 1.6 }}>
+            Every stage is a real product surface, not marketing. Follow the arc, or jump straight
+            to any step.
           </p>
         </div>
 
@@ -729,24 +717,24 @@ function DeckLabSection() {
             <Link
               key={s.n}
               href={s.href}
-              className="card-hover"
+              className="card-hover card-hover-gold"
               style={{
                 position: 'relative',
                 display: 'flex', flexDirection: 'column',
-                padding: 22, borderRadius: 14,
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(232,169,75,0.28)',
-                color: '#F1E9D2', textDecoration: 'none',
-                overflow: 'hidden', minHeight: 170,
+                padding: 24, borderRadius: 16,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)', textDecoration: 'none',
+                overflow: 'hidden', minHeight: 180,
+                boxShadow: '0 4px 14px rgba(20,33,61,0.04)',
               }}
             >
               <div className="display" style={{
-                fontSize: 32, color: '#E8A94B', lineHeight: 1, marginBottom: 12,
-                textShadow: '0 0 20px rgba(232,169,75,0.30)',
+                fontSize: 34, color: 'var(--gold-500)', lineHeight: 1, marginBottom: 12,
               }}>{s.n}</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#FBF3DE' }}>{s.title}</div>
-              <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.5, color: '#C9D3E5', flex: 1 }}>{s.body}</div>
-              <div style={{ marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, color: '#E8A94B' }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-strong)' }}>{s.title}</div>
+              <div style={{ marginTop: 8, fontSize: 13.5, lineHeight: 1.55, color: 'var(--text-muted)', flex: 1 }}>{s.body}</div>
+              <div style={{ marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 700, color: 'var(--gold-600)' }}>
                 Open <span aria-hidden>›</span>
               </div>
               {i < steps.length - 1 && (
@@ -758,7 +746,7 @@ function DeckLabSection() {
                     right: -14, top: '50%', transform: 'translateY(-50%)',
                     width: 28, height: 28,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#E8A94B', fontSize: 22, opacity: 0.55,
+                    color: 'var(--gold-400)', fontSize: 22, opacity: 0.7,
                   }}
                 >›</div>
               )}
@@ -782,13 +770,13 @@ function DeckLabSection() {
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
+/* ═════════════════════════════════════════════════════════════════════
    FORMATS
-   ═══════════════════════════════════════════════════════════════════════ */
+   ═════════════════════════════════════════════════════════════════════ */
 
 function FormatsSection({ formats }: { formats: typeof FORMATS }) {
   return (
-    <section style={{ padding: '72px 24px', background: 'var(--bg)' }}>
+    <section style={{ padding: '76px 24px', background: 'var(--surface)' }}>
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
         <SectionHeader
           eyebrow="Formats"
@@ -807,9 +795,10 @@ function FormatsSection({ formats }: { formats: typeof FORMATS }) {
               className="card-hover card-hover-gold"
               style={{
                 display: 'flex', flexDirection: 'column',
-                padding: 16, borderRadius: 12,
+                padding: 18, borderRadius: 14,
                 background: 'var(--surface)', border: '1px solid var(--border)',
-                textDecoration: 'none', color: 'var(--text)', minHeight: 110,
+                textDecoration: 'none', color: 'var(--text)', minHeight: 120,
+                boxShadow: '0 3px 10px rgba(20,33,61,0.03)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -819,7 +808,7 @@ function FormatsSection({ formats }: { formats: typeof FORMATS }) {
                 <span className="label-mono" style={{ color: 'var(--text-muted)' }}>{f.group}</span>
               </div>
               <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-strong)' }}>{f.label}</div>
-              <div style={{ marginTop: 6, fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>{f.blurb}</div>
+              <div style={{ marginTop: 6, fontSize: 12.5, color: 'var(--text-muted)', lineHeight: 1.5 }}>{f.blurb}</div>
             </Link>
           ))}
         </div>
@@ -838,14 +827,14 @@ function groupToGem(group: string): string {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
+/* ═════════════════════════════════════════════════════════════════════
    RECENT SETS
-   ═══════════════════════════════════════════════════════════════════════ */
+   ═════════════════════════════════════════════════════════════════════ */
 
 function RecentSetsSection({ sets }: { sets: MtgSet[] }) {
   if (!sets.length) return null
   return (
-    <section style={{ padding: '72px 24px', background: 'var(--surface)' }}>
+    <section style={{ padding: '76px 24px', background: 'var(--bg)' }}>
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
         <SectionHeader
           eyebrow="Sets"
@@ -863,9 +852,10 @@ function RecentSetsSection({ sets }: { sets: MtgSet[] }) {
               href={`/set/${set.code}`}
               className="card-hover card-hover-gold"
               style={{
-                display: 'block', background: 'var(--surface-raised)',
-                border: '1px solid var(--border)', borderRadius: 14,
-                padding: 18, textDecoration: 'none', color: 'var(--text)',
+                display: 'block', background: 'var(--surface)',
+                border: '1px solid var(--border)', borderRadius: 16,
+                padding: 20, textDecoration: 'none', color: 'var(--text)',
+                boxShadow: '0 4px 14px rgba(20,33,61,0.04)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -879,8 +869,8 @@ function RecentSetsSection({ sets }: { sets: MtgSet[] }) {
               </div>
               <div style={{ fontSize: 15, fontWeight: 700, marginTop: 12, lineHeight: 1.25, color: 'var(--text-strong)' }}>{set.name}</div>
               <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 6 }}>
-                {set.released_at ?? '—'}
-                {set.card_count ? <> · {set.card_count.toLocaleString()} cards</> : null}
+                {set.released_at ?? 'Release date unknown'}
+                {set.card_count ? <>, {set.card_count.toLocaleString()} cards</> : null}
               </div>
             </Link>
           ))}
@@ -890,24 +880,23 @@ function RecentSetsSection({ sets }: { sets: MtgSet[] }) {
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
+/* ═════════════════════════════════════════════════════════════════════
    FINAL CTA
-   ═══════════════════════════════════════════════════════════════════════ */
+   ═════════════════════════════════════════════════════════════════════ */
 
 function FinalCtaSection() {
   return (
-    <section style={{ padding: '80px 24px 100px' }}>
+    <section style={{ padding: '80px 24px 100px', background: 'var(--surface)' }}>
       <div
-        className="rune-tl rune-br"
         style={{
           position: 'relative',
           maxWidth: 1180, margin: '0 auto',
-          padding: '48px 32px', borderRadius: 24,
+          padding: '52px 32px', borderRadius: 24,
           background:
-            'radial-gradient(80% 100% at 20% 20%, rgba(232,169,75,0.18), rgba(232,169,75,0) 60%),' +
-            'radial-gradient(60% 90% at 90% 90%, rgba(35,95,174,0.18), rgba(35,95,174,0) 60%),' +
-            'linear-gradient(180deg, var(--surface) 0%, var(--bg-light) 100%)',
-          border: '1px solid var(--border-strong)',
+            'radial-gradient(80% 100% at 20% 20%, rgba(232,169,75,0.14), rgba(232,169,75,0) 60%),' +
+            'radial-gradient(60% 90% at 90% 90%, rgba(35,95,174,0.12), rgba(35,95,174,0) 60%),' +
+            'linear-gradient(180deg, #FEFAEE 0%, var(--bg-light) 100%)',
+          border: '1px solid var(--border)',
           textAlign: 'center', overflow: 'hidden',
         }}
       >
@@ -916,16 +905,16 @@ function FinalCtaSection() {
             src="/favicon.png"
             alt=""
             aria-hidden
-            width={72}
-            height={72}
-            style={{ width: 72, height: 72, margin: '0 auto 20px', display: 'block', filter: 'drop-shadow(0 6px 18px rgba(20,33,61,0.20))' }}
+            width={64}
+            height={64}
+            style={{ width: 64, height: 64, margin: '0 auto 20px', display: 'block', filter: 'drop-shadow(0 6px 18px rgba(20,33,61,0.18))' }}
           />
-          <h2 className="display" style={{ margin: 0, fontSize: 'clamp(28px, 3.4vw, 40px)', color: 'var(--text-strong)', lineHeight: 1.1 }}>
+          <h2 className="display" style={{ margin: 0, fontSize: 'clamp(28px, 3.4vw, 40px)', color: 'var(--text-strong)', lineHeight: 1.15 }}>
             One home for MTG pricing, decks and rules.
           </h2>
-          <p style={{ marginTop: 14, color: 'var(--text-muted)', fontSize: 16, lineHeight: 1.55 }}>
-            Free to browse — no login required. Sign in to keep decks, track a collection
-            and personalise Deck Builder.
+          <p style={{ marginTop: 14, color: 'var(--text-muted)', fontSize: 16, lineHeight: 1.6 }}>
+            Free to browse, no login required. Sign in to keep decks, track a collection and
+            personalise Deck Builder.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 22, flexWrap: 'wrap' }}>
             <Link href="/cards/search" className="btn btn-gold btn-lg">Browse cards</Link>
@@ -937,9 +926,9 @@ function FinalCtaSection() {
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
+/* ═════════════════════════════════════════════════════════════════════
    Shared bits
-   ═══════════════════════════════════════════════════════════════════════ */
+   ═════════════════════════════════════════════════════════════════════ */
 
 function SectionHeader({
   eyebrow, title, subtitle, rightLink,
@@ -961,11 +950,11 @@ function SectionHeader({
             {eyebrow}
           </div>
         )}
-        <h2 className="display" style={{ margin: 0, fontSize: 'clamp(28px, 3.2vw, 40px)', color: 'var(--text-strong)', lineHeight: 1.1 }}>
+        <h2 className="display" style={{ margin: 0, fontSize: 'clamp(28px, 3.2vw, 40px)', color: 'var(--text-strong)', lineHeight: 1.15 }}>
           {title}
         </h2>
         {subtitle && (
-          <p style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 15.5, lineHeight: 1.55, maxWidth: 640 }}>
+          <p style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 15.5, lineHeight: 1.6, maxWidth: 640 }}>
             {subtitle}
           </p>
         )}

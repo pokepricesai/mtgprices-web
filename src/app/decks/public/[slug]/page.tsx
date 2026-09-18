@@ -1,7 +1,7 @@
 // app/decks/public/[slug]/page.tsx
 //
 // Public deck page. No login required. 404s on private/nonexistent
-// decks. Every field is a PublicDeckPayload projection — the owner's
+// decks. Every field is a PublicDeckPayload projection, the owner's
 // collection, acquired prices, per-card notes, and user_id never
 // appear.
 //
@@ -21,7 +21,7 @@ import { getFormatRule } from '@/lib/mtg/format-rules'
 // still serve to anon after the deck went private. Force a live
 // render on every request.
 //
-// If we ever want to cache these, the flip must invalidate — via
+// If we ever want to cache these, the flip must invalidate, via
 // revalidatePath('/decks/public/[slug]', 'page') inside the PATCH
 // handler. Deferred until traffic justifies the extra complexity.
 export const dynamic = 'force-dynamic'
@@ -34,14 +34,14 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const { slug } = await params
   const payload = await loadPublicDeckBySlug(slug)
   if (!payload) {
-    return { title: 'Deck not found — MTGPrices', robots: { index: false, follow: false } }
+    return { title: 'Deck not found. MTGPrices', robots: { index: false, follow: false } }
   }
   const commanderName = payload.commanders[0]?.name
   const rule = getFormatRule(payload.deck.format)
   const formatLabel = rule?.label ?? payload.deck.format
   const title = commanderName
-    ? `${payload.deck.name} — ${commanderName} ${formatLabel} — MTGPrices`
-    : `${payload.deck.name} — ${formatLabel} — MTGPrices`
+    ? `${payload.deck.name}. ${commanderName} ${formatLabel}. MTGPrices`
+    : `${payload.deck.name}. ${formatLabel}. MTGPrices`
   const description = commanderName
     ? `${formatLabel} deck built around ${commanderName}. ${payload.totals.main} main-deck cards.`
     : `${formatLabel} deck. ${payload.totals.main} main-deck cards.`

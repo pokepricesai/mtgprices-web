@@ -1,6 +1,6 @@
 'use client'
 // Task-focused AI surfaces on the deck page: Analyse Deck + Improve
-// Deck. Never auto-applies changes — the user chooses per suggestion.
+// Deck. Never auto-applies changes, the user chooses per suggestion.
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -76,7 +76,7 @@ function AnalyseButton({ deckId }: { deckId: string }) {
     setLoading(false)
     if (!res.ok) {
       const j = await res.json().catch(() => ({}))
-      setError(j.error === 'rate_limited' ? 'AI quota reached — try again tomorrow.' : (j.error ?? 'AI failed'))
+      setError(j.error === 'rate_limited' ? 'AI quota reached, try again tomorrow.' : (j.error ?? 'AI failed'))
       return
     }
     const j = await res.json()
@@ -91,7 +91,7 @@ function AnalyseButton({ deckId }: { deckId: string }) {
       </button>
       {open && data && (
         <Modal onClose={() => setOpen(false)} title="Deck analysis">
-          <AiTag>AI interpretation — verify against game rules</AiTag>
+          <AiTag>AI interpretation, verify against game rules</AiTag>
           <Section title="Game plan">{data.analysis.game_plan}</Section>
           <Section title="Mana curve">{data.analysis.curve_notes}</Section>
           <Section title="Capabilities">{data.analysis.capability_notes}</Section>
@@ -148,7 +148,7 @@ function ImproveButton({ deckId }: { deckId: string }) {
     setLoading(false)
     if (!res.ok) {
       const j = await res.json().catch(() => ({}))
-      setError(j.error === 'rate_limited' ? 'AI quota reached — try again tomorrow.' : (j.error ?? 'AI failed'))
+      setError(j.error === 'rate_limited' ? 'AI quota reached, try again tomorrow.' : (j.error ?? 'AI failed'))
       return
     }
     const j = await res.json()
@@ -222,12 +222,12 @@ function ImproveButton({ deckId }: { deckId: string }) {
           )}
           {data && (
             <>
-              <AiTag>AI interpretation — verify against game rules</AiTag>
+              <AiTag>AI interpretation, verify against game rules</AiTag>
               <div style={{ marginTop: 12, fontSize: 13, color: 'var(--text)', lineHeight: 1.55 }}>{data.summary}</div>
               <div style={{ marginTop: 14, display: 'grid', gap: 10 }}>
                 {data.suggestions.length === 0 && (
                   <div style={{ padding: 12, background: 'var(--bg-light)', borderRadius: 8, color: 'var(--text-muted)', fontSize: 13 }}>
-                    No changes to apply — deck already looks OK to the AI, or none of the suggestions survived grounding + validation.
+                    No changes to apply, deck already looks OK to the AI, or none of the suggestions survived grounding + validation.
                   </div>
                 )}
                 {data.suggestions.map((sug) => (
@@ -250,7 +250,7 @@ function ImproveButton({ deckId }: { deckId: string }) {
                 ))}
                 {data.rejected && data.rejected.length > 0 && (
                   <details style={{ marginTop: 4 }}>
-                    <summary style={{ cursor: 'pointer', fontSize: 11, color: 'var(--amber)' }}>{data.rejected.length} AI suggestion(s) rejected by grounding — click to view</summary>
+                    <summary style={{ cursor: 'pointer', fontSize: 11, color: 'var(--amber)' }}>{data.rejected.length} AI suggestion(s) rejected by grounding, click to view</summary>
                     <ul style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
                       {data.rejected.map((r: any, i: number) => <li key={i}>{r.reason}</li>)}
                     </ul>
@@ -272,7 +272,7 @@ function ImproveButton({ deckId }: { deckId: string }) {
 function SuggestionCard({ card, label, faded }: { card: Card | null; label: string; faded?: boolean }) {
   if (!card) {
     return (
-      <div style={{ opacity: faded ? 0.4 : 1, fontSize: 11, color: 'var(--text-muted)' }}>{label}: —</div>
+      <div style={{ opacity: faded ? 0.4 : 1, fontSize: 11, color: 'var(--text-muted)' }}>{label}: ,</div>
     )
   }
   const slug = card.printing?.collector_number ? buildCardSlug(card.printing.collector_number, card.name) : ''

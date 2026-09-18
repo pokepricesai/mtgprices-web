@@ -1,8 +1,8 @@
 // src/lib/mtg/valuation.data.ts
-// Pure data — the finite set of valuation bases MTGPrices supports.
+// Pure data, the finite set of valuation bases MTGPrices supports.
 // Every basis maps to a real (provider, currency, price_type, market)
 // combination present in mtg_current_prices. No silent FX between USD
-// and EUR — the currency is always explicit.
+// and EUR, the currency is always explicit.
 //
 // NO server-only import: consumed by both client controls (basis
 // picker) and server-side collection.ts.
@@ -20,7 +20,7 @@ export type ValuationBasis = {
 export const VALUATION_BASES: ValuationBasis[] = [
   {
     key: 'tcgplayer_usd_retail',
-    label: 'TCGplayer — USD retail',
+    label: 'TCGplayer, USD retail',
     provider: 'tcgplayer',
     currency: 'USD',
     price_type: 'retail',
@@ -29,7 +29,7 @@ export const VALUATION_BASES: ValuationBasis[] = [
   },
   {
     key: 'cardkingdom_usd_retail',
-    label: 'Card Kingdom — USD retail',
+    label: 'Card Kingdom, USD retail',
     provider: 'cardkingdom',
     currency: 'USD',
     price_type: 'retail',
@@ -38,7 +38,7 @@ export const VALUATION_BASES: ValuationBasis[] = [
   },
   {
     key: 'cardkingdom_usd_buylist',
-    label: 'Card Kingdom — USD buylist',
+    label: 'Card Kingdom, USD buylist',
     provider: 'cardkingdom',
     currency: 'USD',
     price_type: 'buylist',
@@ -47,7 +47,7 @@ export const VALUATION_BASES: ValuationBasis[] = [
   },
   {
     key: 'manapool_usd_retail',
-    label: 'ManaPool — USD retail',
+    label: 'ManaPool, USD retail',
     provider: 'manapool',
     currency: 'USD',
     price_type: 'retail',
@@ -56,7 +56,7 @@ export const VALUATION_BASES: ValuationBasis[] = [
   },
   {
     key: 'cardmarket_eur_retail',
-    label: 'Cardmarket — EUR retail',
+    label: 'Cardmarket, EUR retail',
     provider: 'cardmarket',
     currency: 'EUR',
     price_type: 'retail',
@@ -65,12 +65,12 @@ export const VALUATION_BASES: ValuationBasis[] = [
   },
   {
     key: 'cardhoarder_usd_retail',
-    label: 'Cardhoarder — MTGO tix',
+    label: 'Cardhoarder, MTGO tix',
     provider: 'cardhoarder',
     currency: 'USD',
     price_type: 'retail',
     market: 'mtgo',
-    description: 'Magic Online — priced in tix. Different economy to paper.',
+    description: 'Magic Online, priced in tix. Different economy to paper.',
   },
 ]
 
@@ -89,7 +89,7 @@ export function findBasis(match: Partial<ValuationBasis>): ValuationBasis | null
 
 export const DEFAULT_BASIS: ValuationBasis = VALUATION_BASES[0]
 
-/** Symbol for a currency — never mixes them. */
+/** Symbol for a currency, never mixes them. */
 export function currencySymbol(cur: string): string {
   if (cur === 'USD') return '$'
   if (cur === 'EUR') return '€'

@@ -4,7 +4,7 @@
 //
 // The Gateway lets us pass `"provider/model"` strings directly. Both
 // tiers (cheap + reasoning) are configured via env vars so we can swap
-// providers/models without redeploying code — only re-deploying.
+// providers/models without redeploying code, only re-deploying.
 //
 // Cheap tier: constrained output, minimal reasoning allowance.
 // Reasoning tier: deck building + strategic reasoning, higher
@@ -29,7 +29,7 @@ export function providerOf(modelString: string): string {
   return idx >= 0 ? modelString.slice(0, idx) : modelString
 }
 
-/** Effective model IDs per tier — used by the usage log so we can
+/** Effective model IDs per tier, used by the usage log so we can
  *  reconstruct exactly what ran in production. */
 export function modelForTier(tier: Tier): string {
   return AI_MODEL[tier]
@@ -85,7 +85,7 @@ export function sanitiseUserData(input: string, maxLength = 4000): string {
     .replace(/\bignore\s+(?:all\s+|the\s+|any\s+)?previous\s+instructions?\b/gi, '[redacted]')
 }
 
-/** True when the model provider is reachable — used to fail fast if
+/** True when the model provider is reachable, used to fail fast if
  *  AI_GATEWAY_API_KEY is unset. Never prints the key. */
 export function aiConfigured(): boolean {
   return Boolean(process.env.AI_GATEWAY_API_KEY)

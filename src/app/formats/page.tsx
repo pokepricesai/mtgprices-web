@@ -1,4 +1,4 @@
-// app/formats/page.tsx — MTG formats index.
+// app/formats/page.tsx, MTG formats index.
 // Only shows formats present in mtg_oracle_legalities. Per-format legal /
 // banned / restricted counts are queried lazily via getFormatCounts.
 
@@ -10,7 +10,7 @@ export const revalidate = 3600
 
 export const metadata: Metadata = {
   title: 'MTG formats',
-  description: 'Every Magic: The Gathering format we index — Standard, Modern, Legacy, Vintage, Commander, Pauper and more. Legality, bans and card discovery for each.',
+  description: 'Every Magic: The Gathering format we index: Standard, Modern, Legacy, Vintage, Commander, Pauper and more. Legality, bans and card discovery for each.',
   alternates: { canonical: 'https://mtgprices.io/formats' },
   openGraph: { url: 'https://mtgprices.io/formats' },
 }
@@ -31,8 +31,8 @@ export default async function FormatsIndex() {
         <div className="label-mono" style={{ marginBottom: 6 }}>Play</div>
         <h1 style={{ margin: 0, fontSize: 30 }}>MTG formats</h1>
         <p style={{ color: 'var(--text-muted)', marginTop: 6, fontSize: 15, maxWidth: 720 }}>
-          Every format we have legality data for. Counts are derived directly from Scryfall's legality feed —
-          bans and restrictions update as Wizards publishes them.
+          Every format we have legality data for. Counts are derived directly from Scryfall's legality feed,
+          so bans and restrictions update as Wizards publishes them.
         </p>
       </div>
 

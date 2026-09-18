@@ -1,6 +1,6 @@
 // src/lib/mtg/simulation/rules-engine-adapter.ts
 //
-// Phase 4B — RulesEngineAdapter contract.
+// Phase 4B, RulesEngineAdapter contract.
 //
 // This file DEFINES ONLY. It does not implement or link to any engine
 // (Forge, XMage, Manabrew). Phase 4B's spike keeps engines out of
@@ -27,7 +27,7 @@ import type { FormatKey } from '../formats.data'
 
 /** A card in a deck sent to the adapter. MTGPrices identifies cards
  *  by oracle_card_id (the gameplay identity) with an optional
- *  printing_id (for the exact physical printing to prefer — mostly
+ *  printing_id (for the exact physical printing to prefer, mostly
  *  irrelevant to rules-aware simulation but useful for consistent art
  *  in game logs). */
 export type AdapterDeckCard = {
@@ -68,7 +68,7 @@ export type StartMatchRequest = {
 
 /** Response from `startMatch` when running to completion inline
  *  (blocking). For queue-based hosting the adapter also exposes
- *  `enqueueMatch(request)` returning a job id — see the queue
+ *  `enqueueMatch(request)` returning a job id, see the queue
  *  design in Phase 4B report. */
 export type StartMatchResult = {
   sessionId: EngineSessionId
@@ -87,7 +87,7 @@ export type MatchGameResult = {
   events: GameEvent[]
   finalLife: [number, number]
   mulligans: [number, number]
-  /** Deterministic action trace — the sequence of decisions each AI
+  /** Deterministic action trace, the sequence of decisions each AI
    *  made. Suitable for replay. Some engines emit this; others don't.
    *  When unavailable, the field is omitted. */
   actionTrace?: EngineAction[]
@@ -181,7 +181,7 @@ export interface RulesEngineAdapter {
 
   /** Optional bulk mode. Adapter decides whether to parallelise
    *  internally. Never accept `iterations > 1000` in one call from
-   *  the app — chunk at the caller. */
+   *  the app, chunk at the caller. */
   simulateMany?(request: StartMatchRequest & { iterations: number }): Promise<{
     aggregate: {
       p1_wins: number; p2_wins: number; draws: number; timeouts: number; errors: number
@@ -200,7 +200,7 @@ export interface RulesEngineAdapter {
 
 // ── Notes on card identity ─────────────────────────────────────────
 
-/** MTGPrices identifies a card by `oracle_card_id` (UUID) — the
+/** MTGPrices identifies a card by `oracle_card_id` (UUID), the
  *  gameplay identity. Every rules engine has its OWN identifier
  *  system:
  *
@@ -221,7 +221,7 @@ export interface RulesEngineAdapter {
  *  `oracle_card_id` as the source of truth so we can round-trip the
  *  result back into MTGPrices data. Names alone aren't safe because
  *  of split/dfc/adventure cards where multiple oracle rows can share
- *  a display name — the adapter must resolve those unambiguously
+ *  a display name, the adapter must resolve those unambiguously
  *  using the printing_id / (set, cn) hint. */
 export type EngineCardRef = {
   engine_name: string

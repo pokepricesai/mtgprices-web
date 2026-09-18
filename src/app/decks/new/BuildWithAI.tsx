@@ -1,6 +1,6 @@
 'use client'
 // "Build with AI" preview flow. Never saves without user confirmation
-// — the /save endpoint re-runs the deterministic validator on the
+//, the /save endpoint re-runs the deterministic validator on the
 // user-confirmed contents.
 
 import { useState } from 'react'
@@ -59,7 +59,7 @@ export default function BuildWithAI({ formats }: Props) {
     setLoading(false)
     if (!res.ok) {
       const j = await res.json().catch(() => ({}))
-      setError(j.error === 'rate_limited' ? 'AI quota reached — try again tomorrow.' : (j.error ?? 'AI failed'))
+      setError(j.error === 'rate_limited' ? 'AI quota reached, try again tomorrow.' : (j.error ?? 'AI failed'))
       return
     }
     const j = await res.json()
@@ -95,7 +95,7 @@ export default function BuildWithAI({ formats }: Props) {
   if (!open) {
     return (
       <div>
-        <div className="label-mono" style={{ marginBottom: 6, color: 'var(--accent)' }}>OR — pre-launch AI (quota-limited)</div>
+        <div className="label-mono" style={{ marginBottom: 6, color: 'var(--accent)' }}>OR, pre-launch AI (quota-limited)</div>
         <button type="button" onClick={() => setOpen(true)} style={{
           background: 'transparent', color: 'var(--primary)', border: '1px solid var(--primary)',
           padding: '10px 16px', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer',

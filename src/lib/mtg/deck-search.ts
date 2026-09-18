@@ -1,7 +1,7 @@
 // src/lib/mtg/deck-search.ts
 //
 // Deck-aware card search primitives. These are the exact functions
-// Phase 3C AI will call — no separate AI-only retrieval layer. Every
+// Phase 3C AI will call, no separate AI-only retrieval layer. Every
 // filter still resolves into a real DB constraint. Never invents
 // strategic recommendations.
 
@@ -66,7 +66,7 @@ export function composeDeckQuery(deck: DeckContext, request: Partial<FinderQuery
  *  by first pulling the caller's collection + deck contents into an
  *  ID set. */
 export async function searchLegalCards(deck: DeckContext, opts: DeckSearchOptions = {}): Promise<DeckSearchResult> {
-  // getSupabaseServerClient() intentionally NOT called at top level —
+  // getSupabaseServerClient() intentionally NOT called at top level ,
   // it requires Next's request scope. Only getOwnedTotalsForOracles()
   // needs the caller session, and it self-scopes.
   const query = composeDeckQuery(deck, opts.request)
@@ -82,11 +82,11 @@ export async function searchLegalCards(deck: DeckContext, opts: DeckSearchOption
     : []
   query.excludeOracleIds = [...(query.excludeOracleIds ?? []), ...inDeckIds]
 
-  // Pull a bigger candidate set — we may filter by ownership after the
+  // Pull a bigger candidate set, we may filter by ownership after the
   // fact and want enough to fill a page.
   const inner = await findCards(query, { page: 1, pageSize: 200 })
 
-  // Owned / missing intersection — compute in one round-trip against
+  // Owned / missing intersection, compute in one round-trip against
   // the caller's collection (RLS-scoped).
   let ownedByOracle = new Map<string, number>()
   if (opts.ownedOnly || opts.missingOnly) {
@@ -141,7 +141,7 @@ export type DeckAlternativesHit = SimilarHit & {
   copiesInDeck: number
 }
 
-/** "Find alternatives" — deterministic similarity, restricted to the
+/** "Find alternatives", deterministic similarity, restricted to the
  *  deck's format and commander CI where applicable. Excludes the card
  *  itself from results. */
 export async function findAlternativesInDeck(
@@ -208,7 +208,7 @@ export async function findAlternativesInDeck(
   }))
 }
 
-/** "Find cheaper alternatives" — the target's current price under the
+/** "Find cheaper alternatives", the target's current price under the
  *  deck's basis is the ceiling. Uses shared capabilities + primary
  *  type + mana-value ± 1 as the similarity filter, plus deck format
  *  legality + commander CI. */

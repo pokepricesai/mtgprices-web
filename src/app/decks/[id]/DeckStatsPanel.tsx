@@ -83,7 +83,7 @@ export default function DeckStatsPanel({ ctx, onFilterByCapability }: { ctx: Dec
             ))}
           </div>
           <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 6, fontStyle: 'italic' }}>
-            Counts only. No sufficient/insufficient labels — those are Phase 3C.
+            Counts only. No sufficient/insufficient labels, those are Phase 3C.
           </div>
         </div>
       )}

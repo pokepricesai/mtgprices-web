@@ -25,7 +25,7 @@ export default function RulingsList({ rulings, initialCount = 6 }: Props) {
     return <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>No rulings recorded for this card.</div>
   }
   // Rulings arrive newest-first from getCardBySlug. Present them
-  // newest-first — most recent rulings are usually the most relevant.
+  // newest-first, most recent rulings are usually the most relevant.
   const shown = expanded ? rulings : rulings.slice(0, initialCount)
   const hiddenCount = rulings.length - shown.length
 

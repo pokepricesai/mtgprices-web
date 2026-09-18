@@ -1,6 +1,6 @@
 // app/api/decks/[id]/shopping/route.ts
 //
-// Owner-only shopping-list endpoint. Deterministic — no AI involved.
+// Owner-only shopping-list endpoint. Deterministic, no AI involved.
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { getCurrentUser } from '@/lib/supabase/server'

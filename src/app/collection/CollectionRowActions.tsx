@@ -31,14 +31,14 @@ export default function CollectionRowActions({ itemId, quantity, condition }: Pr
     if (c === condition) return
     setBusy(true)
     const supabase = getSupabaseBrowserClient()
-    // Attempt update — if a row with the target condition already
+    // Attempt update, if a row with the target condition already
     // exists, Postgres will 23505 on the unique constraint; we handle
     // that by merging.
     const { error } = await supabase.from('mtg_collection_items')
       .update({ condition: c })
       .eq('id', itemId)
     if (error && error.code === '23505') {
-      // A row with (user, finish, target-condition) already exists —
+      // A row with (user, finish, target-condition) already exists ,
       // merge quantities and delete the current row.
       const { data: cur } = await supabase.from('mtg_collection_items').select('printing_finish_id, quantity').eq('id', itemId).single()
       if (cur) {

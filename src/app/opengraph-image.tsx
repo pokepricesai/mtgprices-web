@@ -2,7 +2,7 @@
 // with gold + arcane-blue accents, echoing the MTGPrices wordmark.
 import { ImageResponse } from 'next/og'
 
-export const alt = 'MTGPrices — live MTG card prices, sets, and deck intelligence'
+export const alt = 'MTGPrices. Live MTG card prices, sets, and deck intelligence'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 export const dynamic = 'force-static'
@@ -102,7 +102,7 @@ export default function OpengraphImage() {
               flexWrap: 'wrap',
             }}
           >
-            Know every card.&nbsp;<span style={{ color: '#E8A94B' }}>Build better decks.</span>
+            Know every card. Build better decks.
           </span>
         </div>
 

@@ -1,4 +1,4 @@
-// app/login/page.tsx — sign-in surface. Google OAuth + email magic link.
+// app/login/page.tsx, sign-in surface. Google OAuth + email magic link.
 
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
@@ -34,7 +34,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       </p>
       <LoginClient nextPath={sp.next ?? '/account'} initialError={sp.error} />
       <p style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 20, lineHeight: 1.5 }}>
-        MTGPrices does not sell your data. We only store what you explicitly add — your collection, decks (later) and preferences. See <a href="/privacy" style={{ color: 'var(--primary)' }}>privacy</a> for details.
+        MTGPrices does not sell your data. We only store what you explicitly add: your collection, decks (later) and preferences. See <a href="/privacy" style={{ color: 'var(--primary)' }}>privacy</a> for details.
       </p>
     </div>
   )

@@ -9,7 +9,7 @@
 //     chosen basis
 //   - "preferred" printing/finish (from mtg_deck_cards.printing_finish_id)
 //     with its current price at basis
-//   - a provider comparison rowset — real (provider, currency,
+//   - a provider comparison rowset, real (provider, currency,
 //     price_type, market) combinations from mtg_current_prices for
 //     each missing Oracle. Never blend currencies.
 //   - a purchase URL when we can construct one deterministically from
@@ -51,7 +51,7 @@ export type MissingLine = {
   } | null
   /** Real (provider, currency, price_type, market) combinations that
    *  MTGPrices has priced for this Oracle. Sorted by (currency,
-   *  provider). Currencies remain separate — do NOT cross-rank. */
+   *  provider). Currencies remain separate, do NOT cross-rank. */
   providerRows: Array<{
     provider: string
     currency: string
@@ -64,7 +64,7 @@ export type MissingLine = {
     printing_finish_id: string
   }>
   /** Deterministically constructed purchase URLs. `null` when we
-   *  cannot verify a URL from stored data — never guessed. */
+   *  cannot verify a URL from stored data, never guessed. */
   purchaseLinks: PurchaseLink[]
 }
 
@@ -89,7 +89,7 @@ export type ShoppingList = {
 }
 
 /** Compute the shopping list for a DeckContext. Uses the caller's
- *  session-scoped ownership data — RLS is enforced upstream. */
+ *  session-scoped ownership data, RLS is enforced upstream. */
 export async function buildShoppingList(
   deck: DeckContext,
   mode: ShoppingMode = 'cheapest_playable',
@@ -97,7 +97,7 @@ export async function buildShoppingList(
   const basis = deck.pricing.basis
   // Aggregate all deck entries (commanders + main + sideboard +
   // companion + maybeboard) by oracle_card_id. Different zones for the
-  // same Oracle collapse into a single shopping row — you don't buy
+  // same Oracle collapse into a single shopping row, you don't buy
   // two copies of a legendary because it's in both main + commander;
   // for singleton formats it's already qty 1.
   //

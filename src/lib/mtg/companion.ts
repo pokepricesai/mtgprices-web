@@ -26,7 +26,7 @@
 //                                      oracle_text with many edge cases)
 //
 // SOURCES:
-//   Companion rulings (Rule 702.139) — Wizards Comprehensive Rules
+//   Companion rulings (Rule 702.139), Wizards Comprehensive Rules
 //   Individual card Oracle text on Scryfall
 
 import type { DeckCardForValidation, ValidationIssue } from './deck-rules'
@@ -43,7 +43,7 @@ export const COMPANION_NAMES = [
   'Yorion, Sky Nomad',
   'Jegantha, the Wellspring',
   'Umori, the Collector',
-  // Not enforced here — surfaced as a warning:
+  // Not enforced here, surfaced as a warning:
   'Kaheera, the Orphanguard',
   'Lutri, the Spellchaser',
   'Zirda, the Dawnwaker',
@@ -116,7 +116,7 @@ export function validateCompanion(input: {
   for (const c of companions) {
     const name = c.name as CompanionName
     if (!(COMPANION_NAMES as readonly string[]).includes(name)) {
-      // Unknown card in companion slot — warn but don't hard-fail.
+      // Unknown card in companion slot, warn but don't hard-fail.
       warnings.push({
         kind: 'partner_uncertainty' as any,
         severity: 'warning',
@@ -130,7 +130,7 @@ export function validateCompanion(input: {
       warnings.push({
         kind: 'partner_uncertainty' as any,
         severity: 'warning',
-        message: `${c.name}: its deck-construction restriction (creature subtypes / singleton / activated abilities) cannot be reliably verified from Oracle data alone. MTGPrices does not enforce it — please double-check the deck against the rules text.`,
+        message: `${c.name}: its deck-construction restriction (creature subtypes / singleton / activated abilities) cannot be reliably verified from Oracle data alone. MTGPrices does not enforce it, please double-check the deck against the rules text.`,
         cardName: c.name,
         oracle_card_id: c.oracle_card_id,
       })

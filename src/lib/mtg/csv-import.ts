@@ -1,10 +1,10 @@
 // src/lib/mtg/csv-import.ts
 //
 // Generic CSV → mtg_collection_items pipeline with format detection.
-// Never silently imports an ambiguous row — anything we can't uniquely
+// Never silently imports an ambiguous row, anything we can't uniquely
 // resolve is returned in `unresolved` for the user to look at.
 //
-// Format detection (based on column headers alone — we do NOT hardcode
+// Format detection (based on column headers alone, we do NOT hardcode
 // column ORDER, which varies):
 //
 //   Moxfield export:  Count, Name, Edition, Condition, Language, Foil,

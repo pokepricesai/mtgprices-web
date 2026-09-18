@@ -4,7 +4,7 @@
 //
 // The candidate pool from Stage B is passed to Sonnet along with the
 // BuildPlan. No tools. Schema-enforced output. Any oracle_card_id
-// outside the pool is rejected — the authorised set IS the pool.
+// outside the pool is rejected, the authorised set IS the pool.
 
 import 'server-only'
 import { z } from 'zod'
@@ -23,12 +23,12 @@ Non-negotiable rules:
 - Never invent card names or IDs. Never invent prices, legalities, or Oracle text.
 - Emit ONLY non-basic cards in "main". The application auto-fills basic lands from "basic_lands_to_add".
 - Prefer breadth of function (draw, ramp, removal, threats) over duplicates. In singleton formats, DO NOT list the same oracle_card_id twice.
-- Never claim strategic superiority — this is a proposal.
+- Never claim strategic superiority, this is a proposal.
 
 Output must be VALID JSON matching the schema. No prose outside the object.`
 
 /** Compact serialisation of a candidate row. One line per card. This
- *  is the single biggest token driver in Stage C so we keep it tight —
+ *  is the single biggest token driver in Stage C so we keep it tight ,
  *  no oracle_text, no keywords, no colours (colour identity is
  *  already enforced), just the id, name, mana cost, MV, type, and
  *  capabilities. Owned/price only shown when the plan cares. */
@@ -64,7 +64,7 @@ export function selectUserPrompt(input: {
 
   parts.push(`Format: ${input.formatRule.label}. Deck size: ${input.formatRule.minDeckSize}${input.formatRule.hasCommander ? ' + commander(s)' : ''}. Singleton: ${input.formatRule.singleton}.`)
   if (input.commanderName) {
-    parts.push(`Commander: ${input.commanderName} (already selected — include the commander oracle_card_id(s) in "commanders": ${JSON.stringify(input.commanderOracleIds)}).`)
+    parts.push(`Commander: ${input.commanderName} (already selected, include the commander oracle_card_id(s) in "commanders": ${JSON.stringify(input.commanderOracleIds)}).`)
   }
   parts.push(`Target: ~${input.targetMainCount} non-basic cards in "main". Then set "basic_lands_to_add"=${input.targetBasicCount} (approximate; the app fills basics deterministically).`)
 
@@ -81,7 +81,7 @@ export function selectUserPrompt(input: {
 
   // Compact candidate list.
   parts.push('')
-  parts.push(`Candidates (${input.pool.candidates.length} — id | name | mana | mv | type | capabilities${showPrice ? ' | price' : ''}${showOwned ? ' | owned' : ''}):`)
+  parts.push(`Candidates (${input.pool.candidates.length}, id | name | mana | mv | type | capabilities${showPrice ? ' | price' : ''}${showOwned ? ' | owned' : ''}):`)
   for (const c of input.pool.candidates) parts.push(candidateLine(c, showOwned, showPrice))
 
   parts.push('')
@@ -105,7 +105,7 @@ export async function runBuildSelect(input: {
     system: SELECT_SYSTEM,
     prompt: selectUserPrompt(input),
     schema: BuildSchema,
-    // No tools — every fact is already in the prompt.
+    // No tools, every fact is already in the prompt.
     maxSteps: 1,
     timeoutMs: input.timeoutMs ?? 140_000,
   })

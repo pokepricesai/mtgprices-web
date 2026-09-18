@@ -1,5 +1,5 @@
 // src/lib/mtg/movers.ts
-// Server-only helper — compute top-mover cards from mtg_price_observations.
+// Server-only helper, compute top-mover cards from mtg_price_observations.
 //
 // This is intentionally conservative. It:
 //   • locks the basis to paper / USD / retail so we don't mix currencies

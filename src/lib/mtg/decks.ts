@@ -2,7 +2,7 @@
 //
 // Server-side deck helpers. All reads/writes go through the caller's
 // session-scoped Supabase client, so RLS enforces `auth.uid()=user_id`
-// on `mtg_decks` and — via the parent-EXISTS policy — on
+// on `mtg_decks` and, via the parent-EXISTS policy, on
 // `mtg_deck_cards`. The service-role client is only used for
 // hydrating catalogue data (oracle_cards, printings, prices, legalities)
 // where the caller's owned data is not involved.
@@ -200,7 +200,7 @@ export type TextImportLine = {
 
 /** Parse "4x Lightning Bolt", "4 Lightning Bolt", "Lightning Bolt x4",
  *  ignore blank lines + section headers ("// Sideboard").
- *  Never silently imports ambiguous rows — the caller decides. */
+ *  Never silently imports ambiguous rows, the caller decides. */
 export async function resolveTextList(text: string, opts: { format?: FormatKey } = {}): Promise<TextImportLine[]> {
   const s = getSupabaseServiceClient()
   const rawLines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
@@ -220,7 +220,7 @@ export async function resolveTextList(text: string, opts: { format?: FormatKey }
     // Trim any trailing set/collector suffix that Moxfield sometimes emits.
     name = name.replace(/\s*\([A-Za-z0-9]+\)\s*(\d+)?\s*$/, '').trim()
 
-    // Look up by exact-ish name — Scryfall names are canonical, so
+    // Look up by exact-ish name, Scryfall names are canonical, so
     // `ilike` with the raw string works even for split cards (which
     // include the '//').
     const { data } = await s.from('mtg_oracle_cards').select('id, name').ilike('name', name).limit(4)
@@ -244,7 +244,7 @@ export function deckToText(deck: DeckRow, cardsWithNames: Array<{ zone: DeckZone
     arr.push(c)
     byZone.set(c.zone, arr)
   }
-  const parts: string[] = [`// ${deck.name} — ${deck.format}`, '']
+  const parts: string[] = [`// ${deck.name}, ${deck.format}`, '']
   const order: DeckZone[] = ['commander', 'main', 'sideboard', 'companion', 'maybeboard']
   for (const zone of order) {
     const arr = byZone.get(zone) ?? []

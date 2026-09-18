@@ -94,8 +94,8 @@ export default function CardFinderControls({ mode, initialParams, suggestions, w
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={mode === 'play'
-            ? 'Describe what you need — "cheap black creature removal legal in commander"'
-            : 'Describe collector interest — "foil mythics under $10 from 2020"'}
+            ? 'Describe what you need. Example: cheap black creature removal legal in commander'
+            : 'Describe collector interest. Example: foil mythics under $10 from 2020'}
           style={{
             width: '100%', padding: '14px 16px',
             border: '1px solid var(--border)', background: 'var(--surface)',
@@ -121,7 +121,7 @@ export default function CardFinderControls({ mode, initialParams, suggestions, w
         )}
       </div>
 
-      {/* Filter grid — different fields per mode */}
+      {/* Filter grid, different fields per mode */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',

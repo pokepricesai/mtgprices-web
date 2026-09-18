@@ -1,4 +1,4 @@
-// app/account/page.tsx — authenticated user summary.
+// app/account/page.tsx, authenticated user summary.
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -67,7 +67,7 @@ export default async function AccountPage() {
         <div className="label-mono" style={{ marginBottom: 8 }}>Default valuation basis</div>
         <p style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 0, marginBottom: 12, lineHeight: 1.55 }}>
           Which provider, currency and price type should power your collection value?
-          MTGPrices never silently converts between USD and EUR — you always see the
+          MTGPrices never silently converts between USD and EUR. You always see the
           exact basis your value was calculated against.
         </p>
         <ValuationBasisPicker current={{

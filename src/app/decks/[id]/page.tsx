@@ -1,4 +1,4 @@
-// app/decks/[id]/page.tsx — main Deck Builder.
+// app/decks/[id]/page.tsx, main Deck Builder.
 
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
@@ -15,8 +15,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const { id } = await params
   const deck = await getDeckById(id)
   return {
-    title: deck ? `${deck.name} — Deck Builder` : 'Deck',
-    description: deck ? `${deck.name} — a MTG deck on MTGPrices.` : 'MTG Deck Builder.',
+    title: deck ? `${deck.name}, Deck Builder` : 'Deck',
+    description: deck ? `${deck.name}, a MTG deck on MTGPrices.` : 'MTG Deck Builder.',
     robots: { index: false, follow: false },
     alternates: { canonical: `https://mtgprices.io/decks/${id}` },
     openGraph: { url: `https://mtgprices.io/decks/${id}` },

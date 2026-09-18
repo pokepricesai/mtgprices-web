@@ -1,4 +1,4 @@
-// app/sitemap-sets.xml/route.ts — MTG set index.
+// app/sitemap-sets.xml/route.ts, MTG set index.
 import { NextResponse } from 'next/server'
 import { listSets } from '@/lib/mtg/sets'
 

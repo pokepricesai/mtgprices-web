@@ -1,4 +1,4 @@
-# Open-Source MTG Rules Engines — Evaluation Report (Phase 4A)
+# Open-Source MTG Rules Engines, Evaluation Report (Phase 4A)
 
 *Compiled 2026-09-17 for Phase 4B (rules-aware simulation) go/no-go.*
 
@@ -35,7 +35,7 @@ This document exists to inform 4B planning.
   through 2026 (Marvel Super Heroes June 2026, The Hobbit Aug 2026,
   `forge-2.0.14`). Nightly daily-snapshots build.
 - **Realistic Node.js path:** Package Forge as a JVM sidecar. Two
-  options — (a) spawn Simulation Mode per match and parse output
+  options, (a) spawn Simulation Mode per match and parse output
   (used by mtg-matchlab); (b) wrap `forge-game` / `forge-ai` in a thin
   Java HTTP or gRPC service and call from Next.js. (b) is cleaner
   but requires Java glue code you'd maintain.
@@ -50,7 +50,7 @@ server, WintersRain/mtg-matchlab, jborden/forge-mtg-tools.
 - **Licence:** MIT.
 - **Card / rules coverage:** README claims "~32,000 unique cards and
   91,000 reprints," "~9,000 unit tests, ~80% coverage." Full rules
-  enforcement — server never trusts client, which suggests deeper
+  enforcement, server never trusts client, which suggests deeper
   rules-correctness discipline than Forge.
 - **Headless / server suitability:** Architecturally client/server
   already. `Mage.Server` is a standalone JBoss Remoting server;
@@ -66,7 +66,7 @@ server, WintersRain/mtg-matchlab, jborden/forge-mtg-tools.
 - **Development activity:** Very active. ~3,306 commits/year;
   2,361 stars, 941 forks; roughly monthly releases (`xmage_1.4.58V1`
   Oct 2025 → `xmage_1.4.61V1` Aug 2026).
-- **Realistic Node.js path:** Same JVM sidecar story — but XMage is
+- **Realistic Node.js path:** Same JVM sidecar story, but XMage is
   *harder* to embed because Remoting is baked in. Pragmatic route is
   to fork `Mage.Tests`' harness style into a JSON-over-HTTP shim.
 
@@ -74,28 +74,28 @@ Sources: magefree/mage, Development Testing Tools wiki.
 
 ## 3. Other engines considered
 
-- **Cockatrice** — Netplay only, explicitly **not** a rules engine
+- **Cockatrice**, Netplay only, explicitly **not** a rules engine
   (state fully player-controlled). Useless for deterministic
   simulation.
-- **Wagic** (WagicProject/wagic, C++, 403 stars, pushed Aug 2026) —
+- **Wagic** (WagicProject/wagic, C++, 403 stars, pushed Aug 2026) ,
   Homebrew mobile-first engine with an `auto=` scripting DSL.
   wagicGPT fork claims ~26,000 cards expressible. Coverage of modern
-  complex mechanics is uneven. Non-SPDX licence ("NOASSERTION") —
+  complex mechanics is uneven. Non-SPDX licence ("NOASSERTION") ,
   needs manual review before commercial-adjacent use.
 - **Manabrew** (witchesofthehill/manabrew, Rust + Tauri + React,
-  48 stars, active daily 2026 releases up to v3.43.0) — Reuses
+  48 stars, active daily 2026 releases up to v3.43.0), Reuses
   Forge's card-script corpus but re-implements the engine in Rust;
   a WASM engine build exists (PR #924). Cards parse; mechanics
   don't all execute yet. Docs explicitly say "broad card coverage
-  still in progress." Non-SPDX licence. Interesting long-term — a
-  WASM engine would drop straight into Next.js — but not
+  still in progress." Non-SPDX licence. Interesting long-term, a
+  WASM engine would drop straight into Next.js, but not
   production-ready.
-- **mtg-python-engine** / **open-mtg** / **open-mtg-env** — Toy /
+- **mtg-python-engine** / **open-mtg** / **open-mtg-env**, Toy /
   academic / RL-research subsets, not real rules.
-- **MTG-Paradox-Engine** — TypeScript, small, unproven.
-- **MagicTheGathering/mtg-sdk-\*** — API wrappers, not engines.
-- **OpenSourcerer** — Long-dormant.
-- **Manalink 3** — Historical Windows-only.
+- **MTG-Paradox-Engine**, TypeScript, small, unproven.
+- **MagicTheGathering/mtg-sdk-\***, API wrappers, not engines.
+- **OpenSourcerer**, Long-dormant.
+- **Manalink 3**, Historical Windows-only.
 
 ## 4. "Use it from Node" strategy
 
@@ -106,17 +106,17 @@ a **JVM sidecar microservice**:
 - Wrap `forge-game` + `forge-ai` (or XMage's server internals) in a
   small Spring Boot / Javalin service exposing JSON endpoints
   (`POST /goldfish`, `POST /simulate`, streaming progress via SSE).
-- Deploy the sidecar on **not Vercel** — Vercel Functions can't run
+- Deploy the sidecar on **not Vercel**, Vercel Functions can't run
   a persistent JVM. Options: Fly.io, Railway, Render, a small VPS,
   or Google Cloud Run (JVM cold start real but tolerable for batch).
   Next.js on Vercel calls it over HTTPS; Supabase remains truth for
   decks/results.
 - Cost/ops: one always-on 1–2 GB JVM instance (Forge/XMage both
-  want ≥ 2 GB heap for stable play) — ~$5–20/month. Auto-scale is
+  want ≥ 2 GB heap for stable play), ~$5–20/month. Auto-scale is
   awkward because games are stateful.
 - Licence caveat: **Forge is GPL-3.0**. Sidecar invoked over HTTP
   by Next.js is *probably* not a derivative work under mainstream
-  FSF interpretation — but shipping modified Forge binaries triggers
+  FSF interpretation, but shipping modified Forge binaries triggers
   source-disclosure. XMage's MIT sidesteps this.
 
 ## 5. Recommendation for Phase 4B

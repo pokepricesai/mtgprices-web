@@ -2,7 +2,7 @@
 //
 // Shared MTG collection module. All reads go through the caller's
 // session-scoped Supabase client (`getSupabaseServerClient`) so RLS
-// enforces `auth.uid() = user_id` — the service role is never used from
+// enforces `auth.uid() = user_id`, the service role is never used from
 // this module. Every function returns typed data that a future Deck
 // Builder can consume directly.
 

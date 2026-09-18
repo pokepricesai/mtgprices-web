@@ -7,7 +7,7 @@
 // `experimentalTriggers`.
 //
 // Vercel Queues are at-least-once. Idempotency is handled at the
-// worker side by mtg_simulation_claim_next() — if the same job_id
+// worker side by mtg_simulation_claim_next(), if the same job_id
 // is delivered twice, only the first claim succeeds; the second
 // gets `null` and returns 204 no-op.
 
@@ -23,12 +23,12 @@ export type QueueSendResult =
 /** Publish a simulation-job trigger to the queue. Returns { ok: false }
  *  cleanly when Vercel Queues are unavailable (e.g. local dev, or
  *  during a feature-flag-off window) so the caller can decide whether
- *  to fall back to `waitUntil`. Never throws — the enqueue endpoint
+ *  to fall back to `waitUntil`. Never throws, the enqueue endpoint
  *  must not fail solely because Queues aren't up. */
 export async function publishSimulationJob(jobId: string): Promise<QueueSendResult> {
   try {
     const result = await send(QUEUE_TOPIC, { job_id: jobId }, {
-      // Idempotency key uses the job_id — if mtgprices-web accidentally
+      // Idempotency key uses the job_id, if mtgprices-web accidentally
       // publishes twice within the message TTL, the queue dedupes.
       idempotencyKey: `job-${jobId}`,
     })

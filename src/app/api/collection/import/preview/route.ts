@@ -1,6 +1,6 @@
 // app/api/collection/import/preview/route.ts
 // Server-side preview endpoint for CSV import. Runs the resolver
-// against the catalogue via the service-role client — the user auth
+// against the catalogue via the service-role client, the user auth
 // check happens against the caller's session cookie.
 
 import { NextResponse, type NextRequest } from 'next/server'

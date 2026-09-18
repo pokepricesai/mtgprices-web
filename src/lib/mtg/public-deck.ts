@@ -2,7 +2,7 @@
 //
 // Deliberate public projection of a deck for /decks/public/[slug].
 //
-// The public payload is a STRICT WHITELIST — every field is chosen and
+// The public payload is a STRICT WHITELIST, every field is chosen and
 // added by hand. NEVER dump DeckContext directly. Fields explicitly
 // excluded:
 //   - user_id, owner email, auth data
@@ -47,7 +47,7 @@ export type PublicDeckCard = {
     finish: string
     image_uri_small: string | null
   } | null
-  /** PUBLIC price only — cheapest current retail at the deck's basis.
+  /** PUBLIC price only, cheapest current retail at the deck's basis.
    *  Explicitly does NOT include ownership or "acquired at" prices. */
   publicPrice: {
     price: number
@@ -66,7 +66,7 @@ export type PublicDeckPayload = {
     slug: string | null
     createdAt: string
     updatedAt: string
-    // No user_id. No owner email. No is_public (implicit — this
+    // No user_id. No owner email. No is_public (implicit, this
     // payload only exists for public decks).
   }
   commanders: PublicDeckCard[]
@@ -104,7 +104,7 @@ export type PublicDeckPayload = {
 }
 
 /** Load a public deck by slug. Returns null when not found OR when the
- *  deck is not public (indistinguishable — 404 either way from the
+ *  deck is not public (indistinguishable, 404 either way from the
  *  route). This function uses the SERVICE-ROLE client so it works
  *  without a user session, but it verifies `is_public = true` server-
  *  side so a private deck cannot slip through. */

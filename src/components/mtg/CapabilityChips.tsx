@@ -1,6 +1,6 @@
 // src/components/mtg/CapabilityChips.tsx
 // Renders the deterministic capability tags produced by classifyCard().
-// Non-decorative — each chip is a real filter target for future search.
+// Non-decorative, each chip is a real filter target for future search.
 
 import Link from 'next/link'
 import type { CardCapability } from '@/lib/mtg/capabilities'
@@ -9,7 +9,7 @@ import { CAPABILITY_LABELS, TYPE_CAPABILITIES } from '@/lib/mtg/capabilities'
 type Props = {
   caps: CardCapability[]
   /** When true, non-type chips link to the Card Finder filtered by that
-   *  capability. Default true — capability chips are the primary
+   *  capability. Default true, capability chips are the primary
    *  discovery bridge from a card page into Card Finder. */
   linkable?: boolean
 }

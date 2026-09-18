@@ -1,5 +1,5 @@
 // app/api/decks/search/route.ts
-// Card search restricted to a deck's context — reuses findCards but
+// Card search restricted to a deck's context, reuses findCards but
 // pre-applies format legality and (optionally) commander colour
 // identity. Returns a lightweight shape for the deck-builder side
 // panel (no owned/missing hydration, no per-oracle price fan-out).

@@ -13,7 +13,7 @@
 // This file INTENTIONALLY does not encode obscure exceptions
 // ("Rat Colony can appear any number of times"). Those are flagged as
 // warnings by the validator rather than hard-failed. Format changes
-// require editing this table only — no rules logic lives in React.
+// require editing this table only, no rules logic lives in React.
 
 import type { FormatKey } from './formats.data'
 
@@ -36,7 +36,7 @@ export type FormatRule = {
   hasCommander: boolean
   /** Commander's colour identity restricts the 99. */
   enforceColorIdentity: boolean
-  /** Singleton — one copy of any non-basic across the deck. */
+  /** Singleton, one copy of any non-basic across the deck. */
   singleton: boolean
   /** Deck-construction notes surfaced in the UI. */
   notes: string[]
@@ -73,7 +73,7 @@ const RULES: Record<string, FormatRule> = {
     minDeckSize: 60, maxDeckSize: Number.POSITIVE_INFINITY,
     copiesLimit: 4, sideboardMaxSize: 15,
     hasCommander: false, enforceColorIdentity: false, singleton: false,
-    notes: ['60-card minimum. 4-copy limit. Eternal format — deep card pool.'],
+    notes: ['60-card minimum. 4-copy limit. Eternal format, deep card pool.'],
   },
   vintage: {
     key: 'vintage', label: 'Vintage',
@@ -82,7 +82,7 @@ const RULES: Record<string, FormatRule> = {
     hasCommander: false, enforceColorIdentity: false, singleton: false,
     notes: [
       '60-card minimum, 4-copy limit.',
-      'Vintage uses a restricted list — restricted cards are limited to 1 copy. Enforced separately.',
+      'Vintage uses a restricted list, restricted cards are limited to 1 copy. Enforced separately.',
     ],
   },
   pauper: {
@@ -118,21 +118,21 @@ const RULES: Record<string, FormatRule> = {
     minDeckSize: 60, maxDeckSize: Number.POSITIVE_INFINITY,
     copiesLimit: 4, sideboardMaxSize: 15,
     hasCommander: false, enforceColorIdentity: false, singleton: false,
-    notes: ['Community format — 4th Edition through Scourge. 60/4/15.'],
+    notes: ['Community format, 4th Edition through Scourge. 60/4/15.'],
   },
   oldschool: {
     key: 'oldschool', label: 'Old School',
     minDeckSize: 60, maxDeckSize: Number.POSITIVE_INFINITY,
     copiesLimit: 4, sideboardMaxSize: 15,
     hasCommander: false, enforceColorIdentity: false, singleton: false,
-    notes: ['Community format — Alpha through Fallen Empires-era. 60/4/15.'],
+    notes: ['Community format, Alpha through Fallen Empires-era. 60/4/15.'],
   },
   penny: {
     key: 'penny', label: 'Penny Dreadful',
     minDeckSize: 60, maxDeckSize: Number.POSITIVE_INFINITY,
     copiesLimit: 4, sideboardMaxSize: 15,
     hasCommander: false, enforceColorIdentity: false, singleton: false,
-    notes: ['Community format — only cards under the small price ceiling. 60/4/15.'],
+    notes: ['Community format, only cards under the small price ceiling. 60/4/15.'],
   },
   future: {
     key: 'future', label: 'Future Standard',
@@ -163,7 +163,7 @@ const RULES: Record<string, FormatRule> = {
     notes: [
       '60 cards total: 1 planeswalker + 1 signature spell + 58 main.',
       'Singleton. Colour identity of the planeswalker + signature spell restricts the deck.',
-      'MTGPrices treats the command zone as a single "commander" slot for now — two-card command zones (planeswalker + signature) are a future refinement.',
+      'MTGPrices treats the command zone as a single "commander" slot for now, two-card command zones (planeswalker + signature) are a future refinement.',
     ],
   },
   brawl: {
@@ -185,7 +185,7 @@ const RULES: Record<string, FormatRule> = {
     minDeckSize: 100, maxDeckSize: 100,
     copiesLimit: 1, sideboardMaxSize: 0,
     hasCommander: false, enforceColorIdentity: false, singleton: true,
-    notes: ['100-card singleton on Arena — no commander.'],
+    notes: ['100-card singleton on Arena, no commander.'],
   },
   duel: {
     key: 'duel', label: 'Duel Commander',

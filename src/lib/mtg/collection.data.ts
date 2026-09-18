@@ -1,5 +1,5 @@
 // src/lib/mtg/collection.data.ts
-// Pure data + types for MTG collection. NO server-only guard —
+// Pure data + types for MTG collection. NO server-only guard ,
 // client components import from here for form controls.
 
 export type CardCondition =

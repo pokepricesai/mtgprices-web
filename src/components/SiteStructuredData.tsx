@@ -20,7 +20,7 @@ export default function SiteStructuredData() {
           height: 512,
         },
         description:
-          'MTGPrices — live Magic: The Gathering card prices, printings, historical charts and set catalogue. Powered by Scryfall + MTGJSON.',
+          'MTGPrices. Live Magic: The Gathering card prices, printings, historical charts and set catalogue. Powered by Scryfall and MTGJSON.',
       },
       {
         '@type': 'WebSite',

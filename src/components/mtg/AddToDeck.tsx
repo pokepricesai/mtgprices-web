@@ -1,5 +1,5 @@
 'use client'
-// AddToDeck — a small dropdown that lists the caller's decks and lets
+// AddToDeck, a small dropdown that lists the caller's decks and lets
 // them push a single oracle_card_id into a chosen deck. Optionally
 // records the current printing_finish_id as the preferred printing so
 // the deck picks up that printing's price + owned status.

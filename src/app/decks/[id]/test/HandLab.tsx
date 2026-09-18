@@ -58,7 +58,7 @@ export default function HandLab({ deck, library, cardIndex }: {
   }
 
   function toggleBottom(cardIndexInHand: number) {
-    // Track "which HAND slot indices are bottomed" — but IDs alone may
+    // Track "which HAND slot indices are bottomed", but IDs alone may
     // collide when multiple copies of the same card are in hand. Use
     // index-based keys as `hand[i].oracle_card_id + '#' + i`.
     const key = state.hand[cardIndexInHand].oracle_card_id + '#' + cardIndexInHand
@@ -132,14 +132,14 @@ export default function HandLab({ deck, library, cardIndex }: {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginBottom: 14 }}>
         <Tile label="Cards in hand" v={String(state.hand.length)} />
         <Tile label="Lands in hand" v={String(openingLands)} />
-        <Tile label="Untapped colours" v={openingColours.size > 0 ? Array.from(openingColours).sort().join('') : '—'} />
+        <Tile label="Untapped colours" v={openingColours.size > 0 ? Array.from(openingColours).sort().join('') : '-'} />
         <Tile label="Mulligans" v={String(state.mulligans)} />
         <Tile label="Library remaining" v={String(state.library.length)} />
       </div>
 
       {isChooseBottom && (
         <div style={{ padding: 10, background: 'var(--amber-soft, rgba(232,169,75,0.10))', color: 'var(--amber, #a0813f)', border: '1px solid rgba(232,169,75,0.28)', borderRadius: 8, fontSize: 13, marginBottom: 10 }}>
-          London mulligan — pick {state.mulligans} card{state.mulligans === 1 ? '' : 's'} to put on the bottom of your library.
+          London mulligan, pick {state.mulligans} card{state.mulligans === 1 ? '' : 's'} to put on the bottom of your library.
         </div>
       )}
 
@@ -161,7 +161,7 @@ export default function HandLab({ deck, library, cardIndex }: {
                 cursor: isChooseBottom ? 'pointer' : 'default',
                 opacity: selectedForBottom ? 0.55 : 1,
               }}
-              aria-label={c.name + (selectedForBottom ? ' — will be bottomed' : '')}
+              aria-label={c.name + (selectedForBottom ? ', will be bottomed' : '')}
             >
               {c.imageUri ? (
                 <img src={c.imageUri} alt={c.name} style={{ width: '100%', display: 'block', borderRadius: 6 }} />
@@ -191,9 +191,9 @@ export default function HandLab({ deck, library, cardIndex }: {
         </div>
       )}
 
-      {/* Non-blocking note — never AI. */}
+      {/* Non-blocking note, never AI. */}
       <div style={{ marginTop: 20, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-        Cards drawn without replacement. London mulligan model — after N mulligans you keep 7 cards then bottom N.
+        Cards drawn without replacement. London mulligan model, after N mulligans you keep 7 cards then bottom N.
         Colour count shows untapped basic + non-basic untapped sources only (see Mana tab for classifier details).
       </div>
     </section>
