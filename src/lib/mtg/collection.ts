@@ -396,6 +396,214 @@ export async function getCollectionSummary(): Promise<CollectionSummary | null> 
   }
 }
 
+// ── Analytics ──────────────────────────────────────────────────────
+
+export type CollectionAnalyticsBucket = {
+  key: string
+  label: string
+  value: number
+  quantity: number
+}
+export type CollectionAnalyticsHolding = {
+  printing_id: string
+  finish: string
+  name: string
+  set_code: string
+  set_name: string
+  collector_number: string | null
+  image_uri_small: string | null
+  unit_price: number
+  quantity: number
+  line_value: number
+  card_href: string
+}
+export type CollectionMissingHolding = {
+  printing_id: string
+  finish: string
+  name: string
+  set_code: string
+  collector_number: string | null
+  image_uri_small: string | null
+  quantity: number
+  card_href: string
+}
+export type CollectionAnalytics = {
+  basis: ValuationBasis
+  totalValue: number
+  totalCards: number
+  totalWithPrice: number
+  totalMissingPrice: number
+  valueBySet: CollectionAnalyticsBucket[]
+  valueByColour: CollectionAnalyticsBucket[]
+  valueByRarity: CollectionAnalyticsBucket[]
+  valueByFinish: CollectionAnalyticsBucket[]
+  topHoldings: CollectionAnalyticsHolding[]
+  missingPrices: CollectionMissingHolding[]
+}
+
+/**
+ * Value-oriented collection analytics on the caller's basis. Uses the
+ * same hydrated rows that power the collection page, then folds them
+ * into per-set / per-colour / per-rarity / per-finish value buckets
+ * and picks the top holdings by line value.
+ *
+ * Every number is denominated in a single currency. No blending.
+ */
+export async function getCollectionAnalytics(): Promise<CollectionAnalytics | null> {
+  const uid = await requireUserId()
+  if (!uid) return null
+  const supabase = await getSupabaseServerClient()
+  const basis = await currentUserPrefsBasis(uid)
+
+  const { data: rows } = await supabase.from('mtg_collection_items').select('*').limit(5000)
+  const rawRows = (rows ?? []) as CollectionItemRow[]
+  const hydrated = await hydrate(rawRows, basis)
+
+  // Set names in one batched query.
+  const setCodes = Array.from(new Set(hydrated.map((h) => h.printing.set_code).filter(Boolean)))
+  const s = getSupabaseServiceClient()
+  const { data: setsRaw } = setCodes.length > 0
+    ? await s.from('mtg_sets').select('code, name').in('code', setCodes)
+    : { data: [] as { code: string; name: string }[] }
+  const setNameByCode = new Map<string, string>()
+  for (const row of (setsRaw ?? []) as any[]) setNameByCode.set(row.code, row.name)
+
+  let totalValue = 0
+  let totalCards = 0
+  let totalWithPrice = 0
+  let totalMissingPrice = 0
+
+  const valueBySetMap = new Map<string, { name: string; value: number; qty: number }>()
+  const valueByColourMap = new Map<string, { label: string; value: number; qty: number }>()
+  const valueByRarityMap = new Map<string, { label: string; value: number; qty: number }>()
+  const valueByFinishMap = new Map<string, { label: string; value: number; qty: number }>()
+
+  const holdings: CollectionAnalyticsHolding[] = []
+  const missing: CollectionMissingHolding[] = []
+
+  const RARITY_LABEL: Record<string, string> = {
+    common: 'Common', uncommon: 'Uncommon', rare: 'Rare', mythic: 'Mythic',
+    special: 'Special', bonus: 'Bonus',
+  }
+  const COLOUR_LABEL: Record<string, string> = {
+    W: 'White', U: 'Blue', B: 'Black', R: 'Red', G: 'Green', C: 'Colourless / multi',
+  }
+
+  for (const h of hydrated) {
+    totalCards += h.quantity
+    const priced = h.currentTotal !== null
+    if (priced) totalWithPrice += h.quantity; else totalMissingPrice += h.quantity
+
+    const lineValue = h.currentTotal?.price ?? 0
+    totalValue += lineValue
+
+    const setCode = h.printing.set_code || 'UNKNOWN'
+    const setName = setNameByCode.get(setCode) ?? setCode.toUpperCase()
+    const bset = valueBySetMap.get(setCode) ?? { name: setName, value: 0, qty: 0 }
+    bset.value += lineValue; bset.qty += h.quantity
+    valueBySetMap.set(setCode, bset)
+
+    const rarity = h.printing.rarity ?? 'unknown'
+    const brar = valueByRarityMap.get(rarity) ?? { label: RARITY_LABEL[rarity] ?? capitalise(rarity), value: 0, qty: 0 }
+    brar.value += lineValue; brar.qty += h.quantity
+    valueByRarityMap.set(rarity, brar)
+
+    const finish = h.finish
+    const bfin = valueByFinishMap.get(finish) ?? { label: capitalise(finish), value: 0, qty: 0 }
+    bfin.value += lineValue; bfin.qty += h.quantity
+    valueByFinishMap.set(finish, bfin)
+
+    const colours = (h.oracle?.colors as string[] | undefined) ?? []
+    if (colours.length === 0) {
+      const b = valueByColourMap.get('C') ?? { label: COLOUR_LABEL.C, value: 0, qty: 0 }
+      b.value += lineValue; b.qty += h.quantity
+      valueByColourMap.set('C', b)
+    } else if (colours.length === 1) {
+      const key = colours[0]
+      const b = valueByColourMap.get(key) ?? { label: COLOUR_LABEL[key] ?? key, value: 0, qty: 0 }
+      b.value += lineValue; b.qty += h.quantity
+      valueByColourMap.set(key, b)
+    } else {
+      // Multicolour buckets under the "colourless / multi" tile so the
+      // colour breakdown stays scannable. Detail is available on the
+      // rarity/set view.
+      const b = valueByColourMap.get('C') ?? { label: COLOUR_LABEL.C, value: 0, qty: 0 }
+      b.value += lineValue; b.qty += h.quantity
+      valueByColourMap.set('C', b)
+    }
+
+    if (h.currentPrice) {
+      const cardHref = buildCardHrefFromPrinting(h.printing)
+      holdings.push({
+        printing_id: h.printing.id,
+        finish: h.finish,
+        name: h.printing.name,
+        set_code: h.printing.set_code,
+        set_name: setName,
+        collector_number: h.printing.collector_number,
+        image_uri_small: h.printing.image_uri_small,
+        unit_price: h.currentPrice.price,
+        quantity: h.quantity,
+        line_value: lineValue,
+        card_href: cardHref,
+      })
+    } else if (h.printing.id) {
+      missing.push({
+        printing_id: h.printing.id,
+        finish: h.finish,
+        name: h.printing.name,
+        set_code: h.printing.set_code,
+        collector_number: h.printing.collector_number,
+        image_uri_small: h.printing.image_uri_small,
+        quantity: h.quantity,
+        card_href: buildCardHrefFromPrinting(h.printing),
+      })
+    }
+  }
+
+  const bucketise = <T extends { label?: string; name?: string; value: number; qty: number }>(
+    map: Map<string, T>,
+    top = 10,
+  ): CollectionAnalyticsBucket[] => Array.from(map.entries())
+    .map(([key, v]) => ({
+      key,
+      label: (v as any).name ?? (v as any).label ?? key,
+      value: Math.round(v.value * 100) / 100,
+      quantity: v.qty,
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, top)
+
+  const topHoldings = holdings.sort((a, b) => b.line_value - a.line_value).slice(0, 20)
+  const missingPrices = missing.sort((a, b) => b.quantity - a.quantity).slice(0, 20)
+
+  return {
+    basis,
+    totalValue: Math.round(totalValue * 100) / 100,
+    totalCards,
+    totalWithPrice,
+    totalMissingPrice,
+    valueBySet: bucketise(valueBySetMap, 12),
+    valueByColour: bucketise(valueByColourMap, 6),
+    valueByRarity: bucketise(valueByRarityMap, 6),
+    valueByFinish: bucketise(valueByFinishMap, 4),
+    topHoldings,
+    missingPrices,
+  }
+}
+
+function capitalise(s: string): string {
+  return s.length > 0 ? s.charAt(0).toUpperCase() + s.slice(1) : s
+}
+function buildCardHrefFromPrinting(p: {
+  set_code: string; collector_number: string | null; name: string;
+}): string {
+  if (!p.set_code) return '#'
+  const nameSlug = p.name.toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  const seg = p.collector_number ? `${p.collector_number}-${nameSlug}` : nameSlug
+  return `/set/${p.set_code}/card/${seg}`
+}
+
 /** Reusable helpers for the future Deck Builder. */
 export async function userOwns(oracleId: string): Promise<boolean> {
   const uid = await requireUserId()

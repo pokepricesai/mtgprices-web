@@ -36,6 +36,7 @@ type PrintingRow = {
   image_uri_small: string | null
   digital: boolean | null
   lang: string | null
+  rarity: string | null
 }
 
 /** Convenience wrapper the card page can call. Takes the oracle id and
@@ -51,7 +52,7 @@ export async function getCardMarketSummary(
   // 1) Every English paper printing for this oracle.
   const { data: printsRaw } = await supabase
     .from('mtg_printings')
-    .select('id, oracle_card_id, set_code, collector_number, name, released_at, image_uri_small, digital, lang')
+    .select('id, oracle_card_id, set_code, collector_number, name, released_at, image_uri_small, digital, lang, rarity')
     .eq('oracle_card_id', oracleCardId)
     .eq('digital', false)
     .eq('lang', 'en')
@@ -100,6 +101,58 @@ export async function getCardMarketSummary(
   const printingById = new Map(prints.map((p) => [p.id, p]))
   const finishById = new Map(finishes.map((f) => [f.id, f]))
 
+  // 3b) Batched 30D observation history for every priced finish. Used
+  // to derive per-row 7D and 30D deltas on the printing comparison
+  // table without one query per printing.
+  const pricedFinishIds = Array.from(new Set(currents.map((c) => c.printing_finish_id)))
+  const since30 = new Date(); since30.setUTCDate(since30.getUTCDate() - 30)
+  const since30Iso = since30.toISOString().slice(0, 10)
+  const IN_CHUNK = 120
+  const obsChunks: string[][] = []
+  for (let i = 0; i < pricedFinishIds.length; i += IN_CHUNK) obsChunks.push(pricedFinishIds.slice(i, i + IN_CHUNK))
+  const obsResults = await Promise.all(obsChunks.map((chunk) =>
+    supabase
+      .from('mtg_price_observations')
+      .select('printing_finish_id, observed_on, price')
+      .eq('provider', basis.provider).eq('currency', basis.currency)
+      .eq('market', basis.market).eq('price_type', basis.priceType)
+      .or('is_anomalous.is.null,is_anomalous.eq.false')
+      .gte('observed_on', since30Iso)
+      .in('printing_finish_id', chunk),
+  ))
+  type Agg = { earliest: { d: string; p: number }; latest: { d: string; p: number }; d7: { d: string; p: number } | null }
+  const aggByFinish = new Map<string, Agg>()
+  const since7 = new Date(); since7.setUTCDate(since7.getUTCDate() - 7)
+  const since7Iso = since7.toISOString().slice(0, 10)
+  for (const { data } of obsResults) for (const row of (data ?? []) as any[]) {
+    const id = row.printing_finish_id as string
+    const d = row.observed_on as string
+    const p = Number(row.price); if (!Number.isFinite(p) || p <= 0) continue
+    const cur = aggByFinish.get(id)
+    if (!cur) {
+      aggByFinish.set(id, { earliest: { d, p }, latest: { d, p }, d7: d >= since7Iso ? { d, p } : null })
+      continue
+    }
+    if (d < cur.earliest.d) cur.earliest = { d, p }
+    if (d > cur.latest.d)   cur.latest   = { d, p }
+    if (d >= since7Iso) {
+      if (!cur.d7 || d < cur.d7.d) cur.d7 = { d, p }
+    }
+  }
+  function deltaFor(finishId: string, currentPrice: number): { pct_7d: number | null; pct_30d: number | null } {
+    const a = aggByFinish.get(finishId)
+    if (!a) return { pct_7d: null, pct_30d: null }
+    let pct_30d: number | null = null
+    if (a.earliest.d !== a.latest.d && a.earliest.p > 0) {
+      pct_30d = (currentPrice - a.earliest.p) / a.earliest.p
+    }
+    let pct_7d: number | null = null
+    if (a.d7 && a.d7.p > 0 && a.d7.d !== a.latest.d) {
+      pct_7d = (currentPrice - a.d7.p) / a.d7.p
+    }
+    return { pct_7d, pct_30d }
+  }
+
   // A single card can have multiple finishes on the same printing
   // (nonfoil + foil). We keep the cheapest finish per printing for the
   // cross-printing comparison view.
@@ -110,6 +163,8 @@ export async function getCardMarketSummary(
     if (!f) continue
     const p = printingById.get(f.printing_id)
     if (!p) continue
+    const price = Number(cp.price)
+    const { pct_7d, pct_30d } = deltaFor(f.id, price)
     const row: PrintingPriceRow = {
       printing_id: p.id,
       finish_id: f.id,
@@ -119,7 +174,9 @@ export async function getCardMarketSummary(
       collector_number: p.collector_number,
       released_at: p.released_at,
       image_uri_small: p.image_uri_small,
-      price: Number(cp.price),
+      rarity: p.rarity,
+      price,
+      pct_7d, pct_30d,
     }
     allPricedFinishRows.push(row)
     const existing = cheapestPerPrinting.get(p.id)

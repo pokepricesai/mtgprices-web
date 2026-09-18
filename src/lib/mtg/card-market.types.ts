@@ -24,7 +24,12 @@ export type PrintingPriceRow = {
   collector_number: string | null
   released_at: string | null
   image_uri_small: string | null
+  rarity: string | null
   price: number
+  // Per-finish 7D and 30D percent deltas (null when history is too
+  // sparse to compare like for like).
+  pct_7d: number | null
+  pct_30d: number | null
 }
 
 export type WindowStat = {

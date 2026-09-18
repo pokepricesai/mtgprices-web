@@ -12,6 +12,7 @@ import {
 import { classify as classifyCard, type CardCapability } from '@/lib/mtg/capabilities'
 import { extractFaces, normaliseLayout } from '@/lib/mtg/faces'
 import { getCardMarketSummary } from '@/lib/mtg/card-market'
+import { getOwnedPrintings } from '@/lib/mtg/collection'
 import { getSetByCode } from '@/lib/mtg/sets'
 import ManaCost from '@/components/mtg/ManaCost'
 import OracleText from '@/components/mtg/OracleText'
@@ -21,11 +22,10 @@ import LegalityMatrix from '@/components/mtg/LegalityMatrix'
 import OtherPrintings from '@/components/mtg/OtherPrintings'
 import PrintingComparison from '@/components/mtg/PrintingComparison'
 import CardMarketOverview from '@/components/mtg/CardMarketOverview'
+import CardActionsStrip from '@/components/mtg/CardActionsStrip'
 import CardSeoContent from '@/components/mtg/CardSeoContent'
 import RulingsList from '@/components/mtg/RulingsList'
 import SimilarCards from '@/components/mtg/SimilarCards'
-import AddToCollection from '@/components/mtg/AddToCollection'
-import AddToDeck from '@/components/mtg/AddToDeck'
 import CardPageClient from './CardPageClient'
 
 export const revalidate = 300
@@ -95,17 +95,30 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
         card_faces: oracle.card_faces,
       })
 
-  // Prices + chart data + market summary + set name.
+  // Prices + chart data + market summary + set name + owner holdings.
   const finishIds = finishes.map((f) => f.id)
-  const [currentByFinish, otherPricesByPrinting, marketSummary, setRow] = await Promise.all([
+  const [currentByFinish, otherPricesByPrinting, marketSummary, setRow, ownedRows] = await Promise.all([
     getCurrentPricesForFinishes(finishIds),
     otherPrintings.length > 0
       ? getHeadlinePricesByPrinting(otherPrintings.map((p) => p.id))
       : Promise.resolve(new Map<string, number>()),
     getCardMarketSummary(oracle.id, printing.id),
     getSetByCode(printing.set_code),
+    getOwnedPrintings(oracle.id),        // returns [] when unauthenticated
   ])
   const setName = setRow?.name ?? printing.set_code.toUpperCase()
+
+  // Roll up owned quantities per printing_id so the comparison table
+  // and the top-of-page badge can render an "owned" count. Sums over
+  // all conditions and finishes.
+  const ownedByPrintingId: Record<string, number> = {}
+  let ownedTotal = 0
+  for (const row of ownedRows) {
+    if (!row.printing_id) continue
+    ownedByPrintingId[row.printing_id] = (ownedByPrintingId[row.printing_id] ?? 0) + (row.quantity ?? 0)
+    ownedTotal += row.quantity ?? 0
+  }
+  const ownedThisPrinting = ownedByPrintingId[printing.id] ?? 0
 
   const defaultFinish: MtgFinish | undefined = finishes.find((f) => f.finish === 'nonfoil') ?? finishes[0]
   const historySeries = defaultFinish
@@ -173,19 +186,6 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
             currentPricesByFinish={serializePriceMap(currentByFinish)}
             chartSeries={chartSeries}
           />
-
-          {/* Add to Collection + Add to Deck */}
-          <div style={{ marginTop: 14, display: 'grid', gap: 8 }}>
-            <AddToCollection
-              finishes={finishes.map((f) => ({ id: f.id, finish: f.finish as 'nonfoil' | 'foil' | 'etched' }))}
-              cardName={printing.name}
-            />
-            <AddToDeck
-              oracleId={oracle.id}
-              cardName={printing.name}
-              preferredFinishId={finishes.find((f) => f.finish === 'nonfoil')?.id ?? finishes[0]?.id ?? null}
-            />
-          </div>
 
           {/* Print meta */}
           <div style={{ marginTop: 20, padding: 14, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 13, display: 'grid', gap: 6 }}>
@@ -256,7 +256,7 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
 
           {/* Market overview: deterministic price summary + insights. */}
           {marketSummary && (
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ marginBottom: 16 }}>
               <CardMarketOverview
                 summary={marketSummary}
                 cardName={printing.name}
@@ -266,6 +266,19 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
               />
             </div>
           )}
+
+          {/* Prominent Add to Collection + Add to Deck actions strip. */}
+          <div style={{ marginBottom: 24 }}>
+            <CardActionsStrip
+              cardName={printing.name}
+              oracleId={oracle.id}
+              finishes={finishes.map((f) => ({ id: f.id, finish: f.finish as 'nonfoil' | 'foil' | 'etched' }))}
+              preferredFinishId={finishes.find((f) => f.finish === 'nonfoil')?.id ?? finishes[0]?.id ?? null}
+              ownedTotal={ownedTotal}
+              ownedThisPrinting={ownedThisPrinting}
+            />
+          </div>
+
 
           {/* Faces / rules text */}
           <div style={{ marginBottom: 24 }}>
@@ -309,9 +322,11 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
             <div style={{ marginBottom: 24 }}>
               <PrintingComparison
                 cardName={printing.name}
+                oracleId={oracle.id}
                 basis={marketSummary.basis}
                 pricedPrintings={marketSummary.pricedPrintings}
                 currentPrintingId={printing.id}
+                ownedByPrintingId={ownedTotal > 0 ? ownedByPrintingId : undefined}
               />
             </div>
           ) : (

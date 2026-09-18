@@ -5,12 +5,13 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/supabase/server'
-import { getCollectionItems, getCollectionSummary } from '@/lib/mtg/collection'
+import { getCollectionItems, getCollectionSummary, getCollectionAnalytics } from '@/lib/mtg/collection'
 import { CONDITION_SHORT, type CardCondition } from '@/lib/mtg/collection.data'
 import { currencySymbol } from '@/lib/mtg/valuation.data'
 import { buildCardSlug } from '@/lib/mtg/slug'
 import CollectionFilters from './CollectionFilters'
 import CollectionRowActions from './CollectionRowActions'
+import CollectionAnalyticsPanel from '@/components/mtg/CollectionAnalytics'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,7 +49,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
 
   const sp = await searchParams
 
-  const [summary, page] = await Promise.all([
+  const [summary, page, analytics] = await Promise.all([
     getCollectionSummary(),
     getCollectionItems({
       name: sp.name,
@@ -61,6 +62,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
       page: parseInt(sp.page ?? '1', 10) || 1,
       pageSize: 24,
     }),
+    getCollectionAnalytics(),
   ])
 
   const currency = summary?.basis.currency ?? 'USD'
@@ -95,6 +97,13 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
             Valuation basis: <strong>{summary.basis.label}</strong>. {summary.basis.description}
             {' · '}<Link href="/account" style={{ color: 'var(--primary)' }}>change basis</Link>
           </div>
+        </section>
+      )}
+
+      {/* Analytics: value by set/colour/rarity/finish, top holdings, missing prices. */}
+      {analytics && (
+        <section style={{ marginBottom: 28 }}>
+          <CollectionAnalyticsPanel analytics={analytics} />
         </section>
       )}
 

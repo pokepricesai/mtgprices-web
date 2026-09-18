@@ -6,8 +6,10 @@ import { getSetByCode } from '@/lib/mtg/sets'
 import { listPrintingsForSet } from '@/lib/mtg/cards'
 import { getHeadlinePricesByPrinting, getFinishesByPrinting } from '@/lib/mtg/prices'
 import { getSetMarket } from '@/lib/mtg/set-market'
+import { getSetValueHistory } from '@/lib/mtg/set-value-history'
 import SetGridClient, { type SetGridPrinting } from '@/components/mtg/SetGridClient'
 import SetMarketOverview from '@/components/mtg/SetMarketOverview'
+import SetValueHistoryChart from '@/components/mtg/SetValueHistoryChart'
 
 export const revalidate = 300
 
@@ -33,10 +35,13 @@ export default async function SetPage({ params }: { params: Promise<Params> }) {
 
   const printings = await listPrintingsForSet(set.code)
   const printingIds = printings.map((p) => p.id)
-  const [headlineMap, finishesMap, setMarket] = await Promise.all([
+  const [headlineMap, finishesMap, setMarket, sv7, sv30, sv90] = await Promise.all([
     getHeadlinePricesByPrinting(printingIds),
     getFinishesByPrinting(printingIds),
     getSetMarket(set.code),
+    getSetValueHistory(set.code, 7),
+    getSetValueHistory(set.code, 30),
+    getSetValueHistory(set.code, 90),
   ])
 
   const items: SetGridPrinting[] = printings.map((p) => ({
@@ -83,7 +88,12 @@ export default async function SetPage({ params }: { params: Promise<Params> }) {
           {setMarket && setMarket.totalPriced > 0 && (
             <SetMarketOverview market={setMarket} setName={set.name} />
           )}
-          <SetGridClient setCode={set.code} printings={items} />
+          {(sv7 || sv30 || sv90) && (
+            <SetValueHistoryChart windows={{ d7: sv7, d30: sv30, d90: sv90 }} />
+          )}
+          <div style={{ marginTop: 24 }}>
+            <SetGridClient setCode={set.code} printings={items} />
+          </div>
         </>
       )}
     </div>

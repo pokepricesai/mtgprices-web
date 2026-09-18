@@ -34,6 +34,14 @@ const PROVIDER_LABEL: Record<string, string> = {
   cardhoarder: 'Cardhoarder',
 }
 
+const PROVIDER_COLOUR: Record<string, string> = {
+  tcgplayer: '#A8681C',
+  cardkingdom: '#235FAE',
+  cardmarket: '#3E7BC9',
+  manapool: '#2A8459',
+  cardhoarder: '#C4441B',
+}
+
 function fmtUSD(v: number | undefined | null): string {
   if (v == null || Number.isNaN(v)) return '-'
   return '$' + Number(v).toFixed(2)
@@ -166,10 +174,16 @@ export default function CardPageClient({
       {chartSeries.length > 0 && (
         <div style={{ marginTop: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-            <div className="label-mono">90-day paper retail (USD)</div>
+            <div className="label-mono">Paper retail history (USD)</div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{chartSeries.length} provider{chartSeries.length === 1 ? '' : 's'}</div>
           </div>
-          <CardPriceChart series={chartSeries} height={220} />
+          <CardPriceChart
+            series={chartSeries}
+            height={220}
+            finishId={finishId}
+            providerColorMap={PROVIDER_COLOUR}
+            providerLabelMap={PROVIDER_LABEL}
+          />
         </div>
       )}
     </>

@@ -6,7 +6,9 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { searchCards, buildCardSlug } from '@/lib/mtg/cards'
+import { getHeadlinePricesByPrinting } from '@/lib/mtg/prices'
 import { FORMATS } from '@/lib/mtg/formats'
+import { getSupabaseServiceClient } from '@/lib/supabaseService'
 import ManaCost from '@/components/mtg/ManaCost'
 
 export const dynamic = 'force-dynamic'
@@ -56,6 +58,16 @@ export default async function CardsSearchPage({ searchParams }: { searchParams: 
         legalIn: legal, rarity,
       }, 60)
     : []
+
+  // Enrichment: cheapest paper USD retail price per hit's shown
+  // printing, plus a total-printings count per oracle so we can show
+  // "N printings" alongside each result.
+  const printingIds = hits.map((h) => h.printing_id)
+  const oracleIds = Array.from(new Set(hits.map((h) => h.oracle_card_id)))
+  const [priceByPrinting, printingCountByOracle] = await Promise.all([
+    printingIds.length > 0 ? getHeadlinePricesByPrinting(printingIds) : Promise.resolve(new Map<string, number>()),
+    countPrintingsByOracle(oracleIds),
+  ])
 
   return (
     <div style={{ maxWidth: 1180, margin: '0 auto', padding: '28px 24px 80px' }}>
@@ -186,13 +198,16 @@ export default async function CardsSearchPage({ searchParams }: { searchParams: 
             {hits.map((h) => {
               const slug = h.collector_number ? buildCardSlug(h.collector_number, h.name) : ''
               const href = slug ? `/set/${h.set_code}/card/${slug}` : '#'
+              const price = priceByPrinting.get(h.printing_id)
+              const printingCount = printingCountByOracle.get(h.oracle_card_id) ?? 0
               return (
                 <Link
                   key={h.printing_id}
                   href={href}
-                  className="card-hover"
+                  className="card-hover card-hover-gold"
                   style={{
-                    display: 'block', background: 'var(--surface)',
+                    display: 'flex', flexDirection: 'column',
+                    background: 'var(--surface)',
                     border: '1px solid var(--border)', borderRadius: 12,
                     padding: 12, textDecoration: 'none', color: 'var(--text)',
                   }}
@@ -201,6 +216,7 @@ export default async function CardsSearchPage({ searchParams }: { searchParams: 
                     aspectRatio: '5 / 7', borderRadius: 6, background: 'var(--bg-light)',
                     marginBottom: 10, overflow: 'hidden',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    position: 'relative',
                   }}>
                     {h.image_uri_small ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -208,8 +224,19 @@ export default async function CardsSearchPage({ searchParams }: { searchParams: 
                     ) : (
                       <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>No image</span>
                     )}
+                    {price !== undefined && Number.isFinite(price) && (
+                      <span style={{
+                        position: 'absolute', bottom: 6, right: 6,
+                        padding: '3px 8px', borderRadius: 6,
+                        background: 'rgba(20,33,61,0.85)', color: '#FBF3DE',
+                        fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+                        fontWeight: 800, fontSize: 12,
+                      }}>${price.toFixed(2)}</span>
+                    )}
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.25 }}>{h.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.25 }}>{h.name}</span>
+                  </div>
                   <div style={{ marginTop: 6, minHeight: 20 }}>
                     {h.mana_cost && <ManaCost cost={h.mana_cost} size={14} />}
                   </div>
@@ -220,6 +247,11 @@ export default async function CardsSearchPage({ searchParams }: { searchParams: 
                   </div>
                   {h.type_line && (
                     <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 6, lineHeight: 1.3 }}>{h.type_line}</div>
+                  )}
+                  {printingCount > 1 && (
+                    <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 6 }}>
+                      {printingCount} printings tracked
+                    </div>
                   )}
                 </Link>
               )
@@ -250,4 +282,25 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
   fontFamily: 'inherit',
   boxSizing: 'border-box',
+}
+
+// Batched printing-count per oracle_card_id. Runs one query and folds
+// the result in memory. English paper only, matching the rest of the
+// search UI.
+async function countPrintingsByOracle(oracleIds: string[]): Promise<Map<string, number>> {
+  const out = new Map<string, number>()
+  if (oracleIds.length === 0) return out
+  const supabase = getSupabaseServiceClient()
+  const { data, error } = await supabase
+    .from('mtg_printings')
+    .select('oracle_card_id')
+    .in('oracle_card_id', oracleIds)
+    .eq('digital', false)
+    .eq('lang', 'en')
+  if (error || !data) return out
+  for (const row of data as any[]) {
+    const id = row.oracle_card_id as string
+    out.set(id, (out.get(id) ?? 0) + 1)
+  }
+  return out
 }
