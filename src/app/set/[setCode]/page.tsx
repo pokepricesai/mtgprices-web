@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   if (!set) return { title: 'Set not found' }
   const canonical = `https://mtgprices.io/set/${set.code}`
   return {
-    title: `${set.name} Card Prices, Set Value and MTG Checklist | MTGPrices`,
+    title: `${set.name} Card Prices, Set Value and MTG Checklist`,
     description: `Every card in ${set.name} with live paper prices, images and Scryfall metadata. Filter by rarity, colour, type and finish. Set value, top movers and cheapest printings on TCGplayer.`,
     alternates: { canonical },
     openGraph: { url: canonical },

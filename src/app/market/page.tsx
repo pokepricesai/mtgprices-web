@@ -9,7 +9,7 @@ import { getMarketMovers, type MoverWindow, type MoverCard } from '@/lib/mtg/mov
 export const revalidate = 300
 
 export const metadata: Metadata = {
-  title: 'MTG Market Movers, Top Risers and Fallers | MTGPrices',
+  title: 'MTG Market Movers, Top Risers and Fallers',
   description: 'Deterministic 7, 30 and 90 day market movers for Magic: The Gathering cards on TCGplayer USD paper retail. Top risers, top fallers, most active, most valuable.',
   alternates: { canonical: 'https://mtgprices.io/market' },
   openGraph: { url: 'https://mtgprices.io/market' },

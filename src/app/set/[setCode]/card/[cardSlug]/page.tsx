@@ -66,7 +66,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const canonical = `${SITE_URL}/set/${detail.printing.set_code}/card/${cardSlug}`
   const setUpper = detail.printing.set_code.toUpperCase()
   return {
-    title: `${detail.printing.name} Price, Printings and MTG Card Details | MTGPrices`,
+    title: `${detail.printing.name} Price, Printings and MTG Card Details`,
     description: `${detail.printing.name} from ${setUpper}. Live paper price, 7d, 30d and 90d charts, format legality, rulings and every English printing.`,
     alternates: { canonical },
     openGraph: { url: canonical },

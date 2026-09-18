@@ -12,7 +12,7 @@ import BrowseClient from './BrowseClient'
 export const revalidate = 900   // 15 min
 
 export const metadata: Metadata = {
-  title: 'Browse MTG sets, filter by type and year | MTGPrices',
+  title: 'Browse MTG sets, filter by type and year',
   description: 'Every Magic: The Gathering set indexed by MTGPrices. Filter by type (expansion, commander, masters, promo) and year, sort by release date, name, size, estimated value or 30D change.',
   alternates: { canonical: 'https://mtgprices.io/browse' },
   openGraph: { url: 'https://mtgprices.io/browse' },
