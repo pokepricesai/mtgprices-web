@@ -20,14 +20,10 @@
   ],
   "functions": {
     "src/app/api/queue/forge-sim/route.ts": {
-      "maxDuration": 700
+      "maxDuration": 700,
+      "experimentalTriggers": [
+        { "type": "queue/v2beta", "topic": "forge-sim" }
+      ]
     }
-  },
-  "experimentalTriggers": [
-    {
-      "type": "queue/v2beta",
-      "topic": "forge-sim",
-      "functionPath": "src/app/api/queue/forge-sim/route.ts"
-    }
-  ]
+  }
 }
