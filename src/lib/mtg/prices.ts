@@ -123,7 +123,9 @@ export async function getPriceHistory(q: MtgHistoryQuery): Promise<MtgHistorySer
     .select('provider, market, currency, price_type, observed_on, price')
     .eq('printing_finish_id', q.printingFinishId)
     .gte('observed_on', sinceIso)
-    .eq('is_anomalous', false)
+    // Historical bootstrap rows may not have is_anomalous set. Treat NULL
+    // as "not flagged". Live-ingest rows explicitly set false/true.
+    .or('is_anomalous.is.null,is_anomalous.eq.false')
 
   if (q.provider)   query = query.eq('provider', q.provider)
   if (q.market)     query = query.eq('market', q.market);       else query = query.eq('market', 'paper')

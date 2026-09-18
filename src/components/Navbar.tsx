@@ -28,6 +28,7 @@ const TOOLS_LINKS: NavItem[] = [
   { label: 'Card Finder',      href: '/card-finder' },
   { label: 'Deck Builder',     href: '/decks/new' },
   { label: 'Test Your Deck',   href: '/decks' },
+  { label: 'Market Movers',    href: '/market' },
   { label: 'My Collection',    href: '/collection' },
 ]
 
@@ -195,6 +196,7 @@ export default function Navbar() {
                   style={{
                     display: 'block', padding: '10px 12px',
                     borderRadius: 8, fontSize: 14, fontWeight: 600,
+                    fontFamily: 'inherit',
                     color: 'var(--text)', textDecoration: 'none',
                   }}
                   onMouseEnter={(e) => {

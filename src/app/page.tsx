@@ -35,7 +35,7 @@ export default async function HomePage() {
   const [counts, recentSets, movers] = await Promise.all([
     getCatalogueCounts(),
     listSets({ limit: 6 }),
-    getMarketMovers(4),
+    getMarketMovers({ windowDays: 30, topN: 4 }),
   ])
 
   const latestSet = recentSets[0] ?? null
@@ -288,7 +288,7 @@ function MarketPulseCard({
         </Link>
       ) : (
         <div style={{ padding: '12px 14px', borderRadius: 12, background: 'var(--bg-light)', border: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 13 }}>
-          Movers appear once we have three or more days of comparable observations.
+          No qualifying movers on the TCGplayer USD paper retail basis right now.
         </div>
       )}
     </div>
@@ -382,8 +382,9 @@ function MarketPulseSection({ movers }: { movers: Awaited<ReturnType<typeof getM
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
         <SectionHeader
           eyebrow="Market pulse"
-          title={<>This week in the market.</>}
-          subtitle={`Paper USD retail via ${movers.provider}. ${movers.windowDays} day window. Only observations flagged clean are counted.`}
+          title={<>{movers.windowDays} days in the MTG market.</>}
+          subtitle={`Paper USD retail via ${movers.provider}. Only observations flagged clean are counted. Full movers with 7d, 30d and 90d windows on the Market page.`}
+          rightLink={{ href: '/market', label: 'All movers →' }}
         />
 
         <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', marginTop: 24 }}>

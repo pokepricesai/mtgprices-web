@@ -430,16 +430,41 @@ details summary::marker { display: none; }
 }
 
 /* Nav-scoped tweaks. Plain link styling with a subtle gold underline for
-   active, closer to the PokePrices calm than a filled chip. */
+   active, closer to the PokePrices calm than a filled chip. Explicit
+   font-family so <button class="nav-link"> does not fall back to the
+   UA default control font on Windows/Chromium. */
 .nav-link {
   position: relative;
   color: var(--text);
   text-decoration: none;
   padding: 10px 12px;
   border-radius: 8px;
+  font-family: 'Figtree', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   font-size: 14px;
   font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0;
   transition: color 150ms ease, background 150ms ease;
+}
+/* Any menu, dropdown or listbox descendant should also use the site
+   font. Prevents inheritance from a parent <button> falling back to
+   the UA default. */
+.nav-link + [role="menu"],
+[role="menu"] {
+  font-family: 'Figtree', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+[role="menu"] [role="menuitem"] {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+/* Global control safety net: any button/input/select that has been
+   given .nav-link or lives inside a nav should not fall back to the
+   UA sans font. */
+button.nav-link,
+button.btn,
+button.chip {
+  font-family: 'Figtree', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 }
 .nav-link:hover { color: var(--gold-600); background: transparent; }
 .nav-link.active {

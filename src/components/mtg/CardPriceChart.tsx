@@ -20,6 +20,8 @@ function formatUSD(v: number): string {
   return '$' + v.toFixed(2)
 }
 
+type Window = 7 | 30 | 90 | 'all'
+
 export default function CardPriceChart({
   series,
   height = 240,
@@ -27,17 +29,46 @@ export default function CardPriceChart({
   series: MtgChartSeries[]
   height?: number
 }) {
+  const [windowDays, setWindowDays] = useState<Window>(90)
+
+  // Compute the cutoff date once per series prop / window switch.
+  // "all" shows the full series (up to whatever the server sent).
+  const cutoffIso = useMemo(() => {
+    if (windowDays === 'all') return null
+    let latest = ''
+    for (const s of series) for (const p of s.points) if (p.date > latest) latest = p.date
+    if (!latest) return null
+    const d = new Date(latest + 'T00:00:00Z')
+    d.setUTCDate(d.getUTCDate() - windowDays)
+    return d.toISOString().slice(0, 10)
+  }, [series, windowDays])
+
   // Fold series into a wide row shape { date, [seriesKey]: value }.
   const wide = useMemo(() => {
     const byDate = new Map<string, Record<string, any>>()
     for (const s of series) {
       for (const p of s.points) {
+        if (cutoffIso && p.date < cutoffIso) continue
         if (!byDate.has(p.date)) byDate.set(p.date, { date: p.date })
         byDate.get(p.date)![s.key] = p.value
       }
     }
     return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date))
-  }, [series])
+  }, [series, cutoffIso])
+
+  // Quick stats for the active window (latest, high, low, delta).
+  const activeSeries = series[0]
+  const stats = useMemo(() => {
+    if (!activeSeries) return null
+    const pts = activeSeries.points.filter((p) => !cutoffIso || p.date >= cutoffIso)
+    if (pts.length === 0) return null
+    let hi = pts[0].value, lo = pts[0].value
+    for (const p of pts) { if (p.value > hi) hi = p.value; if (p.value < lo) lo = p.value }
+    const first = pts[0].value, last = pts[pts.length - 1].value
+    const abs = last - first
+    const pct = first > 0 ? abs / first : null
+    return { latest: last, high: hi, low: lo, abs, pct, points: pts.length }
+  }, [activeSeries, cutoffIso])
 
   const seriesOrder = series.map((s) => s.key)
   const [visible, setVisible] = useState<Set<string>>(new Set(seriesOrder))
@@ -62,8 +93,55 @@ export default function CardPriceChart({
     )
   }
 
+  const WINDOW_OPTIONS: { key: Window; label: string }[] = [
+    { key: 7,  label: '7d' },
+    { key: 30, label: '30d' },
+    { key: 90, label: '90d' },
+    { key: 'all', label: 'All' },
+  ]
+
   return (
     <div>
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: 10,
+      }}>
+        <div style={{ display: 'inline-flex', gap: 4, background: 'var(--bg-light)', border: '1px solid var(--border)', borderRadius: 999, padding: 3 }}>
+          {WINDOW_OPTIONS.map((o) => {
+            const active = windowDays === o.key
+            return (
+              <button
+                key={String(o.key)}
+                type="button"
+                onClick={() => setWindowDays(o.key)}
+                style={{
+                  background: active ? 'var(--surface)' : 'transparent',
+                  color: active ? 'var(--text-strong)' : 'var(--text-muted)',
+                  border: active ? '1px solid var(--border)' : '1px solid transparent',
+                  borderRadius: 999, padding: '4px 12px',
+                  fontSize: 12, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+                  boxShadow: active ? '0 1px 2px rgba(20,33,61,0.05)' : 'none',
+                }}
+              >{o.label}</button>
+            )
+          })}
+        </div>
+        {stats && (
+          <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', fontSize: 12, color: 'var(--text-muted)' }}>
+            <span>Latest <strong style={{ color: 'var(--text-strong)', fontFamily: 'ui-monospace, SFMono-Regular, monospace' }}>{formatUSD(stats.latest)}</strong></span>
+            <span>High <strong style={{ color: 'var(--text-strong)', fontFamily: 'ui-monospace, SFMono-Regular, monospace' }}>{formatUSD(stats.high)}</strong></span>
+            <span>Low <strong style={{ color: 'var(--text-strong)', fontFamily: 'ui-monospace, SFMono-Regular, monospace' }}>{formatUSD(stats.low)}</strong></span>
+            {stats.pct !== null && (
+              <span style={{
+                color: stats.pct >= 0 ? 'var(--green)' : 'var(--red)',
+                fontWeight: 700, fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+              }}>
+                {stats.pct >= 0 ? '▲' : '▼'} {Math.abs(stats.pct * 100).toFixed(1)}%
+              </span>
+            )}
+          </div>
+        )}
+      </div>
       {series.length > 1 && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
           {series.map((s) => {

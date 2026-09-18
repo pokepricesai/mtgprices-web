@@ -5,7 +5,9 @@ import { notFound } from 'next/navigation'
 import { getSetByCode } from '@/lib/mtg/sets'
 import { listPrintingsForSet } from '@/lib/mtg/cards'
 import { getHeadlinePricesByPrinting, getFinishesByPrinting } from '@/lib/mtg/prices'
+import { getSetMarket } from '@/lib/mtg/set-market'
 import SetGridClient, { type SetGridPrinting } from '@/components/mtg/SetGridClient'
+import SetMarketOverview from '@/components/mtg/SetMarketOverview'
 
 export const revalidate = 300
 
@@ -17,8 +19,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   if (!set) return { title: 'Set not found' }
   const canonical = `https://mtgprices.io/set/${set.code}`
   return {
-    title: `${set.name}. MTG prices`,
-    description: `Every card in ${set.name} with live paper prices, images and Scryfall metadata. Filter by rarity, colour, type and finish.`,
+    title: `${set.name} Card Prices, Set Value and MTG Checklist | MTGPrices`,
+    description: `Every card in ${set.name} with live paper prices, images and Scryfall metadata. Filter by rarity, colour, type and finish. Set value, top movers and cheapest printings on TCGplayer.`,
     alternates: { canonical },
     openGraph: { url: canonical },
   }
@@ -31,9 +33,10 @@ export default async function SetPage({ params }: { params: Promise<Params> }) {
 
   const printings = await listPrintingsForSet(set.code)
   const printingIds = printings.map((p) => p.id)
-  const [headlineMap, finishesMap] = await Promise.all([
+  const [headlineMap, finishesMap, setMarket] = await Promise.all([
     getHeadlinePricesByPrinting(printingIds),
     getFinishesByPrinting(printingIds),
+    getSetMarket(set.code),
   ])
 
   const items: SetGridPrinting[] = printings.map((p) => ({
@@ -76,7 +79,12 @@ export default async function SetPage({ params }: { params: Promise<Params> }) {
           No printings for this set are indexed yet.
         </div>
       ) : (
-        <SetGridClient setCode={set.code} printings={items} />
+        <>
+          {setMarket && setMarket.totalPriced > 0 && (
+            <SetMarketOverview market={setMarket} setName={set.name} />
+          )}
+          <SetGridClient setCode={set.code} printings={items} />
+        </>
       )}
     </div>
   )

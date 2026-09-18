@@ -11,12 +11,17 @@ import {
 } from '@/lib/mtg/prices'
 import { classify as classifyCard, type CardCapability } from '@/lib/mtg/capabilities'
 import { extractFaces, normaliseLayout } from '@/lib/mtg/faces'
+import { getCardMarketSummary } from '@/lib/mtg/card-market'
+import { getSetByCode } from '@/lib/mtg/sets'
 import ManaCost from '@/components/mtg/ManaCost'
 import OracleText from '@/components/mtg/OracleText'
 import CardFaces from '@/components/mtg/CardFaces'
 import CapabilityChips from '@/components/mtg/CapabilityChips'
 import LegalityMatrix from '@/components/mtg/LegalityMatrix'
 import OtherPrintings from '@/components/mtg/OtherPrintings'
+import PrintingComparison from '@/components/mtg/PrintingComparison'
+import CardMarketOverview from '@/components/mtg/CardMarketOverview'
+import CardSeoContent from '@/components/mtg/CardSeoContent'
 import RulingsList from '@/components/mtg/RulingsList'
 import SimilarCards from '@/components/mtg/SimilarCards'
 import AddToCollection from '@/components/mtg/AddToCollection'
@@ -59,9 +64,10 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const detail = await getCardBySlug(setCode, cardSlug)
   if (!detail) return { title: 'Card not found' }
   const canonical = `${SITE_URL}/set/${detail.printing.set_code}/card/${cardSlug}`
+  const setUpper = detail.printing.set_code.toUpperCase()
   return {
-    title: `${detail.printing.name} (${detail.printing.set_code.toUpperCase()}). MTG price and printings`,
-    description: `${detail.printing.name} from ${detail.printing.set_code.toUpperCase()}. Live paper price, 90 day chart, legality, rulings and other printings.`,
+    title: `${detail.printing.name} Price, Printings and MTG Card Details | MTGPrices`,
+    description: `${detail.printing.name} from ${setUpper}. Live paper price, 7d, 30d and 90d charts, format legality, rulings and every English printing.`,
     alternates: { canonical },
     openGraph: { url: canonical },
   }
@@ -89,14 +95,17 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
         card_faces: oracle.card_faces,
       })
 
-  // Prices + chart data.
+  // Prices + chart data + market summary + set name.
   const finishIds = finishes.map((f) => f.id)
-  const [currentByFinish, otherPricesByPrinting] = await Promise.all([
+  const [currentByFinish, otherPricesByPrinting, marketSummary, setRow] = await Promise.all([
     getCurrentPricesForFinishes(finishIds),
     otherPrintings.length > 0
       ? getHeadlinePricesByPrinting(otherPrintings.map((p) => p.id))
       : Promise.resolve(new Map<string, number>()),
+    getCardMarketSummary(oracle.id, printing.id),
+    getSetByCode(printing.set_code),
   ])
+  const setName = setRow?.name ?? printing.set_code.toUpperCase()
 
   const defaultFinish: MtgFinish | undefined = finishes.find((f) => f.finish === 'nonfoil') ?? finishes[0]
   const historySeries = defaultFinish
@@ -245,6 +254,19 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
             <div style={{ fontSize: 15, color: 'var(--text-muted)', marginBottom: 20 }}>{oracle.type_line}</div>
           )}
 
+          {/* Market overview: deterministic price summary + insights. */}
+          {marketSummary && (
+            <div style={{ marginBottom: 24 }}>
+              <CardMarketOverview
+                summary={marketSummary}
+                cardName={printing.name}
+                setName={setName}
+                setCode={printing.set_code}
+                collectorNumber={printing.collector_number}
+              />
+            </div>
+          )}
+
           {/* Faces / rules text */}
           <div style={{ marginBottom: 24 }}>
             <CardFaces faces={faces} layoutKind={layoutKind} />
@@ -282,15 +304,26 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
             <LegalityMatrix legalities={legalities} />
           </div>
 
-          {/* Other printings */}
-          <div style={{ marginBottom: 24 }}>
-            <div className="label-mono" style={{ marginBottom: 8 }}>Other printings</div>
-            <OtherPrintings
-              currentPrintingId={printing.id}
-              otherPrintings={otherPrintings}
-              headlinePriceByPrinting={otherPricesByPrinting}
-            />
-          </div>
+          {/* Printing comparison, sortable table on the current basis. */}
+          {marketSummary && marketSummary.pricedPrintings.length > 0 ? (
+            <div style={{ marginBottom: 24 }}>
+              <PrintingComparison
+                cardName={printing.name}
+                basis={marketSummary.basis}
+                pricedPrintings={marketSummary.pricedPrintings}
+                currentPrintingId={printing.id}
+              />
+            </div>
+          ) : (
+            <div style={{ marginBottom: 24 }}>
+              <div className="label-mono" style={{ marginBottom: 8 }}>Other printings</div>
+              <OtherPrintings
+                currentPrintingId={printing.id}
+                otherPrintings={otherPrintings}
+                headlinePriceByPrinting={otherPricesByPrinting}
+              />
+            </div>
+          )}
 
           {/* Rulings */}
           <div style={{ marginBottom: 24 }}>
@@ -303,6 +336,19 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
             <SimilarCards oracleId={oracle.id} currentPrintingId={printing.id} />
           </div>
         </div>
+      </div>
+
+      {/* SEO content + FAQ (full width, sits below the two column hero). */}
+      <div style={{ marginTop: 40 }}>
+        <CardSeoContent
+          oracle={oracle}
+          printing={printing}
+          otherPrintings={otherPrintings}
+          legalities={legalities}
+          market={marketSummary}
+          canonical={`${SITE_URL}/set/${printing.set_code}/card/${cardSlug}`}
+          setName={setName}
+        />
       </div>
 
       <style

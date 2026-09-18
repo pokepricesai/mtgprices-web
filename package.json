@@ -12,7 +12,6 @@
     "typecheck:edge:diagnostic": "tsc --noEmit -p tsconfig.edge.json",
     "test": "vitest",
     "test:run": "vitest run",
-    "audit:ebay": "node scripts/audit-ebay-links.mjs",
     "indexnow": "node scripts/submit-indexnow.js",
     "indexnow:changed": "node scripts/submit-indexnow.js --changed-only --snapshot .indexnow-snapshot.json",
     "scaffold:jp-manual-assets": "npx tsx scripts/set-assets/jp-manual-scaffold.mjs",
