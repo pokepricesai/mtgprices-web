@@ -171,11 +171,17 @@ export async function getCardBySlug(setCode: string, cardSlug: string): Promise<
     return null
   }
   const rows = printings ?? []
+  // Strict match: the printing's name must slugify back to the URL. If
+  // no printing at these candidate collector numbers has a matching
+  // name, treat it as a 404 rather than silently returning whichever
+  // card happens to sit at that collector number. That fallback used
+  // to render, for example, /set/tdm/card/262-narset-veil-witch as
+  // "Mystic Monastery" (the actual card at TDM 262), producing wrong
+  // canonicals and duplicate SEO surface.
   const printing =
     rows.find((p: any) => p.lang === 'en' && `${p.collector_number}-${slugifyCardName(p.name)}` === cardSlug) ??
     rows.find((p: any) => `${p.collector_number}-${slugifyCardName(p.name)}` === cardSlug) ??
-    rows.find((p: any) => p.lang === 'en') ??
-    rows[0]
+    null
   if (!printing) return null
 
   // 2. Oracle card
