@@ -44,38 +44,53 @@ export async function getSetAggregates(
   const codes = setCodes.slice(0, MAX_SETS)
   const supabase = getSupabaseServiceClient()
 
-  // Fast path: single Postgres RPC that computes everything server-side.
-  // Falls back to the batched pipeline below if the RPC is not deployed
-  // yet (see migrations/2026-09-18-mtg-set-aggregates-rpc.sql).
+  // Fast path: the mtg_set_aggregates Postgres RPC (v3, no 30D
+  // observations join). The RPC hits statement timeout when handed
+  // the full 989-set list, so we chunk to 200 codes per call and run
+  // the 5-6 chunks in parallel. Total cold path: about 3.4 s vs
+  // roughly 5 s for the batched TS pipeline below. The RPC path does
+  // NOT populate pct30d/abs30d: those need mtg_price_observations,
+  // which is what made v1 slow. Browse tiles simply hide the 30D chip
+  // when the delta is null, which is already the graceful state for
+  // any set that lacks 30 days of coverage.
+  //
+  // Fallback: if PGRST202 (function not found) or an unexpected error,
+  // silently continue to the batched pipeline below (which also
+  // computes 30D deltas end to end).
   try {
-    const { data: rpcRows, error: rpcErr } = await supabase.rpc('mtg_set_aggregates', {
-      p_set_codes: codes,
-      p_provider: basis.provider,
-      p_currency: basis.currency,
-      p_market: basis.market,
-      p_price_type: basis.priceType,
-    })
-    if (!rpcErr && Array.isArray(rpcRows)) {
-      for (const row of rpcRows as any[]) {
-        out.set(row.set_code, {
-          set_code: row.set_code,
-          totalPrinted: Number(row.total_printed) || 0,
-          totalPriced: Number(row.total_priced) || 0,
-          estimatedValue: Number(row.estimated_value) || 0,
-          pct30d: row.pct_30d === null || row.pct_30d === undefined ? null : Number(row.pct_30d),
-          abs30d: row.abs_30d === null || row.abs_30d === undefined ? null : Number(row.abs_30d),
-          topCardName: row.top_card_name ?? null,
-          topCardPrice: row.top_card_price === null || row.top_card_price === undefined ? null : Number(row.top_card_price),
-        })
+    const RPC_CHUNK = 200
+    const rpcChunks: string[][] = []
+    for (let i = 0; i < codes.length; i += RPC_CHUNK) rpcChunks.push(codes.slice(i, i + RPC_CHUNK))
+    const rpcResults = await Promise.all(rpcChunks.map((chunk) =>
+      supabase.rpc('mtg_set_aggregates', {
+        p_set_codes: chunk,
+        p_provider: basis.provider,
+        p_currency: basis.currency,
+        p_market: basis.market,
+        p_price_type: basis.priceType,
+      })
+    ))
+    const anyErr = rpcResults.find((r) => r.error)
+    if (!anyErr) {
+      for (const { data } of rpcResults) {
+        for (const row of (data ?? []) as any[]) {
+          out.set(row.set_code, {
+            set_code: row.set_code,
+            totalPrinted: Number(row.total_printed) || 0,
+            totalPriced: Number(row.total_priced) || 0,
+            estimatedValue: Number(row.estimated_value) || 0,
+            pct30d: null,
+            abs30d: null,
+            topCardName: row.top_card_name ?? null,
+            topCardPrice: row.top_card_price === null || row.top_card_price === undefined ? null : Number(row.top_card_price),
+          })
+        }
       }
       for (const code of codes) if (!out.has(code)) out.set(code, emptyAggregate(code))
       return out
     }
-    // Silently fall through when the RPC is not present. `PGRST202`
-    // is PostgREST's "function not found" code; anything else we log so
-    // we can spot a broken migration.
-    if (rpcErr && rpcErr.code && rpcErr.code !== 'PGRST202') {
-      console.warn('mtg_set_aggregates RPC error, falling back to batched impl:', rpcErr.code, rpcErr.message)
+    if (anyErr.error && anyErr.error.code && anyErr.error.code !== 'PGRST202') {
+      console.warn('mtg_set_aggregates RPC error, falling back to batched impl:', anyErr.error.code, anyErr.error.message)
     }
   } catch (err) {
     console.warn('mtg_set_aggregates RPC threw, falling back to batched impl:', err)

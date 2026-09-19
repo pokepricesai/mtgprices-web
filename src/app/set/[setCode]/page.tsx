@@ -58,8 +58,26 @@ export default async function SetPage({ params }: { params: Promise<Params> }) {
     price: headlineMap.get(p.id) ?? null,
   }))
 
+  // BreadcrumbList JSON-LD. Mirrors the visible breadcrumb feel (Home →
+  // Sets → this set) and the canonical URLs. Sets do not have a
+  // BreadcrumbList today, cards already do (see CardSeoContent).
+  const canonical = `https://mtgprices.io/set/${set.code}`
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home',  item: 'https://mtgprices.io/' },
+      { '@type': 'ListItem', position: 2, name: 'Sets',  item: 'https://mtgprices.io/browse' },
+      { '@type': 'ListItem', position: 3, name: set.name, item: canonical },
+    ],
+  }
+
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px 64px' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
