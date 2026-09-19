@@ -34,6 +34,7 @@ export async function GET() {
     { url: `${BASE_URL}/formats`,       lastmod: now, priority: '0.85', changefreq: 'weekly' },
     { url: `${BASE_URL}/insights`,      lastmod: now, priority: '0.85', changefreq: 'weekly' },
     { url: `${BASE_URL}/ai`,            lastmod: now, priority: '0.8',  changefreq: 'weekly' },
+    { url: `${BASE_URL}/test-deck`,     lastmod: now, priority: '0.7',  changefreq: 'weekly' },
     { url: `${BASE_URL}/contact`,       lastmod: now, priority: '0.3',  changefreq: 'monthly' },
     { url: `${BASE_URL}/privacy`,       lastmod: now, priority: '0.3',  changefreq: 'yearly'  },
     { url: `${BASE_URL}/terms`,         lastmod: now, priority: '0.3',  changefreq: 'yearly'  },

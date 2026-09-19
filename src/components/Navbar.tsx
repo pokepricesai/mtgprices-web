@@ -10,8 +10,7 @@ import { DEFAULT_AVATAR_KEY, resolveAvatar } from '@/lib/mtg/avatars'
 // Site navigation. Primary desktop bar exposes the surfaces users live
 // in: Cards, Sets, Formats, Card Finder, Decks, Insights, Ask AI. A
 // Tools dropdown holds secondary utilities. On narrower desktop widths
-// (below ~1280) we tuck Formats + Card Finder into Tools so the primary
-// row stays scannable.
+// (below ~1280) Formats + Card Finder move into a Tools dropdown.
 
 type NavItem = { label: string; href: string }
 
@@ -33,13 +32,22 @@ const PRIMARY_LINKS_MEDIUM: NavItem[] = [
   { label: 'Ask AI',      href: '/ai' },
 ]
 
+// Tools items. Formats + Card Finder are NOT here because they are
+// already first-level nav items at wide widths, and appear in the
+// medium-nav Tools variant separately (see MEDIUM_TOOLS_LINKS below).
 const TOOLS_LINKS: NavItem[] = [
-  { label: 'Formats',          href: '/formats' },
-  { label: 'Card Finder',      href: '/card-finder' },
   { label: 'Deck Builder',     href: '/decks/new' },
-  { label: 'Test Your Deck',   href: '/decks' },
+  { label: 'Test Your Deck',   href: '/test-deck' },
   { label: 'Market Movers',    href: '/market' },
   { label: 'My Collection',    href: '/collection' },
+]
+
+// At medium widths, Formats and Card Finder drop out of the primary
+// row and are pulled into Tools so nothing gets orphaned.
+const MEDIUM_TOOLS_LINKS: NavItem[] = [
+  { label: 'Formats',          href: '/formats' },
+  { label: 'Card Finder',      href: '/card-finder' },
+  ...TOOLS_LINKS,
 ]
 
 const MOBILE_GROUPS: { title: string; items: NavItem[] }[] = [
@@ -57,7 +65,7 @@ const MOBILE_GROUPS: { title: string; items: NavItem[] }[] = [
     items: [
       { label: 'My Decks',       href: '/decks' },
       { label: 'New deck',       href: '/decks/new' },
-      { label: 'Test Your Deck', href: '/decks' },
+      { label: 'Test Your Deck', href: '/test-deck' },
     ],
   },
   {
@@ -88,16 +96,14 @@ export default function Navbar() {
   const router = useRouter()
   const pathname = usePathname() ?? '/'
   const [menuOpen, setMenuOpen] = useState(false)
-  const [toolsOpen, setToolsOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [signedIn, setSignedIn] = useState<boolean | null>(null)
   const [profile, setProfile] = useState<MiniProfile | null>(null)
-  const toolsRef = useRef<HTMLDivElement | null>(null)
   const userMenuRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    setMenuOpen(false); setToolsOpen(false); setUserMenuOpen(false)
+    setMenuOpen(false); setUserMenuOpen(false)
   }, [pathname])
 
   useEffect(() => {
@@ -139,18 +145,20 @@ export default function Navbar() {
     return () => { cancelled = true }
   }, [])
 
+  // Outside-click close for the user menu. The Tools dropdowns own
+  // their own outside-close logic so their refs never collide across
+  // the wide and medium variants (that collision used to swallow
+  // dropdown Link clicks).
   useEffect(() => {
     function onDown(e: MouseEvent) {
-      const inside =
-        (toolsRef.current && toolsRef.current.contains(e.target as Node)) ||
-        (userMenuRef.current && userMenuRef.current.contains(e.target as Node))
-      if (!inside) { setToolsOpen(false); setUserMenuOpen(false) }
+      if (!userMenuRef.current) return
+      if (!userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false)
     }
-    if (toolsOpen || userMenuOpen) {
+    if (userMenuOpen) {
       document.addEventListener('mousedown', onDown)
       return () => document.removeEventListener('mousedown', onDown)
     }
-  }, [toolsOpen, userMenuOpen])
+  }, [userMenuOpen])
 
   function submitSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -174,8 +182,6 @@ export default function Navbar() {
 
   const nextParam = encodeURIComponent(pathname === '/login' ? '/' : pathname)
   const avatarDef = useMemo(() => resolveAvatar(profile?.avatarKey), [profile?.avatarKey])
-  const _wide = PRIMARY_LINKS_WIDE
-  const _medium = PRIMARY_LINKS_MEDIUM
 
   return (
     <nav
@@ -215,9 +221,10 @@ export default function Navbar() {
         />
       </Link>
 
-      {/* Desktop nav (wide + medium variants) */}
+      {/* Desktop nav (wide + medium variants). Each ToolsDropdown owns
+          its own ref so the two DOM instances never share state. */}
       <div className="desktop-nav-wide" style={{ display: 'none', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-        {_wide.map((item) => (
+        {PRIMARY_LINKS_WIDE.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -225,10 +232,10 @@ export default function Navbar() {
             className={`nav-link${isActive(item.href) ? ' active' : ''}`}
           >{item.label}</Link>
         ))}
-        <ToolsDropdown open={toolsOpen} setOpen={setToolsOpen} refEl={toolsRef} />
+        <ToolsDropdown items={TOOLS_LINKS} />
       </div>
       <div className="desktop-nav-medium" style={{ display: 'none', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-        {_medium.map((item) => (
+        {PRIMARY_LINKS_MEDIUM.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -236,7 +243,7 @@ export default function Navbar() {
             className={`nav-link${isActive(item.href) ? ' active' : ''}`}
           >{item.label}</Link>
         ))}
-        <ToolsDropdown open={toolsOpen} setOpen={setToolsOpen} refEl={toolsRef} />
+        <ToolsDropdown items={MEDIUM_TOOLS_LINKS} />
       </div>
 
       {/* Search */}
@@ -530,25 +537,44 @@ export default function Navbar() {
   )
 }
 
-function ToolsDropdown({
-  open, setOpen, refEl,
-}: {
-  open: boolean
-  setOpen: (v: boolean) => void
-  refEl: React.RefObject<HTMLDivElement | null>
-}) {
+// Self-contained Tools dropdown. Each instance owns its own DOM ref
+// and outside-close logic so wide-nav and medium-nav variants never
+// clobber each other's ref (an earlier bug where sharing a parent ref
+// across both variants swallowed the Link click on the visible one).
+//
+// Typography note: the trigger uses className="nav-link" only. We do
+// NOT set the CSS `font` shorthand inline because that would reset
+// font-family / size / weight / line-height back to inherit from the
+// nav container, which is what made Tools visibly differ from the
+// other primary links. Letting .nav-link fully control typography is
+// the correct fix.
+function ToolsDropdown({ items }: { items: NavItem[] }) {
+  const [open, setOpen] = useState(false)
+  const boxRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (!boxRef.current) return
+      if (!boxRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    if (open) {
+      document.addEventListener('mousedown', onDown)
+      return () => document.removeEventListener('mousedown', onDown)
+    }
+  }, [open])
+
   return (
-    <div ref={refEl} style={{ position: 'relative' }}>
+    <div ref={boxRef} style={{ position: 'relative' }}>
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
         className={`nav-link${open ? ' active' : ''}`}
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
           background: 'transparent',
-          border: 'none', cursor: 'pointer', font: 'inherit',
+          border: 'none', cursor: 'pointer',
           color: open ? 'var(--gold-600)' : 'var(--text)',
         }}
       >
@@ -566,14 +592,7 @@ function ToolsDropdown({
             zIndex: 101,
           }}
         >
-          {[
-            { label: 'Formats',          href: '/formats' },
-            { label: 'Card Finder',      href: '/card-finder' },
-            { label: 'Deck Builder',     href: '/decks/new' },
-            { label: 'Test Your Deck',   href: '/decks' },
-            { label: 'Market Movers',    href: '/market' },
-            { label: 'My Collection',    href: '/collection' },
-          ].map((it) => (
+          {items.map((it) => (
             <Link
               key={it.href}
               href={it.href}
