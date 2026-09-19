@@ -3,7 +3,7 @@
 
 import 'server-only'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
-import { buildCardSlug } from '@/lib/mtg/cards'
+import { slugifyCardName } from '@/lib/mtg/slug'
 
 /** Total number of card-sitemap shards. 5 shards × ~22K URLs each
  *  keeps us far under Google's 50K per-sitemap cap. */
@@ -66,7 +66,12 @@ const BUILD_ISO = new Date().toISOString()
 export function buildSitemapXml(entries: { setCode: string; collector: string; name: string; released_at: string | null }[]): string {
   const items = entries
     .map((e) => {
-      const slug = buildCardSlug(e.collector, e.name)
+      // Collector numbers can contain non-ASCII characters (e.g. "★"
+      // for star-foil variants), which are not valid raw in a <loc>
+      // per the sitemap protocol and RFC 3986. Percent-encode the
+      // collector portion so crawlers see a well-formed URL. The
+      // route handler decodes it back before slug parsing.
+      const slug = `${encodeURIComponent(e.collector)}-${slugifyCardName(e.name)}`
       const loc = `https://mtgprices.io/set/${e.setCode}/card/${slug}`
       const lastmod = e.released_at
         ? new Date(`${e.released_at}T00:00:00Z`).toISOString()
@@ -76,6 +81,7 @@ export function buildSitemapXml(entries: { setCode: string; collector: string; n
     .join('\n')
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${items}\n</urlset>`
 }
+
 
 function xmlEscape(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;')

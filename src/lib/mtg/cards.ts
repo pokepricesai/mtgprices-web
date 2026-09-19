@@ -148,7 +148,14 @@ export type MtgCardDetail = {
 export async function getCardBySlug(setCode: string, cardSlug: string): Promise<MtgCardDetail | null> {
   const supabase = getSupabaseServiceClient()
   const set = setCode.trim().toLowerCase()
-  const splits = candidateCardSlugSplits(cardSlug)
+  // Next.js does not URL-decode non-ASCII characters in dynamic route
+  // segments, so a request for /set/7ed/card/91%E2%98%85-opportunity
+  // arrives here with cardSlug = '91%E2%98%85-opportunity'. Decode
+  // once so the collector-number split matches the DB value ('91★').
+  // decodeURIComponent throws on malformed input, treat that as 404.
+  let decoded: string
+  try { decoded = decodeURIComponent(cardSlug) } catch { return null }
+  const splits = candidateCardSlugSplits(decoded)
   if (!set || splits.length === 0) return null
 
   // Both collector_number and name-slug can contain "-", so the split
@@ -179,8 +186,8 @@ export async function getCardBySlug(setCode: string, cardSlug: string): Promise<
   // "Mystic Monastery" (the actual card at TDM 262), producing wrong
   // canonicals and duplicate SEO surface.
   const printing =
-    rows.find((p: any) => p.lang === 'en' && `${p.collector_number}-${slugifyCardName(p.name)}` === cardSlug) ??
-    rows.find((p: any) => `${p.collector_number}-${slugifyCardName(p.name)}` === cardSlug) ??
+    rows.find((p: any) => p.lang === 'en' && `${p.collector_number}-${slugifyCardName(p.name)}` === decoded) ??
+    rows.find((p: any) => `${p.collector_number}-${slugifyCardName(p.name)}` === decoded) ??
     null
   if (!printing) return null
 

@@ -16,6 +16,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { buildSitemapXml } from '@/lib/mtg/sitemap'
 
 const ROOT_SRC = readFileSync(
   join(process.cwd(), 'src/app/sitemap.xml/route.ts'),
@@ -108,6 +109,20 @@ describe('sitemap.xml root index', () => {
         ?? ''
       expect(insideGet, 'live now() should not run per request').not.toMatch(/new\s+Date\(\)\.toISOString\(\)/)
     }
+  })
+
+  it('percent-encodes non-ASCII collector numbers in card <loc>', () => {
+    // Regression: raw ★ in a sitemap loc violates RFC 3986 and the
+    // sitemap protocol. Emit "%E2%98%85" so Google receives a
+    // well-formed URL, then the route handler decodeURIComponents
+    // back to "★" before splitting.
+    const xml = buildSitemapXml([
+      { setCode: '7ed', collector: '91★', name: 'Opportunity', released_at: '2001-04-11' },
+      { setCode: 'ala', collector: '37',  name: "Courier's Capsule", released_at: '2008-10-03' },
+    ])
+    expect(xml).toContain('/set/7ed/card/91%E2%98%85-opportunity')
+    expect(xml).not.toMatch(/\/card\/91★-/)
+    expect(xml).toContain('/set/ala/card/37-couriers-capsule')
   })
 
   it('has a route file for every card shard the constant claims', () => {

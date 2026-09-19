@@ -24,6 +24,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // server-only throws at import to guard against use in a Client
+      // Component bundle. Vitest tests are pure Node, stub it out so
+      // we can unit-test pure helpers alongside server-only modules.
+      'server-only': path.resolve(__dirname, './src/__mocks__/server-only.ts'),
     },
   },
 })
