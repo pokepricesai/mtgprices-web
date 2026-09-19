@@ -8,7 +8,7 @@
 // never mixes currencies or providers.
 
 import type { CardMarketSummary, WindowStat } from '@/lib/mtg/card-market.types'
-import { buildEbaySearchLink } from '@/lib/mtg/ebay-links'
+import EbayLinkButton from './EbayLinkButton'
 
 type Props = {
   summary: CardMarketSummary
@@ -35,11 +35,6 @@ export default function CardMarketOverview({ summary, cardName, setName, setCode
 
   const primaryFinish = summary.currentFinish ?? 'nonfoil'
   const finishLabel = primaryFinish === 'nonfoil' ? 'nonfoil' : primaryFinish
-  const ebay = buildEbaySearchLink({
-    cardName, setName: setName ?? null, setCode: setCode ?? null,
-    collectorNumber: collectorNumber ?? null,
-    finish: (primaryFinish === 'foil' || primaryFinish === 'etched') ? primaryFinish : 'nonfoil',
-  })
 
   return (
     <section
@@ -107,19 +102,15 @@ export default function CardMarketOverview({ summary, cardName, setName, setCode
       )}
 
       <div style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-        <a
-          href={ebay.href}
-          rel="sponsored nofollow noopener"
-          target="_blank"
-          className="btn btn-gold btn-sm"
-        >
-          {ebay.label}
-        </a>
-        {ebay.affiliate && (
-          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-            Affiliate link. MTGPrices may earn a commission on qualifying purchases.
-          </span>
-        )}
+        <EbayLinkButton
+          variant="gold"
+          cardName={cardName}
+          setName={setName ?? null}
+          setCode={setCode ?? null}
+          collectorNumber={collectorNumber ?? null}
+          finish={(primaryFinish === 'foil' || primaryFinish === 'etched') ? primaryFinish : 'nonfoil'}
+          source="card-overview"
+        />
       </div>
     </section>
   )

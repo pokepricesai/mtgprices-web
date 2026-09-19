@@ -15,10 +15,9 @@ import Link from 'next/link'
 import { buildCardSlug } from '@/lib/mtg/slug'
 import type { PrintingPriceRow, MarketBasis } from '@/lib/mtg/card-market.types'
 import { CURRENCY_SYMBOL } from '@/lib/mtg/card-market.types'
-import { buildEbaySearchLink } from '@/lib/mtg/ebay-links'
-import { useCountry } from '@/lib/geo/useCountry'
 import AddToCollection from '@/components/mtg/AddToCollection'
 import AddToDeck from '@/components/mtg/AddToDeck'
+import EbayLinkButton from '@/components/mtg/EbayLinkButton'
 
 type SortKey =
   | 'cheapest'
@@ -67,7 +66,6 @@ export default function PrintingComparison({
   const [sort, setSort] = useState<SortKey>('cheapest')
   const [finishFilter, setFinishFilter] = useState<'any' | 'nonfoil' | 'foil' | 'etched'>('any')
   const [openActions, setOpenActions] = useState<string | null>(null)
-  const country = useCountry()
 
   const sym = CURRENCY_SYMBOL[basis.currency]
 
@@ -159,24 +157,6 @@ export default function PrintingComparison({
                 const owned = ownedByPrintingId?.[r.printing_id] ?? 0
                 const rarityColor = r.rarity ? (RARITY_COLOUR[r.rarity] ?? 'var(--text-muted)') : 'var(--text-muted)'
                 const isActionsOpen = openActions === rowKey
-                const ebay = buildEbaySearchLink({
-                  cardName,
-                  setName: r.set_name,
-                  setCode: r.set_code,
-                  collectorNumber: r.collector_number,
-                  finish: (r.finish === 'foil' || r.finish === 'etched') ? r.finish : 'nonfoil',
-                  marketplace: country ? undefined : undefined,
-                })
-                // Rebuild with country if we have one so the search
-                // opens on the visitor's marketplace TLD.
-                const ebayLocalised = country ? buildEbaySearchLink({
-                  cardName,
-                  setName: r.set_name,
-                  setCode: r.set_code,
-                  collectorNumber: r.collector_number,
-                  finish: (r.finish === 'foil' || r.finish === 'etched') ? r.finish : 'nonfoil',
-                  marketplace: mapCountryToMarketplace(country),
-                }) : ebay
                 return (
                   <>
                     <tr key={rowKey}
@@ -226,18 +206,15 @@ export default function PrintingComparison({
                       )}
                       <Td align="right">
                         <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-                          <a
-                            href={ebayLocalised.href}
-                            target="_blank"
-                            rel="sponsored nofollow noopener"
-                            title={ebayLocalised.label}
-                            style={{
-                              padding: '5px 10px', borderRadius: 8,
-                              background: 'var(--accent-soft)', color: 'var(--gold-600)',
-                              border: '1px solid var(--accent-border)',
-                              fontSize: 11.5, fontWeight: 700, textDecoration: 'none',
-                            }}
-                          >eBay</a>
+                          <EbayLinkButton
+                            variant="chip"
+                            cardName={cardName}
+                            setName={r.set_name}
+                            setCode={r.set_code}
+                            collectorNumber={r.collector_number}
+                            finish={(r.finish === 'foil' || r.finish === 'etched') ? r.finish : 'nonfoil'}
+                            source="printing-comparison"
+                          />
                           <button
                             type="button"
                             onClick={() => setOpenActions(isActionsOpen ? null : rowKey)}
@@ -318,12 +295,6 @@ function RowActions({
       </div>
     </div>
   )
-}
-
-function mapCountryToMarketplace(country: string): 'US' | 'GB' | 'DE' | 'FR' | 'IT' | 'ES' | 'AU' | 'CA' {
-  const key = country.toUpperCase()
-  if (key === 'US' || key === 'GB' || key === 'DE' || key === 'FR' || key === 'IT' || key === 'ES' || key === 'AU' || key === 'CA') return key
-  return 'US'
 }
 
 function Th({ children, align = 'left' }: { children: React.ReactNode; align?: 'left' | 'right' | 'center' }) {

@@ -429,6 +429,24 @@ details summary::marker { display: none; }
   -webkit-text-fill-color: transparent;
 }
 
+/* Homepage hero logo. Sits above the "Public preview" chip and the
+   main headline as the top visual mark on /. Width caps handle the
+   375 / 768 / 1440 breakpoints. Aspect ratio is preserved by height:
+   auto (set inline on the <Image>). */
+.hero-logo {
+  width: 100%;
+  max-width: 220px;
+}
+@media (min-width: 640px) {
+  .hero-logo { max-width: 260px; }
+}
+@media (min-width: 1024px) {
+  .hero-logo { max-width: 300px; }
+}
+@media (min-width: 1400px) {
+  .hero-logo { max-width: 320px; }
+}
+
 /* Nav-scoped tweaks. Plain link styling with a subtle gold underline for
    active, closer to the PokePrices calm than a filled chip. Explicit
    font-family so <button class="nav-link"> does not fall back to the

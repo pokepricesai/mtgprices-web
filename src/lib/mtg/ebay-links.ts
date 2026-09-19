@@ -1,19 +1,18 @@
 // src/lib/mtg/ebay-links.ts
 // Contextual eBay Partner Network link builder for MTGPrices.
 //
-// This module is deliberately conservative:
-//   * URLs are always plain eBay search URLs (no invented item IDs).
-//   * Tracking parameters (campid, customid, mkevt, etc.) are ONLY
-//     appended when BOTH `EBAY_EPN_CAMPAIGN_ID` and
-//     `EBAY_AFFILIATE_ENABLED === 'true'` are set. If either is missing
-//     the link is still rendered but as a plain search URL, so the
-//     product still works pre-launch.
-//   * Marketplace TLD is chosen from a small allowlist keyed by
-//     ISO-3166 country. Anything unknown falls back to the configured
-//     default (US).
+// Two important properties:
+//   * Tracking is per marketplace. Each supported eBay TLD gets its own
+//     EBAY_EPN_CAMPAIGN_ID_<COUNTRY> env var. If a resolved marketplace
+//     has no configured campaign, tracking is NOT injected: the link
+//     stays a plain search URL and .affiliate stays false. Reusing a US
+//     campaign on ebay.co.uk would silently break attribution, so we
+//     refuse to guess.
+//   * Everything else is inputs to the caller. Card facts, source label
+//     (used as EPN customid), marketplace override.
 //
-// Disclosure: the caller is responsible for showing a short "This
-// link is affiliate/sponsored" note next to the button in the UI.
+// The link is always a valid eBay search URL scoped to the MTG
+// category, whether or not tracking is present.
 
 export type EbayMarketplace = 'US' | 'GB' | 'DE' | 'FR' | 'IT' | 'ES' | 'AU' | 'CA'
 
@@ -28,8 +27,8 @@ const HOST_BY_MARKETPLACE: Record<EbayMarketplace, string> = {
   CA: 'www.ebay.ca',
 }
 
-// eBay MKCID/MKRID pairs per marketplace (public constants from the
-// eBay Partner Network docs, safe to hardcode).
+// Public EPN MKCID/MKRID pairs per marketplace. These are constants
+// published by eBay Partner Network and are safe to hardcode.
 const MK_IDS: Record<EbayMarketplace, { mkcid: string; mkrid: string }> = {
   US: { mkcid: '1', mkrid: '711-53200-19255-0' },
   GB: { mkcid: '1', mkrid: '710-53481-19255-0' },
@@ -51,17 +50,45 @@ const DEFAULT_MARKETPLACE = (): EbayMarketplace => {
   return (raw in HOST_BY_MARKETPLACE ? raw : 'US') as EbayMarketplace
 }
 
-/** Choose a marketplace from an optional ISO country code. Anything
- *  outside the allowlist falls back to the configured default. */
+/** Choose a marketplace from an optional ISO 3166 alpha-2 country
+ *  code. Anything outside the allowlist falls back to the configured
+ *  default. */
 export function marketplaceFor(country?: string | null): EbayMarketplace {
   if (!country) return DEFAULT_MARKETPLACE()
   const key = country.toUpperCase() as EbayMarketplace
   return HOST_BY_MARKETPLACE[key] ? key : DEFAULT_MARKETPLACE()
 }
 
+/** Look up the EPN campaign ID configured for the given marketplace.
+ *  Environment naming: EBAY_EPN_CAMPAIGN_ID_<CODE>. Returns null when
+ *  no campaign is configured for that marketplace so the caller can
+ *  render a plain link with no tracking. */
+export function epnCampaignFor(marketplace: EbayMarketplace): string | null {
+  const key = `EBAY_EPN_CAMPAIGN_ID_${marketplace}`
+  const val = (process.env[key] ?? '').trim()
+  return val ? val : null
+}
+
+/** True when the master switch is on. Individual marketplaces still
+ *  need their own campaign id. Used by the UI to decide the affiliate
+ *  disclosure. */
+export function ebayAffiliateEnabled(): boolean {
+  return process.env.EBAY_AFFILIATE_ENABLED === 'true'
+}
+
+// Optional, source-based customid values. Callers pass a `source`
+// string. If the string looks like one of the well-known IDs we let it
+// through; otherwise we sanitise it (a-z, 0-9, dash, up to 40 chars).
+// customid is passed through to eBay analytics as an arbitrary token,
+// so we prefer short and stable values.
+function sanitiseCustomId(raw: string | null | undefined): string | null {
+  if (!raw) return null
+  const cleaned = raw.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 40)
+  return cleaned.length > 0 ? cleaned : null
+}
+
 export type EbaySearchInput = {
-  // Card facts. Everything is optional so callers can build progressive
-  // searches (e.g. name only vs name+set+collector).
+  // Card facts.
   cardName: string
   setName?: string | null
   setCode?: string | null
@@ -69,25 +96,24 @@ export type EbaySearchInput = {
   finish?: 'nonfoil' | 'foil' | 'etched' | null
   // Override the marketplace (typically derived from geo).
   marketplace?: EbayMarketplace
-  // Free-form modifier appended to the query text (e.g. "cheap" or
-  // "graded"). Kept short.
+  // Free-form modifier appended to the query text (e.g. "cheap").
   modifier?: string
+  // Origin label for EPN analytics. Recommended values:
+  //   'card-overview'         from CardMarketOverview
+  //   'printing-comparison'   from the PrintingComparison table row
+  //   'deck-shopping'         from the deck shopping list
+  //   'collection'            from the collection page
+  // Anything else is sanitised down to [a-z0-9-].
+  source?: string | null
 }
 
 export type EbayLink = {
   href: string
   marketplace: EbayMarketplace
-  affiliate: boolean          // true when tracking params were injected
-  label: string               // suggested UI label (caller can override)
+  affiliate: boolean          // true when tracking params were attached
+  label: string               // suggested UI label
 }
 
-/** Build a query string that eBay's card catalogue tends to match well.
- *  Example inputs and outputs:
- *    name only                    →  "Lightning Bolt Magic the Gathering"
- *    name + set                   →  "Lightning Bolt Beta Magic the Gathering"
- *    name + set + collector       →  "Lightning Bolt Beta 161 Magic the Gathering"
- *    name + foil finish           →  "Lightning Bolt foil Magic the Gathering"
- */
 function buildQuery(i: EbaySearchInput): string {
   const parts: string[] = [i.cardName]
   if (i.setName) parts.push(i.setName)
@@ -100,7 +126,8 @@ function buildQuery(i: EbaySearchInput): string {
 }
 
 /** Compose the final URL. Tracking params only appear when the
- *  campaign ID is configured AND the master switch is on. */
+ *  resolved marketplace has its own campaign id configured AND the
+ *  master switch is on. */
 export function buildEbaySearchLink(input: EbaySearchInput): EbayLink {
   const marketplace = input.marketplace ?? DEFAULT_MARKETPLACE()
   const host = HOST_BY_MARKETPLACE[marketplace]
@@ -109,19 +136,21 @@ export function buildEbaySearchLink(input: EbaySearchInput): EbayLink {
   url.searchParams.set('_nkw', buildQuery(input))
   url.searchParams.set('_sacat', MTG_CATEGORY_ID)
 
-  const campid = (process.env.EBAY_EPN_CAMPAIGN_ID ?? '').trim()
-  const enabled = process.env.EBAY_AFFILIATE_ENABLED === 'true'
+  const campid = epnCampaignFor(marketplace)
+  const enabled = ebayAffiliateEnabled()
   const affiliate = Boolean(campid) && enabled
 
-  if (affiliate) {
+  if (affiliate && campid) {
     const ids = MK_IDS[marketplace]
     // Standard EPN "clkid" pattern. Values here mirror the eBay-provided
-    // tracking template; the campid is the value that attributes revenue.
+    // tracking template. The campid is what attributes revenue.
     url.searchParams.set('mkevt', '1')
     url.searchParams.set('mkcid', ids.mkcid)
     url.searchParams.set('mkrid', ids.mkrid)
     url.searchParams.set('campid', campid)
-    const custom = (process.env.EBAY_CUSTOM_ID ?? '').trim()
+    // customid: prefer the caller-provided source, fall back to a
+    // configured global value if present.
+    const custom = sanitiseCustomId(input.source) ?? sanitiseCustomId(process.env.EBAY_CUSTOM_ID ?? '')
     if (custom) url.searchParams.set('customid', custom)
     // Match hint helps eBay attribute session → click → conversion.
     url.searchParams.set('toolid', '10001')
@@ -141,11 +170,4 @@ function defaultLabel(i: EbaySearchInput): string {
   if (i.setName && i.collectorNumber) return `Find this printing on eBay`
   if (i.setName) return `Find ${i.setName} copies on eBay`
   return `Search this card on eBay`
-}
-
-/** Convenience: is the account wired up for revenue tracking at all?
- *  Used by the UI to decide whether to show the small affiliate
- *  disclosure line. */
-export function ebayAffiliateConfigured(): boolean {
-  return Boolean(process.env.EBAY_EPN_CAMPAIGN_ID?.trim()) && process.env.EBAY_AFFILIATE_ENABLED === 'true'
 }

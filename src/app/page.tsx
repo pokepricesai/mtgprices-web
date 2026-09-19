@@ -76,8 +76,21 @@ function Hero({
 
       <div style={{ maxWidth: 1180, margin: '0 auto', position: 'relative' }}>
         <div className="hero-grid" style={{ display: 'grid', gap: 40, alignItems: 'center' }}>
-          {/* Left: brand copy + search + chips */}
+          {/* Left: brand mark + copy + search + chips */}
           <div>
+            {/* Hero logo. Deliberately larger than the navbar lockup so
+                the brand carries strongly into the page. Sized via the
+                .hero-logo helper so mobile and desktop scale together
+                and the aspect ratio is preserved via CSS `height: auto`. */}
+            <Image
+              src="/logo.png"
+              alt="MTGPrices"
+              width={600}
+              height={180}
+              priority
+              className="hero-logo"
+              style={{ display: 'block', height: 'auto', marginBottom: 22 }}
+            />
             <span
               className="chip chip-gold"
               style={{ marginBottom: 20, background: 'rgba(232,169,75,0.12)' }}
