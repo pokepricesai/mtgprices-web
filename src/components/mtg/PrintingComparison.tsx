@@ -213,7 +213,7 @@ export default function PrintingComparison({
                             setCode={r.set_code}
                             collectorNumber={r.collector_number}
                             finish={(r.finish === 'foil' || r.finish === 'etched') ? r.finish : 'nonfoil'}
-                            source="printing-comparison"
+                            source="mtg-printing-comparison"
                           />
                           <button
                             type="button"

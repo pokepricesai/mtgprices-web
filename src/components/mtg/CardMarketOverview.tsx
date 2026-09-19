@@ -109,7 +109,7 @@ export default function CardMarketOverview({ summary, cardName, setName, setCode
           setCode={setCode ?? null}
           collectorNumber={collectorNumber ?? null}
           finish={(primaryFinish === 'foil' || primaryFinish === 'etched') ? primaryFinish : 'nonfoil'}
-          source="card-overview"
+          source="mtg-card-overview"
         />
       </div>
     </section>

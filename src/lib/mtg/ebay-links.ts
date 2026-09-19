@@ -98,11 +98,12 @@ export type EbaySearchInput = {
   marketplace?: EbayMarketplace
   // Free-form modifier appended to the query text (e.g. "cheap").
   modifier?: string
-  // Origin label for EPN analytics. Recommended values:
-  //   'card-overview'         from CardMarketOverview
-  //   'printing-comparison'   from the PrintingComparison table row
-  //   'deck-shopping'         from the deck shopping list
-  //   'collection'            from the collection page
+  // Origin label for EPN analytics. Prefixed with mtg- so MTGPrices
+  // traffic is distinguishable from Poképrices traffic in the shared
+  // EPN campaigns.
+  //   'mtg-card-overview'         from CardMarketOverview
+  //   'mtg-printing-comparison'   from the PrintingComparison table row
+  //   'mtg-deck-shopping'         from the deck shopping list
   // Anything else is sanitised down to [a-z0-9-].
   source?: string | null
 }
