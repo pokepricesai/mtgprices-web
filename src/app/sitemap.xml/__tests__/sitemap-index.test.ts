@@ -25,6 +25,10 @@ const SITEMAP_LIB = readFileSync(
   join(process.cwd(), 'src/lib/mtg/sitemap.ts'),
   'utf8',
 )
+const PAGES_SRC = readFileSync(
+  join(process.cwd(), 'src/app/sitemap-pages.xml/route.ts'),
+  'utf8',
+)
 
 const CARD_SHARDS_FLOOR = 5
 
@@ -53,6 +57,15 @@ describe('sitemap.xml root index', () => {
     expect(match).toBeTruthy()
     const shards = match ? parseInt(match[1], 10) : 0
     expect(shards).toBeGreaterThanOrEqual(CARD_SHARDS_FLOOR)
+  })
+
+  it('sitemap-pages.xml includes /insights and /ai', () => {
+    expect(PAGES_SRC).toMatch(/\/insights['`]/)
+    expect(PAGES_SRC).toMatch(/\/ai['`]/)
+  })
+
+  it('sitemap-pages.xml pulls in every article from listInsights()', () => {
+    expect(PAGES_SRC).toContain('listInsights')
   })
 
   it('has a route file for every card shard the constant claims', () => {

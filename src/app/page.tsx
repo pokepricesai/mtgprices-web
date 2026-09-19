@@ -12,6 +12,7 @@ import { getSupabaseServiceClient } from '@/lib/supabaseService'
 import { getMarketMovers, type MoverCard } from '@/lib/mtg/movers'
 import HomeSearch from '@/components/HomeSearch'
 import { FORMATS } from '@/lib/mtg/formats.data'
+import { latestInsights, type InsightMeta } from '@/lib/insights'
 
 export const revalidate = 300
 
@@ -42,6 +43,7 @@ export default async function HomePage() {
   const primaryFormats = FORMATS
     .filter((f) => f.group === 'Primary' || f.group === 'Casual' || f.group === 'Eternal')
     .slice(0, 8)
+  const insights = latestInsights(3)
 
   return (
     <>
@@ -50,10 +52,61 @@ export default async function HomePage() {
       <StartExploringSection />
       <PlayersAndCollectorsSection />
       <DeckLabSection />
+      <InsightsSection items={insights} />
       <FormatsSection formats={primaryFormats} />
       <RecentSetsSection sets={recentSets} />
       <FinalCtaSection />
     </>
+  )
+}
+
+function InsightsSection({ items }: { items: InsightMeta[] }) {
+  if (items.length === 0) return null
+  return (
+    <section style={{ padding: '76px 24px', background: 'var(--bg)' }}>
+      <div style={{ maxWidth: 1180, margin: '0 auto' }}>
+        <SectionHeader
+          eyebrow="Insights"
+          title={<>Latest from the MTGPrices editorial.</>}
+          subtitle="Weekly writing on the Magic market, collecting, deckbuilding, sets and formats."
+          rightLink={{ href: '/insights', label: 'All insights →' }}
+        />
+        <div style={{
+          display: 'grid', gap: 16, marginTop: 24,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        }}>
+          {items.map((a) => (
+            <Link
+              key={a.slug}
+              href={`/insights/${a.slug}`}
+              className="card-hover card-hover-gold"
+              style={{
+                display: 'flex', flexDirection: 'column', gap: 8,
+                padding: 20, borderRadius: 16,
+                background: 'var(--surface)', border: '1px solid var(--border)',
+                textDecoration: 'none', color: 'var(--text)',
+                boxShadow: '0 4px 14px rgba(20,33,61,0.04)',
+              }}
+            >
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span className="chip chip-arcane" style={{ fontSize: 11 }}>{a.category}</span>
+                <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
+                  {new Date(a.publishedAt + 'T00:00:00Z').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })} · {a.readingTimeMin} min
+                </span>
+              </div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-strong)', lineHeight: 1.3 }}>
+                {a.title}
+              </div>
+              {a.description && (
+                <p style={{ margin: 0, fontSize: 13.5, color: 'var(--text-muted)', lineHeight: 1.55 }}>
+                  {a.description}
+                </p>
+              )}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -192,10 +245,10 @@ function TrustChip({ label }: { label: string }) {
 
 function DeckIntelligenceCard() {
   const actions = [
-    { label: 'Build from a brief',    href: '/decks/new', accent: 'gold' as const },
-    { label: 'Find replacements',     href: '/decks',     accent: 'arcane' as const },
-    { label: 'Analyse a deck',        href: '/decks',     accent: 'arcane' as const },
-    { label: 'Cards for a strategy',  href: '/card-finder?mode=play', accent: 'gold' as const },
+    { label: 'Ask about a card',      href: '/ai',                        accent: 'gold' as const },
+    { label: 'Cards for a strategy',  href: '/ai',                        accent: 'gold' as const },
+    { label: 'Analyse a deck',        href: '/decks',                     accent: 'arcane' as const },
+    { label: 'Build a deck',          href: '/decks/new',                 accent: 'arcane' as const },
   ]
   return (
     <div
@@ -211,14 +264,16 @@ function DeckIntelligenceCard() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className="gem gem-gold" aria-hidden />
-          <span className="label-mono" style={{ color: 'var(--gold-600)' }}>Deck Intelligence</span>
+          <span className="label-mono" style={{ color: 'var(--gold-600)' }}>MTGPrices AI</span>
         </div>
-        <span className="chip chip-gold" style={{ fontSize: 10.5 }}>Preview</span>
+        <Link href="/ai" className="chip chip-gold" style={{ fontSize: 10.5, textDecoration: 'none' }}>
+          Ask AI →
+        </Link>
       </div>
-      <h3 style={{ margin: 0, fontSize: 20, lineHeight: 1.25 }}>From an idea to a tested list.</h3>
+      <h3 style={{ margin: 0, fontSize: 20, lineHeight: 1.25 }}>Ask about cards, prices and decks.</h3>
       <p style={{ marginTop: 8, color: 'var(--text-muted)', fontSize: 13.5, lineHeight: 1.55 }}>
-        Format aware Deck Builder, capability based card search and a rules aware Test Your Deck
-        flow. All grounded in the live database, no invented cards.
+        Grounded in the live MTGPrices catalogue. Format aware Deck Builder, capability based
+        card search and a rules aware Test Your Deck flow. No invented cards.
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 14 }}>
         {actions.map((a) => (

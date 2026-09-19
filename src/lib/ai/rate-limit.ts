@@ -46,7 +46,7 @@ export async function checkQuota(userId: string): Promise<QuotaResult> {
 
 export type LogInput = {
   userId: string
-  operation: 'analyse_deck' | 'improve_deck' | 'replace_card' | 'build_deck'
+  operation: 'analyse_deck' | 'improve_deck' | 'replace_card' | 'build_deck' | 'ask'
   provider: string
   model: string
   tokensInput?: number | null
