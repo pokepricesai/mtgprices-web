@@ -139,7 +139,7 @@ export function bindPublicAiTools(): { tools: Record<string, any>; authorised: A
 
     getCurrentPrice: tool({
       description:
-        'Get the current TCGplayer USD paper retail price for the cheapest priced nonfoil printing of a card. Also returns which set that printing is in, so responses can cite it.',
+        'Get the current TCGplayer USD paper retail price for the cheapest priced nonfoil printing of a card. Returns the price, the finish, which set and collector number that printing is from, and the observation date of the price (observed_on) so answers can be honest about how fresh the data is.',
       inputSchema: z.object({
         oracle_card_id: z.string().uuid(),
       }),
@@ -164,12 +164,17 @@ export function bindPublicAiTools(): { tools: Record<string, any>; authorised: A
         const finishIds = finishRows.map((f) => f.id)
         if (finishIds.length === 0) return { priced: false, printings: printingIds.length }
         const priceMap = await getCurrentPricesForFinishes(finishIds)
-        type Row = { price: number; printing_id: string; finish: string }
+        type Row = { price: number; printing_id: string; finish: string; observed_on: string }
         const rows: Row[] = []
         for (const f of finishRows) {
           const p = pickHeadlinePrice(priceMap.get(f.id))
           if (!p) continue
-          rows.push({ price: Number(p.price), printing_id: f.printing_id, finish: f.finish })
+          rows.push({
+            price: Number(p.price),
+            printing_id: f.printing_id,
+            finish: f.finish,
+            observed_on: p.observed_on,
+          })
         }
         if (rows.length === 0) return { priced: false, printings: printingIds.length }
         const nonfoils = rows.filter((r) => r.finish === 'nonfoil')
@@ -182,6 +187,7 @@ export function bindPublicAiTools(): { tools: Record<string, any>; authorised: A
           set_code: printing?.set_code ?? null,
           collector_number: printing?.collector_number ?? null,
           card_name: printing?.name ?? null,
+          observed_on: pick.observed_on,
           basis: 'tcgplayer USD paper retail',
         }
       },
@@ -258,7 +264,7 @@ export const PUBLIC_AI_SYSTEM_PROMPT = `You are the MTGPrices assistant. You hel
 
 Grounding rules that you MUST follow:
 1. Never invent card names, prices, legality, oracle text, printings or set information. Every card you mention must first be returned by a tool call. If searchCards did not return a card, you do not know it exists.
-2. Prices come from getCurrentPrice or the price fields in searchCards results. Every price you cite must identify the basis (TCGplayer USD paper retail unless stated otherwise). Never blend USD and EUR.
+2. Prices come from getCurrentPrice or the price fields in searchCards results. Every price you cite must identify the basis (TCGplayer USD paper retail unless stated otherwise) AND, when you called getCurrentPrice, the observation date returned as observed_on. Say for example "$1.23 on TCGplayer USD paper retail as of 2026-09-17". Never blend USD and EUR.
 3. Legality answers come from getCardFacts.legalities. If you have not called getCardFacts, do not answer a legality question.
 4. Format rules come from getFormatRule. Do not memorise deck sizes.
 5. If a factual answer requires data you have not fetched, call the appropriate tool first. If a tool returns no data, say so plainly.
