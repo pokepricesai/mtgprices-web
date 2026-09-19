@@ -6,14 +6,21 @@
 
 import Link from 'next/link'
 import type { SetMarket, SetMoverTile, SetValueTile } from '@/lib/mtg/set-market'
+import { SET_VALUE_COVERAGE_THRESHOLD } from '@/lib/mtg/set-aggregate'
 
 type Props = { market: SetMarket; setName: string }
 
 export default function SetMarketOverview({ market, setName }: Props) {
   const sym = market.currencySymbol
   const coverage = market.totalPrinted > 0
-    ? Math.round((market.totalPriced / market.totalPrinted) * 100)
+    ? market.totalPriced / market.totalPrinted
     : 0
+  const coveragePct = Math.round(coverage * 100)
+  const showsFullValue = coverage >= SET_VALUE_COVERAGE_THRESHOLD
+  const valueLabel = showsFullValue ? 'Set value' : 'Priced-card subtotal'
+  const valueSublabel = showsFullValue
+    ? `Estimated set value on ${providerLabel(market.basis.provider)}`
+    : `Subtotal for the ${market.totalPriced.toLocaleString()} priced ${market.totalPriced === 1 ? 'card' : 'cards'} on ${providerLabel(market.basis.provider)}. Coverage is below ${Math.round(SET_VALUE_COVERAGE_THRESHOLD * 100)}%, so this is not a whole-set estimate.`
 
   return (
     <section
@@ -28,14 +35,15 @@ export default function SetMarketOverview({ market, setName }: Props) {
       <div className="label-mono" style={{ color: 'var(--gold-600)', marginBottom: 8 }}>Set market overview</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'baseline' }}>
         <div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>{valueLabel}</div>
           <div style={{ fontSize: 32, fontWeight: 800, fontFamily: 'ui-monospace, SFMono-Regular, monospace', color: 'var(--text-strong)' }}>
             {sym}{market.estimatedValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-            Estimated set value on {providerLabel(market.basis.provider)}
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, maxWidth: 460, lineHeight: 1.4 }}>
+            {valueSublabel}
           </div>
         </div>
-        <MiniStat label="Priced printings" value={`${market.totalPriced} / ${market.totalPrinted}`} sub={`${coverage}% coverage`} />
+        <MiniStat label="Priced cards" value={`${market.totalPriced} / ${market.totalPrinted}`} sub={`${coveragePct}% coverage`} />
         <MiniStat label="Unpriced" value={String(market.totalUnpriced)} sub="No current observation on this basis" />
       </div>
 

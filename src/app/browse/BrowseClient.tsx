@@ -10,6 +10,12 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import type { MtgSet } from '@/lib/mtg/sets'
 import type { SetAggregate } from '@/lib/mtg/set-market-batch'
+import {
+  setValueLabel,
+  has30dCoverage,
+  SET_VALUE_COVERAGE_THRESHOLD,
+} from '@/lib/mtg/set-aggregate'
+import { slugifyCardName } from '@/lib/mtg/slug'
 
 export type BrowseSet = MtgSet
 
@@ -96,8 +102,16 @@ export default function BrowseClient({ sets, aggregates }: Props) {
 
   const sorted = useMemo(() => {
     const arr = [...filtered]
-    const val = (s: BrowseSet) => aggregates[s.code]?.estimatedValue ?? 0
-    const pct = (s: BrowseSet) => aggregates[s.code]?.pct30d ?? null
+    // For sort-by-value, use the priced subtotal irrespective of the
+    // coverage label. Sorting by "Set value only when coverage is
+    // strong" would make weak-coverage sets always rank last and hide
+    // legitimate expensive-but-thin-coverage sets from the view.
+    const val = (s: BrowseSet) => aggregates[s.code]?.pricedSubtotal ?? 0
+    // For sort-by-30D, only sets that qualify for the 30D chip count.
+    const pct = (s: BrowseSet) => {
+      const agg = aggregates[s.code]
+      return agg && has30dCoverage(agg) ? agg.pct30d : null
+    }
     switch (sort) {
       case 'newest':    arr.sort((a, b) => (b.released_at ?? '').localeCompare(a.released_at ?? '')); break
       case 'oldest':    arr.sort((a, b) => (a.released_at ?? '').localeCompare(b.released_at ?? '')); break
@@ -237,45 +251,106 @@ function TileGrid({ sets, aggregates }: { sets: BrowseSet[]; aggregates: Record<
               )}
             </div>
             <div style={{ fontSize: 14, fontWeight: 700, marginTop: 8, lineHeight: 1.25, color: 'var(--text-strong)' }}>{set.name}</div>
-            <div style={{ color: 'var(--text-muted)', fontSize: 11.5, marginTop: 6, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {set.released_at && <span>{set.released_at}</span>}
-              {set.card_count != null && <span>{set.card_count.toLocaleString()} cards</span>}
+            <div style={{ color: 'var(--text-muted)', fontSize: 11.5, marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {set.released_at && <span>Released {humanDate(set.released_at)}</span>}
+              {(cardCountForTile(set, agg) ?? 0) > 0 && (
+                <>
+                  <span aria-hidden style={{ opacity: 0.5 }}>·</span>
+                  <span>{cardCountForTile(set, agg)!.toLocaleString()} cards</span>
+                </>
+              )}
             </div>
-            {agg && agg.totalPriced > 0 && (
-              <div style={{
-                marginTop: 10, paddingTop: 10, borderTop: '1px dashed var(--border)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-              }}>
-                <div>
-                  <div style={{
-                    fontSize: 15, fontWeight: 800, color: 'var(--text-strong)',
-                    fontFamily: 'ui-monospace, SFMono-Regular, monospace',
-                  }}>${agg.estimatedValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                    Est. value ({agg.totalPriced}/{agg.totalPrinted} priced)
-                  </div>
-                </div>
-                {agg.pct30d !== null && (
-                  <span style={{
-                    fontSize: 11, fontWeight: 800,
-                    color: agg.pct30d >= 0 ? 'var(--green)' : 'var(--red)',
-                    background: agg.pct30d >= 0 ? 'var(--green-soft)' : 'var(--red-soft)',
-                    padding: '3px 8px', borderRadius: 999,
-                    fontFamily: 'ui-monospace, SFMono-Regular, monospace',
-                  }}>{agg.pct30d >= 0 ? '▲' : '▼'} {Math.abs(agg.pct30d * 100).toFixed(1)}% 30d</span>
-                )}
-              </div>
-            )}
-            {agg?.topCardName && agg.topCardPrice !== null && (
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
-                Top: <strong style={{ color: 'var(--text)' }}>{agg.topCardName}</strong> ${agg.topCardPrice.toFixed(2)}
-              </div>
-            )}
+            <SetValueBlock set={set} agg={agg ?? null} />
           </Link>
         )
       })}
     </div>
   )
+}
+
+// The "cards" number rendered next to the release date. Prefer the
+// eligible catalogue count (agg.eligibleCount) so the coverage line
+// underneath uses the same denominator. Fall back to Scryfall's
+// set.card_count when the aggregate has not loaded yet, so the tile
+// header does not go blank while phase-1 is still running.
+function cardCountForTile(set: BrowseSet, agg: SetAggregate | null | undefined): number | null {
+  if (agg && agg.eligibleCount > 0) return agg.eligibleCount
+  return set.card_count ?? null
+}
+
+function SetValueBlock({ set, agg }: { set: BrowseSet; agg: SetAggregate | null }) {
+  if (!agg || agg.pricedCount === 0) return null
+  const label = setValueLabel(agg)
+  const coveragePct = Math.round(agg.coverage * 100)
+  const showsFullValue = agg.coverage >= SET_VALUE_COVERAGE_THRESHOLD
+  const mostValuableHref = agg.mostValuableName && agg.mostValuableCollectorNumber
+    ? `/set/${set.code}/card/${agg.mostValuableCollectorNumber}-${slugifyCardName(agg.mostValuableName)}`
+    : null
+  const show30d = has30dCoverage(agg)
+  return (
+    <div style={{
+      marginTop: 10, paddingTop: 10, borderTop: '1px dashed var(--border)',
+      display: 'flex', flexDirection: 'column', gap: 4,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{label}</div>
+          <div style={{
+            fontSize: 16, fontWeight: 800, color: 'var(--text-strong)',
+            fontFamily: 'ui-monospace, SFMono-Regular, monospace', lineHeight: 1.15,
+          }}>{formatUsd(agg.pricedSubtotal)}</div>
+        </div>
+        {show30d && agg.pct30d !== null && (
+          <span style={{
+            fontSize: 11, fontWeight: 800,
+            color: agg.pct30d >= 0 ? 'var(--green)' : 'var(--red)',
+            background: agg.pct30d >= 0 ? 'var(--green-soft)' : 'var(--red-soft)',
+            padding: '3px 8px', borderRadius: 999,
+            fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+          }}>{agg.pct30d >= 0 ? '▲' : '▼'} {Math.abs(agg.pct30d * 100).toFixed(1)}% 30D</span>
+        )}
+      </div>
+      <div style={{ fontSize: 10.5, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+        {agg.pricedCount.toLocaleString()} of {agg.eligibleCount.toLocaleString()} cards priced · {coveragePct}% coverage
+      </div>
+      {agg.mostValuableName && agg.mostValuablePrice !== null && (
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+          {showsFullValue ? 'Most valuable' : 'Most valuable priced card'}
+          {': '}
+          {mostValuableHref ? (
+            <Link
+              href={mostValuableHref}
+              onClick={(e) => e.stopPropagation()}
+              style={{ color: 'var(--text)', fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: 2 }}
+            >{agg.mostValuableName}</Link>
+          ) : (
+            <strong style={{ color: 'var(--text)' }}>{agg.mostValuableName}</strong>
+          )}
+          {' · '}{formatUsd(agg.mostValuablePrice)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+function humanDate(iso: string): string {
+  // Accept YYYY-MM-DD from the DB. Render as "24 Apr 2026". Guard
+  // against malformed input by falling back to the raw string.
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso)
+  if (!m) return iso
+  const y = Number(m[1]); const mo = Number(m[2]); const d = Number(m[3])
+  if (!(mo >= 1 && mo <= 12)) return iso
+  return `${d} ${MONTHS[mo - 1]} ${y}`
+}
+
+function formatUsd(n: number): string {
+  if (!Number.isFinite(n)) return '$0'
+  // Show cents for values under 100, otherwise a whole-dollar figure to
+  // avoid tile bloat like "$3,182.81" competing with "1 of 103 cards priced".
+  if (n < 100) return `$${n.toFixed(2)}`
+  return `$${Math.round(n).toLocaleString()}`
 }
 
 function Select({ label, value, onChange, options }: {

@@ -66,13 +66,17 @@ export async function getSetMarket(
   const supabase = getSupabaseServiceClient()
   const topN = opts.topN ?? 5
 
-  // 1) All English paper printings in the set.
+  // 1) All English paper printings in the set. Filter out
+  //    collector_number-less rows so the eligible population matches
+  //    the /browse denominator (mtg_set_aggregates_v4) exactly.
+  //    Those rows also cannot have a card page under our URL scheme.
   const { data: printsRaw, error: prErr } = await supabase
     .from('mtg_printings')
     .select('id, name, set_code, collector_number, image_uri_small')
     .eq('set_code', setCode)
     .eq('digital', false)
     .eq('lang', 'en')
+    .not('collector_number', 'is', null)
     .order('collector_number', { ascending: true, nullsFirst: false })
   if (prErr || !printsRaw || printsRaw.length === 0) {
     if (prErr) console.error('getSetMarket printings error:', prErr)
