@@ -13,6 +13,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "icons:optimize": "node scripts/optimize-icons.mjs",
+    "seo:audit": "node scripts/seo-audit.mjs",
     "indexnow": "node scripts/submit-indexnow.js",
     "indexnow:changed": "node scripts/submit-indexnow.js --changed-only --snapshot .indexnow-snapshot.json",
     "scaffold:jp-manual-assets": "npx tsx scripts/set-assets/jp-manual-scaffold.mjs",

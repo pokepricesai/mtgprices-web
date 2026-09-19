@@ -48,7 +48,8 @@ export default function CardSeoContent({
     firstPrinting, newestPrinting, legalityByFormat, market, setName,
   })
 
-  const showFaqSchema = faqs.length >= 3
+  // FAQPage rich results were retired by Google in 2026. We keep the
+  // visible FAQ block for humans but no longer emit FAQPage JSON-LD.
 
   return (
     <section aria-label="About this card and FAQ" style={{ display: 'grid', gap: 24 }}>
@@ -109,17 +110,12 @@ export default function CardSeoContent({
         </div>
       )}
 
-      {/* Structured data */}
+      {/* Structured data (BreadcrumbList only). FAQPage was removed
+          after Google retired FAQ rich results. */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd(cardName, printing, setName, canonical)) }}
       />
-      {showFaqSchema && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd(faqs)) }}
-        />
-      )}
     </section>
   )
 }
@@ -244,18 +240,6 @@ function breadcrumbLd(cardName: string, printing: MtgPrinting, setName: string, 
       { '@type': 'ListItem', position: 2, name: setName, item: `${origin}/set/${printing.set_code}` },
       { '@type': 'ListItem', position: 3, name: cardName, item: canonical },
     ],
-  }
-}
-
-function faqLd(faqs: FaqEntry[]) {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: faqs.map((f) => ({
-      '@type': 'Question',
-      name: f.q,
-      acceptedAnswer: { '@type': 'Answer', text: f.a },
-    })),
   }
 }
 

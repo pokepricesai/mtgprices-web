@@ -68,6 +68,48 @@ describe('sitemap.xml root index', () => {
     expect(PAGES_SRC).toContain('listInsights')
   })
 
+  it('sitemap-pages.xml never lists private or search-result URLs', () => {
+    // Search-result URLs are an unbounded parameter space and must
+    // not appear in the sitemap. Private routes must never appear.
+    // Verify the SOURCE does not reference these paths.
+    const banned = [
+      '/cards/search',   // param variant
+      '/login', '/account', '/settings', '/collection',
+      '/decks', '/decks/new', '/decks/public',
+      '/test-deck',      // NOINDEX per SEO policy
+    ]
+    for (const b of banned) {
+      const pattern = new RegExp(`['\`]${b.replace(/\//g, '\\/')}['\`]`)
+      expect(PAGES_SRC, `banned path ${b} appeared in sitemap-pages source`).not.toMatch(pattern)
+    }
+  })
+
+  it('sitemap-pages.xml routes eligibility through isSitemapEligible', () => {
+    // The source should not manually cherry-pick paths, it should
+    // ask the central policy helper. Prevents drift from
+    // src/lib/seo.ts.
+    expect(PAGES_SRC).toContain('isSitemapEligible')
+  })
+
+  it('sitemap lastmod values are not live now() timestamps', () => {
+    // Live now() on every request made the lastmod signal noisy for
+    // crawlers. Assert per-boot BUILD_ISO instead in every sitemap.
+    for (const src of [
+      readFileSync(join(process.cwd(), 'src/app/sitemap.xml/route.ts'), 'utf8'),
+      readFileSync(join(process.cwd(), 'src/app/sitemap-pages.xml/route.ts'), 'utf8'),
+      readFileSync(join(process.cwd(), 'src/app/sitemap-sets.xml/route.ts'), 'utf8'),
+      readFileSync(join(process.cwd(), 'src/lib/mtg/sitemap.ts'), 'utf8'),
+    ]) {
+      // Look for a `new Date().toISOString()` call INSIDE the GET
+      // handler / buildSitemapXml function. Module-scope BUILD_ISO is
+      // fine.
+      const insideGet = src.match(/export\s+async\s+function\s+GET[\s\S]*?\n\}/)?.[0]
+        ?? src.match(/export\s+function\s+buildSitemapXml[\s\S]*?\n\}/)?.[0]
+        ?? ''
+      expect(insideGet, 'live now() should not run per request').not.toMatch(/new\s+Date\(\)\.toISOString\(\)/)
+    }
+  })
+
   it('has a route file for every card shard the constant claims', () => {
     // Ensures we did not raise CARD_SITEMAP_SHARDS without adding the
     // corresponding /sitemap-cards-N.xml routes.

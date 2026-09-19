@@ -144,14 +144,6 @@ function Hero({
               className="hero-logo"
               style={{ display: 'block', height: 'auto', marginBottom: 22 }}
             />
-            <span
-              className="chip chip-gold"
-              style={{ marginBottom: 20, background: 'rgba(232,169,75,0.12)' }}
-            >
-              <span className="gem gem-gold" aria-hidden />
-              Public preview
-            </span>
-
             <h1
               className="display"
               style={{

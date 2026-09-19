@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   if (!f) return { title: 'Format not found' }
   const canonical = `https://mtgprices.io/formats/${f.key}`
   return {
-    title: `${f.label}, MTG format`,
+    title: `${f.label} MTG Cards, Legality and Deck Tools`,
     description: `${f.blurb} Card legality, bans and restrictions for ${f.label} on MTGPrices.io.`,
     alternates: { canonical },
     openGraph: { url: canonical },
@@ -39,9 +39,26 @@ export default async function FormatPage({ params }: { params: Promise<Params> }
     getFormatSpotlight(f.key as FormatKey, 'restricted', 60),
   ])
 
+  const canonical = `https://mtgprices.io/formats/${f.key}`
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home',    item: 'https://mtgprices.io/' },
+      { '@type': 'ListItem', position: 2, name: 'Formats', item: 'https://mtgprices.io/formats' },
+      { '@type': 'ListItem', position: 3, name: f.label,   item: canonical },
+    ],
+  }
+
   return (
     <div style={{ maxWidth: 1180, margin: '0 auto', padding: '32px 24px 80px' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
       <nav aria-label="Breadcrumb" style={{ marginBottom: 12, fontSize: 12, color: 'var(--text-muted)' }}>
+        <Link href="/" style={{ color: 'inherit' }}>Home</Link>
+        <span style={{ margin: '0 6px', opacity: 0.5 }}>›</span>
         <Link href="/formats" style={{ color: 'inherit' }}>Formats</Link>
         <span style={{ margin: '0 6px', opacity: 0.5 }}>›</span>
         <span style={{ color: 'var(--text)' }}>{f.label}</span>

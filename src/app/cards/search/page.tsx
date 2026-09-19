@@ -13,11 +13,17 @@ import ManaCost from '@/components/mtg/ManaCost'
 
 export const dynamic = 'force-dynamic'
 
+// Search-result URLs are an unbounded parameter space so we mark the
+// whole /cards/search template noindex,follow. The canonical points at
+// the base path (no query) so any linked search state collapses to a
+// single URL for crawlers. Follow is intentionally on so linked cards
+// stay discoverable.
 export const metadata: Metadata = {
   title: 'Search cards',
   description: 'Search MTG cards by name, type, Oracle text, colour, colour identity, format legality and rarity.',
   alternates: { canonical: 'https://mtgprices.io/cards/search' },
   openGraph: { url: 'https://mtgprices.io/cards/search' },
+  robots: { index: false, follow: true },
 }
 
 type SearchParams = {

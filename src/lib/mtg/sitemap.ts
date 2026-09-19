@@ -57,13 +57,20 @@ export async function fetchCardShard(shard: number): Promise<
   return out
 }
 
+// Card-shard lastmod is derived from released_at when available and
+// falls back to a per-build ISO otherwise (many printings have a real
+// release date). BUILD_ISO stays stable within a deploy so crawlers do
+// not see every URL "changed" on every request.
+const BUILD_ISO = new Date().toISOString()
+
 export function buildSitemapXml(entries: { setCode: string; collector: string; name: string; released_at: string | null }[]): string {
-  const now = new Date().toISOString()
   const items = entries
     .map((e) => {
       const slug = buildCardSlug(e.collector, e.name)
       const loc = `https://mtgprices.io/set/${e.setCode}/card/${slug}`
-      const lastmod = e.released_at ? new Date(e.released_at).toISOString() : now
+      const lastmod = e.released_at
+        ? new Date(`${e.released_at}T00:00:00Z`).toISOString()
+        : BUILD_ISO
       return `  <url>\n    <loc>${xmlEscape(loc)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.6</priority>\n  </url>`
     })
     .join('\n')
