@@ -71,13 +71,18 @@ export async function POST(req: Request) {
 
   const { tools, authorised } = bindPublicAiTools()
   const t0 = Date.now()
+  // Ceiling picked to fit inside Vercel's 300s function budget with
+  // headroom while giving the model enough room for the harder
+  // prompts (e.g. "compare three cards + similarity" needs ~8 tool
+  // calls: searchCards, 3× getCurrentPrice, getCardFacts, findSimilar
+  // and often another searchCards for the similar-to target).
   const result = await runAi({
     tier: 'cheap',
     system: PUBLIC_AI_SYSTEM_PROMPT + deckHint,
     prompt: cleaned,
     tools,
-    maxSteps: 6,
-    timeoutMs: 45_000,
+    maxSteps: 12,
+    timeoutMs: 120_000,
   })
   const latencyMs = Date.now() - t0
 
