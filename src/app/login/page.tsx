@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   description: 'Sign in to MTGPrices to track your collection.',
   alternates: { canonical: `${SITE_URL}/login` },
   openGraph: { url: `${SITE_URL}/login` },
+  robots: { index: false, follow: true },
 }
 
 type SearchParams = { next?: string; error?: string }

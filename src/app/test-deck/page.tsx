@@ -20,6 +20,7 @@ export const metadata: Metadata = {
   description: 'Opening hands, mulligan analysis, draw odds and mana feasibility for any deck you save on MTGPrices.',
   alternates: { canonical: `${SITE_URL}/test-deck` },
   openGraph: { url: `${SITE_URL}/test-deck` },
+  robots: { index: false, follow: true },
 }
 
 export default async function TestDeckLanding() {
