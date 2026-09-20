@@ -12,17 +12,29 @@
 //                   Pricing availability MUST NOT reduce this number.
 //   pricedCount     Number of eligible printings that have at least one
 //                   current basket price on the caller's basis.
-//   pricedSubtotal  Sum of one price per priced printing. The chosen
-//                   price is the cheapest nonfoil finish current price
-//                   on the basis. If no nonfoil finish has a price, we
-//                   fall back to the cheapest of any finish so a foil-
-//                   only printing still contributes exactly one row.
-//                   Foil and nonfoil of the same printing are never
-//                   summed together.
+//   pricedSubtotal  Sum of one price per priced printing.
+//                   Basket rule (stable across dates, price-independent):
+//                   for each eligible printing choose a CANONICAL FINISH
+//                   from mtg_canonical_finish (nonfoil > foil > etched,
+//                   then any other finish deterministically). Only that
+//                   canonical finish's observations count. If the
+//                   canonical finish has no observation on the endpoint
+//                   date, the printing is unpriced for that endpoint;
+//                   no silent finish substitution.
 //   coverage        pricedCount / eligibleCount, clamped to [0, 1].
 //   mostValuable    The single most valuable priced printing in the
 //                   set on the basis. Ties broken by lowest collector
 //                   number so the result is stable across calls.
+//
+// 7D / 30D / 90D basket movement is computed by
+// annotateHistoricalMovement (src/lib/mtg/set-market-batch.ts) against
+// mtg_set_value_daily. Each requires:
+//   - current-endpoint coverage >= HISTORY_COVERAGE_THRESHOLD
+//   - historical-endpoint coverage >= HISTORY_COVERAGE_THRESHOLD
+//   - basket size >= MIN_HISTORY_BASKET_SIZE at both endpoints
+//   - past basket value > 0
+// Any failure -> that horizon's pct/abs stays null and the UI hides
+// the chip for that horizon.
 //
 // The threshold for calling the total a "Set value" rather than a
 // "Priced-card subtotal" is deliberately conservative. Below it the
@@ -51,10 +63,14 @@ export type SetAggregate = {
   mostValuableName: string | null
   mostValuableCollectorNumber: string | null
   mostValuablePrice: number | null
-  /** 30D change of the basket value, present only when the basket
-   *  passes the history coverage threshold. */
+  /** 7D / 30D / 90D change of the basket value. Present only when
+   *  BOTH endpoints on the horizon clear the coverage bar. */
+  pct7d:  number | null
+  abs7d:  number | null
   pct30d: number | null
   abs30d: number | null
+  pct90d: number | null
+  abs90d: number | null
 }
 
 export function computeCoverage(priced: number, eligible: number): number {
@@ -71,9 +87,19 @@ export function setValueLabel(agg: Pick<SetAggregate, 'coverage'>): 'Set value' 
   return agg.coverage >= SET_VALUE_COVERAGE_THRESHOLD ? 'Set value' : 'Priced-card subtotal'
 }
 
-/** Is the aggregate healthy enough that we should render a 30D chip? */
+/** Is the aggregate healthy enough that we should render a movement
+ *  chip for this horizon? Requires (a) a computed pct and (b)
+ *  current-endpoint coverage clearing the threshold. Historical-
+ *  endpoint coverage is enforced upstream: the pct is null if the
+ *  past side did not clear the bar. */
 export function has30dCoverage(agg: Pick<SetAggregate, 'pct30d' | 'coverage'>): boolean {
   return agg.pct30d !== null && agg.coverage >= SET_VALUE_COVERAGE_THRESHOLD
+}
+export function has7dCoverage(agg: Pick<SetAggregate, 'pct7d' | 'coverage'>): boolean {
+  return agg.pct7d !== null && agg.coverage >= SET_VALUE_COVERAGE_THRESHOLD
+}
+export function has90dCoverage(agg: Pick<SetAggregate, 'pct90d' | 'coverage'>): boolean {
+  return agg.pct90d !== null && agg.coverage >= SET_VALUE_COVERAGE_THRESHOLD
 }
 
 export function emptyAggregate(setCode: string): SetAggregate {
@@ -86,7 +112,8 @@ export function emptyAggregate(setCode: string): SetAggregate {
     mostValuableName: null,
     mostValuableCollectorNumber: null,
     mostValuablePrice: null,
-    pct30d: null,
-    abs30d: null,
+    pct7d: null, abs7d: null,
+    pct30d: null, abs30d: null,
+    pct90d: null, abs90d: null,
   }
 }

@@ -8,7 +8,9 @@ import {
   SET_VALUE_COVERAGE_THRESHOLD,
   computeCoverage,
   setValueLabel,
+  has7dCoverage,
   has30dCoverage,
+  has90dCoverage,
   emptyAggregate,
   type SetAggregate,
 } from '@/lib/mtg/set-aggregate'
@@ -71,6 +73,32 @@ describe('set-aggregate methodology', () => {
     // on tiles where the headline says "Priced-card subtotal".
     expect(has30dCoverage(agg({ pct30d: 0.1, coverage: 0.79 }))).toBe(false)
     expect(has30dCoverage(agg({ pct30d: 0.1, coverage: 0.80 }))).toBe(true)
+  })
+
+  it('7D and 90D chips follow the same UI-side gate as 30D', () => {
+    // Whatever the horizon, the tile-side gate is: computed pct AND
+    // current coverage clears the threshold. Historical-endpoint
+    // coverage was enforced upstream (annotateHistoricalMovement).
+    expect(has7dCoverage(agg({ pct7d:  0.02, coverage: 0.9 }))).toBe(true)
+    expect(has7dCoverage(agg({ pct7d:  0.02, coverage: 0.5 }))).toBe(false)
+    expect(has7dCoverage(agg({ pct7d:  null, coverage: 1.0 }))).toBe(false)
+    expect(has90dCoverage(agg({ pct90d: 0.10, coverage: 0.9 }))).toBe(true)
+    expect(has90dCoverage(agg({ pct90d: 0.10, coverage: 0.7 }))).toBe(false)
+    expect(has90dCoverage(agg({ pct90d: null, coverage: 1.0 }))).toBe(false)
+  })
+
+  it('a recent set with no historical rows leaves 90D null', () => {
+    // Sets released inside the 90-day window naturally have no
+    // 90-day-ago row in mtg_set_value_daily. annotateHistoricalMovement
+    // leaves pct90d null in that case. UI hides the chip.
+    const recentSet = agg({
+      eligibleCount: 100, pricedCount: 100, pricedSubtotal: 1234, coverage: 1,
+      pct7d: 0.01, abs7d: 5.5, pct30d: -0.02, abs30d: -25,
+      pct90d: null, abs90d: null,   // no 90-day-ago basket
+    })
+    expect(has7dCoverage(recentSet)).toBe(true)
+    expect(has30dCoverage(recentSet)).toBe(true)
+    expect(has90dCoverage(recentSet)).toBe(false)
   })
 
   it('never treats a missing card as $0 in the coverage calculation', () => {

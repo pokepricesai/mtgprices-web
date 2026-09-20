@@ -84,10 +84,10 @@ export async function getSetAggregates(
   // rather than showing garbage.
   for (const code of codes) if (!out.has(code)) out.set(code, emptyAggregate(code))
 
-  // Phase 2: 30D basket movement, sourced from the precomputed daily
-  // aggregate table. Two cheap point reads (today, today-30) instead
-  // of scanning ~60M price observations.
-  await annotate30dFromDaily(supabase, out, codes, basis)
+  // Phase 2: 7D / 30D / 90D basket movement, sourced from the
+  // precomputed daily aggregate table. Four cheap point reads
+  // (anchor, -7, -30, -90) instead of scanning ~60M observations.
+  await annotateHistoricalMovement(supabase, out, codes, basis)
 
   return out
 }
@@ -128,13 +128,15 @@ function mergeRow(out: Map<string, SetAggregate>, row: unknown) {
     mostValuablePrice: r.most_valuable_price === null || r.most_valuable_price === undefined
       ? null
       : Number(r.most_valuable_price),
-    pct30d: null,
-    abs30d: null,
+    pct7d: null, abs7d: null,
+    pct30d: null, abs30d: null,
+    pct90d: null, abs90d: null,
   })
 }
 
 // ---------------------------------------------------------------------
-// 30D basket movement, sourced from mtg_set_value_daily.
+// 7D / 30D / 90D basket movement, sourced from mtg_set_value_daily.
+// One three-endpoint annotation covers all horizons in a single pass.
 // ---------------------------------------------------------------------
 
 type DailyRow = {
@@ -145,7 +147,7 @@ type DailyRow = {
   basket_value: number | string
 }
 
-async function annotate30dFromDaily(
+async function annotateHistoricalMovement(
   supabase: ReturnType<typeof getSupabaseServiceClient>,
   out: Map<string, SetAggregate>,
   codes: string[],
@@ -154,48 +156,67 @@ async function annotate30dFromDaily(
   // Anchor to the most recent day the daily aggregate has been
   // refreshed for on this basis. Do not use CURRENT_DATE blindly:
   // if the ingest is running late, today's rows may not exist yet
-  // and we would report the whole set as "no 30D data".
+  // and we would report the whole set as "no history".
   const anchor = await mostRecentAggregateDate(supabase, basis)
   if (!anchor) return
   const anchorMs = Date.parse(anchor + 'T00:00:00Z')
   if (!Number.isFinite(anchorMs)) return
-  const past = new Date(anchorMs)
-  past.setUTCDate(past.getUTCDate() - 30)
-  const pastIso = past.toISOString().slice(0, 10)
 
-  const [nowRows, pastRows] = await Promise.all([
+  const isoBack = (days: number) => {
+    const d = new Date(anchorMs); d.setUTCDate(d.getUTCDate() - days)
+    return d.toISOString().slice(0, 10)
+  }
+  const iso7  = isoBack(7)
+  const iso30 = isoBack(30)
+  const iso90 = isoBack(90)
+
+  const [nowRows, r7, r30, r90] = await Promise.all([
     readDailyRows(supabase, codes, anchor, basis),
-    readDailyRows(supabase, codes, pastIso, basis),
+    readDailyRows(supabase, codes, iso7,   basis),
+    readDailyRows(supabase, codes, iso30,  basis),
+    readDailyRows(supabase, codes, iso90,  basis),
   ])
   const nowByCode = new Map<string, DailyRow>(nowRows.map((r) => [r.set_code, r]))
-  const pastByCode = new Map<string, DailyRow>(pastRows.map((r) => [r.set_code, r]))
+  const past7     = new Map<string, DailyRow>(r7.map((r)     => [r.set_code, r]))
+  const past30    = new Map<string, DailyRow>(r30.map((r)    => [r.set_code, r]))
+  const past90    = new Map<string, DailyRow>(r90.map((r)    => [r.set_code, r]))
 
   for (const code of codes) {
     const cur = out.get(code)
     if (!cur || cur.eligibleCount === 0) continue
     const n = nowByCode.get(code)
-    const p = pastByCode.get(code)
-    if (!n || !p) continue
-    const nowVal = Number(n.basket_value) || 0
-    const pastVal = Number(p.basket_value) || 0
-    const nowCov = computeCoverage(n.priced_count, n.eligible_count)
-    const pastCov = computeCoverage(p.priced_count, p.eligible_count)
-    // Both endpoints must clear the coverage bar AND we need at least
-    // MIN_HISTORY_BASKET_SIZE priced entries at each endpoint. This
-    // is stricter than "one side has coverage": a chip that says
-    // -4% based on 5 priced cards today versus 400 priced 30d ago is
-    // meaningless, so we require both sides to be full.
-    const enough =
-      nowCov >= HISTORY_COVERAGE_THRESHOLD &&
-      pastCov >= HISTORY_COVERAGE_THRESHOLD &&
-      n.priced_count >= MIN_HISTORY_BASKET_SIZE &&
-      p.priced_count >= MIN_HISTORY_BASKET_SIZE &&
-      pastVal > 0
-    if (!enough) continue
-    const pct = (nowVal - pastVal) / pastVal
-    const abs = round2(nowVal - pastVal)
-    out.set(code, { ...cur, pct30d: pct, abs30d: abs })
+    if (!n) continue
+
+    const p7  = movement(n, past7.get(code))
+    const p30 = movement(n, past30.get(code))
+    const p90 = movement(n, past90.get(code))
+
+    out.set(code, {
+      ...cur,
+      pct7d:  p7.pct,  abs7d:  p7.abs,
+      pct30d: p30.pct, abs30d: p30.abs,
+      pct90d: p90.pct, abs90d: p90.abs,
+    })
   }
+}
+
+function movement(now: DailyRow, past: DailyRow | undefined): { pct: number | null; abs: number | null } {
+  if (!past) return { pct: null, abs: null }
+  const nowVal = Number(now.basket_value) || 0
+  const pastVal = Number(past.basket_value) || 0
+  const nowCov = computeCoverage(now.priced_count, now.eligible_count)
+  const pastCov = computeCoverage(past.priced_count, past.eligible_count)
+  // Both endpoints must clear the coverage bar AND both must carry
+  // at least MIN_HISTORY_BASKET_SIZE priced entries. Otherwise the
+  // move is dominated by a handful of movers, not the set.
+  const enough =
+    nowCov >= HISTORY_COVERAGE_THRESHOLD &&
+    pastCov >= HISTORY_COVERAGE_THRESHOLD &&
+    now.priced_count >= MIN_HISTORY_BASKET_SIZE &&
+    past.priced_count >= MIN_HISTORY_BASKET_SIZE &&
+    pastVal > 0
+  if (!enough) return { pct: null, abs: null }
+  return { pct: (nowVal - pastVal) / pastVal, abs: round2(nowVal - pastVal) }
 }
 
 async function mostRecentAggregateDate(
