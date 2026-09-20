@@ -63,6 +63,16 @@ describe('set-aggregate methodology', () => {
     expect(has30dCoverage(e)).toBe(false)
   })
 
+  it('30D chip requires BOTH endpoints at high coverage (per user spec)', () => {
+    // Both-endpoint gate is enforced upstream (annotate30dFromDaily in
+    // set-market-batch.ts). Here we lock the final UI-side gate: even
+    // with a computed pct30d, if the CURRENT coverage is below the
+    // threshold, the chip stays hidden. This prevents a chip showing
+    // on tiles where the headline says "Priced-card subtotal".
+    expect(has30dCoverage(agg({ pct30d: 0.1, coverage: 0.79 }))).toBe(false)
+    expect(has30dCoverage(agg({ pct30d: 0.1, coverage: 0.80 }))).toBe(true)
+  })
+
   it('never treats a missing card as $0 in the coverage calculation', () => {
     // If a set has 100 eligible printings and 40 are priced at $10
     // each, the priced subtotal is $400 and coverage is 40%. Missing
