@@ -2,12 +2,11 @@
 // Contextual eBay Partner Network link builder for MTGPrices.
 //
 // Two important properties:
-//   * Tracking is per marketplace. Each supported eBay TLD gets its own
-//     EBAY_EPN_CAMPAIGN_ID_<COUNTRY> env var. If a resolved marketplace
-//     has no configured campaign, tracking is NOT injected: the link
-//     stays a plain search URL and .affiliate stays false. Reusing a US
-//     campaign on ebay.co.uk would silently break attribution, so we
-//     refuse to guess.
+//   * ONE shared EPN Campaign ID for MTGPrices (env EBAY_EPN_CAMPAIGN_ID)
+//     is reused across every supported marketplace. Attribution stays
+//     correct because each marketplace still uses its own
+//     marketplace-specific mkrid (published by EPN, hard-coded below).
+//     Reporting distinguishes MTGPrices placements via customid.
 //   * Everything else is inputs to the caller. Card facts, source label
 //     (used as EPN customid), marketplace override.
 //
@@ -59,19 +58,21 @@ export function marketplaceFor(country?: string | null): EbayMarketplace {
   return HOST_BY_MARKETPLACE[key] ? key : DEFAULT_MARKETPLACE()
 }
 
-/** Look up the EPN campaign ID configured for the given marketplace.
- *  Environment naming: EBAY_EPN_CAMPAIGN_ID_<CODE>. Returns null when
- *  no campaign is configured for that marketplace so the caller can
- *  render a plain link with no tracking. */
-export function epnCampaignFor(marketplace: EbayMarketplace): string | null {
-  const key = `EBAY_EPN_CAMPAIGN_ID_${marketplace}`
-  const val = (process.env[key] ?? '').trim()
+/** Look up the shared MTGPrices EPN campaign ID. One ID is reused
+ *  across every supported marketplace; per-marketplace attribution
+ *  still works because each marketplace has its own mkrid published
+ *  by EPN (see MK_IDS). Returns null when the env var is unset so
+ *  the caller can render a plain untracked link.
+ *
+ *  The `marketplace` argument is accepted for API compatibility but
+ *  no longer used to pick between different campaigns. */
+export function epnCampaignFor(_marketplace?: EbayMarketplace): string | null {
+  const val = (process.env.EBAY_EPN_CAMPAIGN_ID ?? '').trim()
   return val ? val : null
 }
 
-/** True when the master switch is on. Individual marketplaces still
- *  need their own campaign id. Used by the UI to decide the affiliate
- *  disclosure. */
+/** True when the master switch is on AND a shared campaign ID is
+ *  configured. Used by the UI to decide the affiliate disclosure. */
 export function ebayAffiliateEnabled(): boolean {
   return process.env.EBAY_AFFILIATE_ENABLED === 'true'
 }
@@ -137,7 +138,7 @@ export function buildEbaySearchLink(input: EbaySearchInput): EbayLink {
   url.searchParams.set('_nkw', buildQuery(input))
   url.searchParams.set('_sacat', MTG_CATEGORY_ID)
 
-  const campid = epnCampaignFor(marketplace)
+  const campid = epnCampaignFor()
   const enabled = ebayAffiliateEnabled()
   const affiliate = Boolean(campid) && enabled
 
