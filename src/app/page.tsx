@@ -7,7 +7,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { listSets, type MtgSet } from '@/lib/mtg/sets'
+import { listSets, countPublicSets, type MtgSet } from '@/lib/mtg/sets'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
 import { getMarketMovers, type MoverCard } from '@/lib/mtg/movers'
 import HomeSearch from '@/components/HomeSearch'
@@ -18,24 +18,34 @@ export const revalidate = 300
 
 async function getCatalogueCounts() {
   const s = getSupabaseServiceClient()
-  const [printings, oracles, sets, priced] = await Promise.all([
+  const [printings, oracles, publicSets, priced] = await Promise.all([
     s.from('mtg_printings').select('id', { count: 'exact', head: true }).eq('digital', false).eq('lang', 'en'),
     s.from('mtg_oracle_cards').select('id', { count: 'exact', head: true }),
-    s.from('mtg_sets').select('id', { count: 'exact', head: true }).eq('digital', false),
+    // Match /browse and sitemap-sets.xml: only the browsable / public-
+    // type sets. Reporting the raw mtg_sets total here would tell the
+    // visitor "N sets" while /browse and the sitemap disagree.
+    countPublicSets(),
     s.from('mtg_current_prices').select('printing_finish_id', { count: 'exact', head: true }),
   ])
   return {
     printings: printings.count ?? 0,
     oracles: oracles.count ?? 0,
-    sets: sets.count ?? 0,
+    sets: publicSets,
     pricedFinishes: priced.count ?? 0,
   }
 }
 
 export default async function HomePage() {
+  // Homepage "Latest set" and "Recently released" must ONLY show sets
+  // whose released_at is today or earlier. A future-dated Scryfall
+  // entry (spoiler-only, preview) must never be described as already
+  // launched. The filter is at the query layer so tests pinning the
+  // helper (releasedBy) protect this behaviour independently of the
+  // page.
+  const today = new Date().toISOString().slice(0, 10)
   const [counts, recentSets, movers] = await Promise.all([
     getCatalogueCounts(),
-    listSets({ limit: 6 }),
+    listSets({ limit: 6, releasedBy: today }),
     getMarketMovers({ windowDays: 30, topN: 4 }),
   ])
 

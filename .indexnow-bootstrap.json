@@ -1,0 +1,99 @@
+{
+  "startedAt": "2026-09-21T11:31:16.039Z",
+  "target": "https://mtgprices.io",
+  "snapshot": {
+    "count": 107173,
+    "first": "https://mtgprices.io/",
+    "last": "https://mtgprices.io/set/c20/card/120-niblis-of-frost"
+  },
+  "batches": [
+    {
+      "index": 1,
+      "size": 10000,
+      "attempts": 1,
+      "status": 200,
+      "ok": true,
+      "ms": 1723
+    },
+    {
+      "index": 2,
+      "size": 10000,
+      "attempts": 1,
+      "status": 200,
+      "ok": true,
+      "ms": 988
+    },
+    {
+      "index": 3,
+      "size": 10000,
+      "attempts": 1,
+      "status": 200,
+      "ok": true,
+      "ms": 1101
+    },
+    {
+      "index": 4,
+      "size": 10000,
+      "attempts": 1,
+      "status": 200,
+      "ok": true,
+      "ms": 914
+    },
+    {
+      "index": 5,
+      "size": 10000,
+      "attempts": 1,
+      "status": 200,
+      "ok": true,
+      "ms": 922
+    },
+    {
+      "index": 6,
+      "size": 10000,
+      "attempts": 1,
+      "status": 200,
+      "ok": true,
+      "ms": 1081
+    },
+    {
+      "index": 7,
+      "size": 10000,
+      "attempts": 1,
+      "status": 200,
+      "ok": true,
+      "ms": 961
+    },
+    {
+      "index": 8,
+      "size": 10000,
+      "attempts": 1,
+      "status": 200,
+      "ok": true,
+      "ms": 939
+    },
+    {
+      "index": 9,
+      "size": 10000,
+      "attempts": 1,
+      "status": 200,
+      "ok": true,
+      "ms": 985
+    },
+    {
+      "index": 10,
+      "size": 10000,
+      "attempts": 1,
+      "status": 200,
+      "ok": true,
+      "ms": 919
+    },
+    {
+      "index": 11,
+      "size": 7173,
+      "attempts": 1,
+      "status": 200,
+      "ok": true,
+      "ms": 683
+    }
+  ]
+}

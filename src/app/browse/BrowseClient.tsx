@@ -264,7 +264,11 @@ function TileGrid({ sets, aggregates }: { sets: BrowseSet[]; aggregates: Record<
             </div>
             <div style={{ fontSize: 14, fontWeight: 700, marginTop: 8, lineHeight: 1.25, color: 'var(--text-strong)' }}>{set.name}</div>
             <div style={{ color: 'var(--text-muted)', fontSize: 11.5, marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {set.released_at && <span>Released {humanDate(set.released_at)}</span>}
+              {set.released_at && (
+                <span>
+                  {isFutureDate(set.released_at) ? 'Releases' : 'Released'} {humanDate(set.released_at)}
+                </span>
+              )}
               {(cardCountForTile(set, agg) ?? 0) > 0 && (
                 <>
                   <span aria-hidden style={{ opacity: 0.5 }}>·</span>
@@ -355,6 +359,16 @@ function humanDate(iso: string): string {
   const y = Number(m[1]); const mo = Number(m[2]); const d = Number(m[3])
   if (!(mo >= 1 && mo <= 12)) return iso
   return `${d} ${MONTHS[mo - 1]} ${y}`
+}
+
+/** True when the ISO date is strictly after today (UTC). Guards the
+ *  tile label so a set with a future release date reads "Releases X"
+ *  rather than the misleading past tense "Released X". */
+function isFutureDate(iso: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso)
+  if (!m) return false
+  const today = new Date().toISOString().slice(0, 10)
+  return iso.slice(0, 10) > today
 }
 
 function formatUsd(n: number): string {
