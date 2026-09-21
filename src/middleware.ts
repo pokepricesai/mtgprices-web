@@ -8,6 +8,15 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
+  // IndexNow ownership verification. IndexNow protocol requires the
+  // key file to be served at https://<host>/<KEY>.txt. Rewrite to a
+  // small handler so the key stays in an env var. Matched at the
+  // pathname level so nothing else pays a cost.
+  const indexNowKey = (process.env.INDEXNOW_KEY ?? '').trim()
+  if (indexNowKey && request.nextUrl.pathname === `/${indexNowKey}.txt`) {
+    return NextResponse.rewrite(new URL('/api/indexnow-key', request.url))
+  }
+
   const response = NextResponse.next({ request })
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
