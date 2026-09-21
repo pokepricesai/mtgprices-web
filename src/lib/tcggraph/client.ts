@@ -108,20 +108,36 @@ class MemoryEtagStore implements EtagStore {
 // ---------------------------------------------------------------------
 
 export function parseCredits(h: Headers): CreditSnapshot {
-  const num = (name: string): number | null => {
-    const raw = h.get(name)
-    if (raw === null) return null
-    const n = Number(raw)
-    return Number.isFinite(n) ? n : null
+  // TCGGraph's real header names as observed live (Slice 1 audit):
+  //   x-credits-cost, x-credits-limit, x-credits-remaining, x-credits-used
+  //   x-daily-limit, x-daily-remaining
+  //   x-ratelimit-limit, x-ratelimit-remaining, x-ratelimit-reset
+  // The `TCGGraph-*` names from Slice 0 were speculative. We keep them
+  // as a fallback so a future rename doesn't break us silently.
+  const num = (...names: string[]): number | null => {
+    for (const name of names) {
+      const raw = h.get(name)
+      if (raw === null) continue
+      const n = Number(raw)
+      if (Number.isFinite(n)) return n
+    }
+    return null
+  }
+  const str = (...names: string[]): string | null => {
+    for (const name of names) {
+      const raw = h.get(name)
+      if (raw !== null) return raw
+    }
+    return null
   }
   return {
-    creditsLimit:     num('TCGGraph-Credits-Limit'),
-    creditsRemaining: num('TCGGraph-Credits-Remaining'),
-    creditsReset:     h.get('TCGGraph-Credits-Reset'),
-    requestCost:      num('TCGGraph-Cost'),
-    rateLimitLimit:     num('X-RateLimit-Limit'),
-    rateLimitRemaining: num('X-RateLimit-Remaining'),
-    serverNote:       h.get('TCGGraph-Note') ?? h.get('X-Server-Note') ?? null,
+    creditsLimit:       num('x-credits-limit',     'TCGGraph-Credits-Limit'),
+    creditsRemaining:   num('x-credits-remaining', 'TCGGraph-Credits-Remaining'),
+    creditsReset:       str('x-credits-reset',     'x-ratelimit-reset', 'TCGGraph-Credits-Reset'),
+    requestCost:        num('x-credits-cost',      'TCGGraph-Cost'),
+    rateLimitLimit:     num('x-ratelimit-limit',   'X-RateLimit-Limit'),
+    rateLimitRemaining: num('x-ratelimit-remaining','X-RateLimit-Remaining'),
+    serverNote:         str('x-server-note',       'TCGGraph-Note') ?? null,
   }
 }
 
@@ -171,29 +187,46 @@ export class TcgGraphClient {
     return this.request<T>(path, opts)
   }
 
+  // ------------------------------------------------------------------
+  // Real TCGGraph v1 endpoint surface, verified live in Slice 1:
+  //   /games                        (1 credit)
+  //   /sets?game=X                  (1 credit)
+  //   /cards?game=X[&set=Y][&page=N][&limit=<=100][&language=en] (2 credits)
+  //   /cards/{id}                   (2 credits)
+  //
+  // /prices and /printings do NOT exist as separate endpoints. Every
+  // card carries inline prices[], gradedPrices[], printings[]
+  // (finish/edition variants) under /cards. The list endpoints
+  // enforce a hard limit of 100 rows per page even if a larger
+  // `limit` is passed.
+  // ------------------------------------------------------------------
+
   async getGames(): Promise<TcgGraphResponse<TcgGraphPage<TcgGraphGame>>> {
     return this.request<TcgGraphPage<TcgGraphGame>>('/games')
   }
 
-  async listSets(gameId: string, opts: { cursor?: string; limit?: number } = {}): Promise<TcgGraphResponse<TcgGraphPage<TcgGraphSet>>> {
-    return this.request('/sets', { query: { game: gameId, cursor: opts.cursor, limit: opts.limit } })
+  async listSets(gameId: string, opts: { page?: number; limit?: number } = {}): Promise<TcgGraphResponse<TcgGraphPage<TcgGraphSet>>> {
+    return this.request('/sets', { query: { game: gameId, page: opts.page, limit: opts.limit } })
   }
 
-  async listCards(gameId: string, opts: { setId?: string; cursor?: string; limit?: number } = {}): Promise<TcgGraphResponse<TcgGraphPage<TcgGraphCard>>> {
-    return this.request('/cards', { query: { game: gameId, set: opts.setId, cursor: opts.cursor, limit: opts.limit } })
+  async listCards(gameId: string, opts: { set?: string; page?: number; limit?: number; language?: string } = {}): Promise<TcgGraphResponse<TcgGraphPage<TcgGraphCard>>> {
+    // limit is capped at 100 server-side. Passing >100 returns 100
+    // rows anyway; we forward what the caller asked for and trust
+    // the server to clamp.
+    return this.request('/cards', { query: { game: gameId, set: opts.set, page: opts.page, limit: opts.limit, language: opts.language } })
   }
 
-  async listPrintings(gameId: string, opts: { setId?: string; cursor?: string; limit?: number } = {}): Promise<TcgGraphResponse<TcgGraphPage<TcgGraphPrinting>>> {
-    return this.request('/printings', { query: { game: gameId, set: opts.setId, cursor: opts.cursor, limit: opts.limit } })
+  async getCard(cardId: string): Promise<TcgGraphResponse<TcgGraphCard>> {
+    return this.request(`/cards/${encodeURIComponent(cardId)}`)
   }
 
-  async getMarketPrices(gameId: string, opts: { printingId?: string; setId?: string; cursor?: string; limit?: number } = {}): Promise<TcgGraphResponse<TcgGraphPage<TcgGraphMarketPrice>>> {
-    return this.request('/prices/market', { query: { game: gameId, printing: opts.printingId, set: opts.setId, cursor: opts.cursor, limit: opts.limit } })
-  }
-
-  async getGradedPrices(gameId: string, opts: { printingId?: string; setId?: string; cursor?: string; limit?: number } = {}): Promise<TcgGraphResponse<TcgGraphPage<TcgGraphGradedPrice>>> {
-    return this.request('/prices/graded', { query: { game: gameId, printing: opts.printingId, set: opts.setId, cursor: opts.cursor, limit: opts.limit } })
-  }
+  // Deprecated - these Slice-0 endpoints do NOT exist on TCGGraph v1.
+  // Kept as no-ops that throw, so any leftover call sites blow up
+  // loudly rather than silently return null. Prices come inline via
+  // listCards() -> data[].prices / .gradedPrices / .printings.
+  async listPrintings(): Promise<never> { throw new TcgGraphError('/printings does not exist on TCGGraph v1; use listCards() and read .printings inline') }
+  async getMarketPrices(): Promise<never> { throw new TcgGraphError('/prices/market does not exist on TCGGraph v1; use listCards() and read .prices inline') }
+  async getGradedPrices(): Promise<never> { throw new TcgGraphError('/prices/graded does not exist on TCGGraph v1; use listCards() and read .gradedPrices inline') }
 
   // -------------------------------------------------------------------
   // Core request logic. Retries transient failures with capped

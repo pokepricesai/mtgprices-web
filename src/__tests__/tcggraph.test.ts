@@ -55,22 +55,36 @@ function mk(overrides: Partial<ConstructorParameters<typeof TcgGraphClient>[0]> 
 }
 
 describe('TcgGraph parseCredits', () => {
-  it('reads all documented credit headers', () => {
+  it('reads the real live x-credits-* header family', () => {
+    // Header names verified live in Slice 1 audit against TCGGraph.
+    const h = new Headers({
+      'x-credits-limit':     '25000',
+      'x-credits-remaining': '24997',
+      'x-credits-cost':      '2',
+      'x-ratelimit-limit':   '60',
+      'x-ratelimit-remaining':'58',
+      'x-ratelimit-reset':   '1790003280',
+    })
+    const c = parseCredits(h)
+    expect(c.creditsLimit).toBe(25_000)
+    expect(c.creditsRemaining).toBe(24_997)
+    expect(c.requestCost).toBe(2)
+    expect(c.rateLimitLimit).toBe(60)
+    expect(c.rateLimitRemaining).toBe(58)
+    expect(c.creditsReset).toBe('1790003280')
+  })
+  it('falls back to the Slice-0 TCGGraph-* header family if the API ever renames', () => {
     const h = new Headers({
       'TCGGraph-Credits-Limit':     '150000',
       'TCGGraph-Credits-Remaining': '149993',
       'TCGGraph-Credits-Reset':     '2026-10-01T00:00:00Z',
       'TCGGraph-Cost':              '2',
-      'X-RateLimit-Limit':          '100',
-      'X-RateLimit-Remaining':      '87',
     })
     const c = parseCredits(h)
     expect(c.creditsLimit).toBe(150_000)
     expect(c.creditsRemaining).toBe(149_993)
     expect(c.creditsReset).toBe('2026-10-01T00:00:00Z')
     expect(c.requestCost).toBe(2)
-    expect(c.rateLimitLimit).toBe(100)
-    expect(c.rateLimitRemaining).toBe(87)
   })
   it('is null-safe when headers are absent', () => {
     const c = parseCredits(new Headers())
@@ -87,7 +101,7 @@ describe('TcgGraphClient basic success', () => {
       'etag': '"v1"',
       'TCGGraph-Credits-Limit': '150000',
       'TCGGraph-Credits-Remaining': '149998',
-      'TCGGraph-Cost': '2',
+      'x-credits-cost': '2',
     })])
     const client = mk({ fetchImpl })
     const r = await client.getGames()
@@ -105,8 +119,8 @@ describe('TcgGraphClient basic success', () => {
 describe('TcgGraphClient ETag + 304', () => {
   it('sends If-None-Match on the second call and short-circuits on 304', async () => {
     const fetchImpl = seqFetch([
-      res(200, { data: [{ id: 'g:mtg', name: 'MTG' }] }, { 'etag': '"v1"', 'TCGGraph-Cost': '2' }),
-      res(304, null, { 'TCGGraph-Cost': '0' }),
+      res(200, { data: [{ id: 'g:mtg', name: 'MTG' }] }, { 'etag': '"v1"', 'x-credits-cost': '2' }),
+      res(304, null, { 'x-credits-cost': '0' }),
     ])
     const client = mk({ fetchImpl })
     const first = await client.getGames()
@@ -129,7 +143,7 @@ describe('TcgGraphClient retry semantics', () => {
   it('retries 429 with Retry-After honoured, then succeeds', async () => {
     const fetchImpl = seqFetch([
       res(429, null, { 'retry-after': '0' }),
-      res(200, { data: [{ id: 'g:mtg', name: 'MTG' }] }, { 'TCGGraph-Cost': '1' }),
+      res(200, { data: [{ id: 'g:mtg', name: 'MTG' }] }, { 'x-credits-cost': '1' }),
     ])
     const client = mk({ fetchImpl, maxAttempts: 3 })
     const r = await client.getGames()
@@ -173,7 +187,7 @@ describe('TcgGraphClient retry semantics', () => {
 
 describe('TcgGraphClient safety budgets', () => {
   it('short-circuits once credit budget is exhausted', async () => {
-    const fetchImpl = seqFetch([res(200, { data: [] }, { 'TCGGraph-Cost': '100' })])
+    const fetchImpl = seqFetch([res(200, { data: [] }, { 'x-credits-cost': '100' })])
     const client = mk({ fetchImpl, creditBudget: 50 })
     await client.getGames()
     // Next call must refuse.
@@ -181,7 +195,7 @@ describe('TcgGraphClient safety budgets', () => {
     expect(fetchImpl.calls).toHaveLength(1)
   })
   it('short-circuits once request budget is exhausted', async () => {
-    const fetchImpl = seqFetch([res(200, { data: [] }, { 'TCGGraph-Cost': '1' })])
+    const fetchImpl = seqFetch([res(200, { data: [] }, { 'x-credits-cost': '1' })])
     const client = mk({ fetchImpl, requestBudget: 1 })
     await client.getGames()
     await expect(client.listSets('mtg')).rejects.toBeInstanceOf(TcgGraphRequestBudgetError)
@@ -191,18 +205,18 @@ describe('TcgGraphClient safety budgets', () => {
 
 describe('TcgGraphClient URL building', () => {
   it('composes base + path + query params correctly', async () => {
-    const fetchImpl = seqFetch([res(200, { data: [] }, { 'TCGGraph-Cost': '1' })])
+    const fetchImpl = seqFetch([res(200, { data: [] }, { 'x-credits-cost': '1' })])
     const client = mk({ fetchImpl })
-    await client.listPrintings('ygo', { setId: 'lob', limit: 100 })
+    await client.listCards('yugioh', { set: 'lob', limit: 100 })
     const url = new URL(fetchImpl.calls[0].url)
-    expect(url.origin + url.pathname).toBe(`${BASE}/printings`)
-    expect(url.searchParams.get('game')).toBe('ygo')
+    expect(url.origin + url.pathname).toBe(`${BASE}/cards`)
+    expect(url.searchParams.get('game')).toBe('yugioh')
     expect(url.searchParams.get('set')).toBe('lob')
     expect(url.searchParams.get('limit')).toBe('100')
-    expect(url.searchParams.get('cursor')).toBeNull()   // undefined -> omitted
+    expect(url.searchParams.get('page')).toBeNull()   // undefined -> omitted
   })
   it('always sends Authorization: Bearer <key>', async () => {
-    const fetchImpl = seqFetch([res(200, { data: [] }, { 'TCGGraph-Cost': '1' })])
+    const fetchImpl = seqFetch([res(200, { data: [] }, { 'x-credits-cost': '1' })])
     const client = mk({ fetchImpl })
     await client.getGames()
     const h = fetchImpl.calls[0].init.headers as Record<string, string> | undefined

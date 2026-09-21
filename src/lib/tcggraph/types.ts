@@ -96,20 +96,23 @@ export type TcgGraphPage<T> = {
   total?: number | null
 }
 
-/** Credit-tracking headers surfaced from every response. */
+/** Credit-tracking headers surfaced from every response. TCGGraph
+ *  actually emits the `x-credits-*` and `x-daily-*` family (verified
+ *  live in Slice 1). We keep the field names abstract so a future
+ *  header rename does not break call sites. */
 export type CreditSnapshot = {
-  /** TCGGraph-specific credit ceiling (rolling). */
+  /** Monthly / plan credit ceiling. */
   creditsLimit: number | null
   /** Credits remaining in the current window. */
   creditsRemaining: number | null
-  /** Reset epoch (seconds since epoch) or ISO string. */
+  /** Reset time as reported by the server (may be an epoch or ISO). */
   creditsReset: string | null
   /** How much this specific request cost. */
   requestCost: number | null
-  /** Optional plain rate-limit headers (RFC-ish). */
+  /** Per-endpoint short-window rate limit. */
   rateLimitLimit: number | null
   rateLimitRemaining: number | null
-  /** Server-provided reason string if included in the response. */
+  /** Optional server-supplied note. */
   serverNote: string | null
 }
 
