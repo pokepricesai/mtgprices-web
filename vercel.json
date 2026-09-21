@@ -19,7 +19,11 @@
     },
     {
       "path": "/api/cron/refresh-set-value-daily",
-      "schedule": "15 3 * * *"
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/refresh-set-value-daily",
+      "schedule": "0 18 * * *"
     }
   ],
   "functions": {

@@ -223,11 +223,18 @@ async function mostRecentAggregateDate(
   supabase: ReturnType<typeof getSupabaseServiceClient>,
   basis: MarketBasis,
 ): Promise<string | null> {
+  // Skip zero-coverage days. The daily cron is guarded against
+  // pre-ingest inserts, but if a poisoned row ever lands (missed
+  // ingest, manual seed, etc.) we do NOT want it to become the /browse
+  // anchor: nowVal=0 kills every 30D chip. Require priced_count > 0
+  // on at least ONE set on the candidate day. Cheap: single row, PK-
+  // covered index scan.
   const { data, error } = await supabase
     .from('mtg_set_value_daily')
-    .select('observed_on')
+    .select('observed_on, priced_count')
     .eq('provider', basis.provider).eq('currency', basis.currency)
     .eq('market', basis.market).eq('price_type', basis.priceType)
+    .gt('priced_count', 0)
     .order('observed_on', { ascending: false })
     .limit(1)
   if (error) {
