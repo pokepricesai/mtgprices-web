@@ -1,76 +1,104 @@
 #!/usr/bin/env node
 // scripts/tcggraph-status.mjs
-// Internal summary command. Prints TCGGraph credit state + per-game
-// catalogue counts + last ingest run + failure signals. Read-only.
+// Operator-friendly network summary. Slice 3 Phase K version.
+// Read-only. Uses 1 credit (a /games probe) to fetch fresh headers.
 // Never prints the API key.
 
-import { loadEnv, requireEnv, getSupabase, tcgFetch } from './lib/tcggraph-ingest.mjs'
+import { loadEnv, getSupabase, tcgFetch } from './lib/tcggraph-ingest.mjs'
 loadEnv()
+
+function pct(n, d) { return d > 0 ? `${(n / d * 100).toFixed(2)}%` : '-' }
 
 async function main() {
   const sb = getSupabase()
-  // Credit probe: cheapest endpoint is /games (1 credit).
   const probe = await tcgFetch('/games')
-  const line = (...s) => console.log(s.join(' '))
 
-  line('\nTCGGRAPH STATUS')
-  line('===============')
-  line('Plan:                Starter (25,000 credits/month, 2,500/day) - inferred from x-credits-limit')
-  line(`Monthly used:        ${(probe.creditsLimit ?? 0) - (probe.creditsRemaining ?? 0)} / ${probe.creditsLimit ?? '?'}`)
-  line(`Monthly remaining:   ${probe.creditsRemaining ?? '?'}`)
-  line(`Daily remaining:     ${probe.dailyRemaining ?? '?'} / ${probe.dailyLimit ?? '?'}`)
+  const monthlyUsed = (probe.creditsLimit ?? 0) - (probe.creditsRemaining ?? 0)
+  const dailyUsed   = (probe.dailyLimit ?? 0)   - (probe.dailyRemaining ?? 0)
+  console.log('')
+  console.log('TCGGRAPH PLAN')
+  console.log(`  Starter (${probe.creditsLimit ?? '?'}/month, ${probe.dailyLimit ?? '?'}/day)`)
+  console.log('')
+  console.log('MONTHLY')
+  console.log(`  used:      ${monthlyUsed} / ${probe.creditsLimit ?? '?'}`)
+  console.log(`  remaining: ${probe.creditsRemaining ?? '?'}`)
+  console.log('')
+  console.log('DAILY')
+  console.log(`  used:      ${dailyUsed} / ${probe.dailyLimit ?? '?'}`)
+  console.log(`  remaining: ${probe.dailyRemaining ?? '?'}`)
 
-  const games = ['mtg', 'ygo', 'onepiece', 'swu']
-  for (const gid of games) {
-    line('')
-    line(`GAME: ${gid}`)
-    line('-'.repeat(gid.length + 7))
-    const [cards, printings, mapped, market, graded, run] = await Promise.all([
-      sb.from('tcg_cards').select('*', { count: 'exact', head: true }).eq('game_id', gid),
-      sb.from('tcg_printings').select('*', { count: 'exact', head: true }).eq('game_id', gid),
-      sb.from('tcg_printings').select('*', { count: 'exact', head: true }).eq('game_id', gid).not('mtg_printings_id', 'is', null),
-      sb.from('tcg_market_prices_current').select('*', { count: 'exact', head: true }).eq('game_id', gid),
-      sb.from('tcg_graded_prices_current').select('*', { count: 'exact', head: true }).eq('game_id', gid),
-      sb.from('tcg_ingest_runs').select('id, resource, status, started_at, finished_at, pages_completed, rows_fetched, credits_used, daily_credits_remaining, notes').eq('game_id', gid).order('started_at', { ascending: false }).limit(1).maybeSingle(),
+  const games = [
+    { id: 'mtg',      label: 'MAGIC: THE GATHERING' },
+    { id: 'ygo',      label: 'YU-GI-OH!' },
+    { id: 'onepiece', label: 'ONE PIECE' },
+    { id: 'swu',      label: 'STAR WARS: UNLIMITED' },
+  ]
+  for (const g of games) {
+    console.log('')
+    console.log(g.label)
+    console.log('-'.repeat(g.label.length))
+    const [cards, printings, mapped, ambiguous, unmapped, market, gradedTotal, gradedSlab, gradedRaw, marketHist, gradedHist, run] = await Promise.all([
+      sb.from('tcg_cards').select('*', { count: 'exact', head: true }).eq('game_id', g.id),
+      sb.from('tcg_printings').select('*', { count: 'exact', head: true }).eq('game_id', g.id),
+      sb.from('tcg_printings').select('*', { count: 'exact', head: true }).eq('game_id', g.id).not('mtg_printings_id', 'is', null),
+      sb.from('tcg_printings').select('*', { count: 'exact', head: true }).eq('game_id', g.id).eq('mapping_confidence', 'ambiguous'),
+      sb.from('tcg_printings').select('*', { count: 'exact', head: true }).eq('game_id', g.id).eq('mapping_confidence', 'unmapped'),
+      sb.from('tcg_market_prices_current').select('*', { count: 'exact', head: true }).eq('game_id', g.id),
+      sb.from('tcg_graded_prices_current').select('*', { count: 'exact', head: true }).eq('game_id', g.id),
+      sb.from('tcg_graded_prices_current').select('*', { count: 'exact', head: true }).eq('game_id', g.id).not('grader', 'in', '("raw")'),
+      sb.from('tcg_graded_prices_current').select('*', { count: 'exact', head: true }).eq('game_id', g.id).eq('grader', 'raw'),
+      sb.from('tcg_market_price_daily').select('*', { count: 'exact', head: true }).eq('game_id', g.id),
+      sb.from('tcg_graded_price_daily').select('*', { count: 'exact', head: true }).eq('game_id', g.id),
+      sb.from('tcg_ingest_runs').select('id, resource, status, started_at, finished_at, pages_completed, rows_fetched, credits_used, notes').eq('game_id', g.id).order('started_at', { ascending: false }).limit(1).maybeSingle(),
     ])
-    line(`cards:               ${cards.count ?? 0}`)
-    line(`printings:           ${printings.count ?? 0}`)
-    if (gid === 'mtg') line(`  with mtg_printings_id: ${mapped.count ?? 0}`)
-    line(`market rows:         ${market.count ?? 0}`)
-    line(`graded rows:         ${graded.count ?? 0}`)
+    const nPrint  = printings.count ?? 0
+    const nMapped = mapped.count ?? 0
+    const nSlab   = gradedSlab.count ?? 0
+    console.log(`  cards:                 ${cards.count ?? 0}`)
+    console.log(`  physical printings:    ${nPrint}`)
+    if (g.id === 'mtg') {
+      console.log(`    mapped to mtg_id:    ${nMapped}  (${pct(nMapped, nPrint)})`)
+    }
+    console.log(`  market rows (current): ${market.count ?? 0}`)
+    console.log(`  graded rows (current): ${gradedTotal.count ?? 0}`)
+    console.log(`    slab / any-graded:   ${nSlab}  (${pct(nSlab, nPrint)})`)
+    console.log(`    raw-only rows:       ${gradedRaw.count ?? 0}`)
+    console.log(`  history rows (market): ${marketHist.count ?? 0}`)
+    console.log(`  history rows (graded): ${gradedHist.count ?? 0}`)
+    console.log(`  ambiguous mappings:    ${ambiguous.count ?? 0}`)
+    console.log(`  unmapped printings:    ${unmapped.count ?? 0}`)
     if (run.data) {
       const r = run.data
-      line(`last ingest run:     ${r.resource}  status=${r.status}  pages=${r.pages_completed}  fetched=${r.rows_fetched}  credits=${r.credits_used}`)
-      line(`  started:           ${r.started_at}`)
-      line(`  finished:          ${r.finished_at ?? '(still running)'}`)
-      if (r.notes?.mapping_counts) line(`  mapping counts:    ${JSON.stringify(r.notes.mapping_counts)}`)
-      if (r.notes?.stop_reason) line(`  stop reason:       ${r.notes.stop_reason}`)
+      console.log(`  last ingest:           ${r.resource}  status=${r.status}  pages=${r.pages_completed}  rows=${r.rows_fetched}  credits=${r.credits_used}`)
+      console.log(`    started:             ${r.started_at}`)
+      console.log(`    finished:            ${r.finished_at ?? '(still running)'}`)
+      if (r.notes?.stop_reason) console.log(`    stop reason:         ${r.notes.stop_reason}`)
     } else {
-      line(`last ingest run:     (none)`)
+      console.log(`  last ingest:           (none)`)
     }
   }
 
-  // Failures overview.
-  line('')
-  line('FAILURES / SIGNALS')
-  line('==================')
-  const { data: amb } = await sb.from('tcg_printings').select('*', { count: 'exact', head: true }).eq('mapping_confidence', 'ambiguous')
-  const { data: unm } = await sb.from('tcg_printings').select('*', { count: 'exact', head: true }).eq('mapping_confidence', 'unmapped')
-  const { data: hi }  = await sb.from('tcg_printings').select('*', { count: 'exact', head: true }).eq('mapping_confidence', 'high_confidence')
-  line(`printings with mapping_confidence=ambiguous:      ${amb ?? 0}`)
-  line(`printings with mapping_confidence=high_confidence:${hi ?? 0}`)
-  line(`printings with mapping_confidence=unmapped:       ${unm ?? 0}`)
-  const { data: staleRuns } = await sb
-    .from('tcg_ingest_runs')
-    .select('id, game_id, resource, started_at, status')
-    .eq('status', 'running')
-    .lt('started_at', new Date(Date.now() - 4 * 3600 * 1000).toISOString())
-  if (staleRuns && staleRuns.length) {
-    line(`stale 'running' runs (>4h old):`)
-    for (const r of staleRuns) line(`  ${r.game_id}.${r.resource}  since ${r.started_at}`)
-  } else {
-    line(`stale runs:                                       0`)
-  }
+  // Ingest health.
+  console.log('')
+  console.log('INGEST HEALTH')
+  console.log('=============')
+  const { data: staleLocks } = await sb.from('tcg_ingest_locks').select('*').lt('leased_until', new Date().toISOString())
+  const { data: activeLocks } = await sb.from('tcg_ingest_locks').select('*').gte('leased_until', new Date().toISOString())
+  const { data: staleRuns }  = await sb.from('tcg_ingest_runs').select('*').eq('status', 'running').lt('started_at', new Date(Date.now() - 4 * 3600_000).toISOString())
+  const { data: failedRuns } = await sb.from('tcg_ingest_runs').select('*').eq('status', 'failure').order('started_at', { ascending: false }).limit(5)
+  console.log(`  active locks:          ${activeLocks?.length ?? 0}`)
+  console.log(`  stale locks:           ${staleLocks?.length ?? 0}`)
+  console.log(`  stale 'running' runs:  ${staleRuns?.length ?? 0}`)
+  console.log(`  recent failures:       ${failedRuns?.length ?? 0}`)
+  for (const f of failedRuns ?? []) console.log(`    ${f.game_id}.${f.resource}  ${f.started_at}  ${f.notes?.stop_reason ?? '-'}`)
+  // Warnings.
+  const warnings = []
+  if ((probe.creditsRemaining ?? 0) < 2500) warnings.push(`monthly remaining below 2 500`)
+  if ((probe.dailyRemaining ?? 0) < 200)    warnings.push(`daily remaining below 200`)
+  if ((staleLocks?.length ?? 0) > 0)        warnings.push(`stale locks present; will auto-reclaim on next attempt`)
+  if ((staleRuns?.length ?? 0) > 0)         warnings.push(`stale 'running' runs > 4h old`)
+  if (warnings.length === 0) console.log(`  credit warnings:       none`)
+  else for (const w of warnings) console.log(`  WARNING: ${w}`)
 }
 
 main().catch((e) => { console.error(e.message); process.exit(1) })

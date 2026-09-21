@@ -1,15 +1,15 @@
 // src/lib/tcggraph/read-model.ts
-// Server-only helpers that let MTG-side code ask the network layer:
-//   "For this mtg_printings.id, what does TCGGraph know?"
-// Returns:
-//   - the tcg_printings row
-//   - current market rows (TCGGraph-sourced; separate from mtg_current_prices)
-//   - current graded rows
-//   - most recent observation date
+// Server-only. Read helpers that let MTG-side code ask the network
+// layer: "For this mtg_printings.id, what does TCGGraph know?"
 //
-// The MTG public UI is NOT changed in Slice 2. This module is the
-// contract the future graded panel and Slice-3 admin surfaces will
-// consume. Wire it up in a later slice.
+// Slice 3 semantics: `raw` and `any`-grader-9.5-and-below rows are
+// stored the same way in tcg_graded_prices_current for provider
+// fidelity, but the CALLER never confuses them:
+//   * rawPrice          -> the single grader='raw' quote (ungraded market)
+//   * gradedPrices[]    -> everything ELSE (psa|bgs|cgc|sgc|any + all grades)
+//     sorted in a stable, useful order:
+//       PSA 10, BGS 10, CGC 10, SGC 10, any 9.5, any 9, any 8, any 7, rest
+// Absent quotes stay absent. NEVER imputed to $0.
 
 import 'server-only'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
@@ -40,17 +40,85 @@ export type TcgGradedRow = {
   updated_at: string | null
 }
 
+export type TcgRawQuote = {
+  tcg_printing_id: string
+  price: number
+  currency: string
+  card_sales_volume: number | null
+  updated_at: string | null
+}
+
 export type TcgPrintingBundle = {
   mtgPrintingId: string
-  tcgPrintings: Array<{ id: string; tcggraph_card_id: string; tcggraph_printing_key: string; finish: string | null; mapping_confidence: string }>
+  tcgPrintings: Array<{
+    id: string
+    tcggraph_card_id: string
+    tcggraph_printing_key: string
+    finish: string | null
+    mapping_confidence: string
+  }>
   market: TcgMarketRow[]
-  graded: TcgGradedRow[]
+  /** Absent-safe: null when there is genuinely no raw quote. */
+  rawPrice: TcgRawQuote | null
+  /** True slab / any-graded quotes only. Never contains grader='raw'. */
+  gradedPrices: TcgGradedRow[]
+  /** Most recent updated_at observed on any TCGGraph row for this
+   *  MTG printing (market or graded). */
+  lastSourceUpdate: string | null
   latestObservationDate: string | null
 }
 
-/** Look up everything TCGGraph knows about a specific
- *  mtg_printings.id. Returns null when no tcg_printings row exists
- *  (mapping not yet bootstrapped OR truly unmapped). */
+const GRADER_RANK: Record<string, number> = {
+  psa: 0, bgs: 1, cgc: 2, sgc: 3, any: 4,
+}
+const GRADE_RANK: Record<string, number> = {
+  '10': 0, '9.5': 1, '9': 2, '8.5': 3, '8': 4, '7.5': 5, '7': 6,
+}
+
+function sortGraded(rows: TcgGradedRow[]): TcgGradedRow[] {
+  // Slabbed first (psa/bgs/cgc/sgc grade 10), then any at 9.5/9/8/7.
+  return rows.slice().sort((a, b) => {
+    const ga = GRADER_RANK[a.grader.toLowerCase()] ?? 99
+    const gb = GRADER_RANK[b.grader.toLowerCase()] ?? 99
+    if (ga !== gb) return ga - gb
+    const rda = GRADE_RANK[a.grade] ?? 99
+    const rdb = GRADE_RANK[b.grade] ?? 99
+    if (rda !== rdb) return rda - rdb
+    return b.price - a.price
+  })
+}
+
+function pickRaw(rows: TcgGradedRow[]): TcgRawQuote | null {
+  const r = rows.find((row) => row.grader.toLowerCase() === 'raw')
+  if (!r) return null
+  return {
+    tcg_printing_id: r.tcg_printing_id,
+    price: r.price,
+    currency: r.currency,
+    card_sales_volume: r.card_sales_volume,
+    updated_at: r.updated_at,
+  }
+}
+
+function partitionRawAndGraded(rows: TcgGradedRow[]): { raw: TcgRawQuote | null; graded: TcgGradedRow[] } {
+  return {
+    raw: pickRaw(rows),
+    graded: sortGraded(rows.filter((r) => r.grader.toLowerCase() !== 'raw')),
+  }
+}
+
+function newestTimestamp(rows: Array<{ updated_at: string | null }>): string | null {
+  let best: string | null = null
+  for (const r of rows) {
+    if (!r.updated_at) continue
+    if (!best || r.updated_at > best) best = r.updated_at
+  }
+  return best
+}
+
+/** For a single mtg_printings.id. Returns null when there is no
+ *  matching tcg_printings row (mapping still pending OR truly
+ *  unmapped). */
 export async function getTcgBundleForMtgPrinting(mtgPrintingId: string): Promise<TcgPrintingBundle | null> {
   const sb = getSupabaseServiceClient()
   const { data: prints } = await sb
@@ -64,16 +132,22 @@ export async function getTcgBundleForMtgPrinting(mtgPrintingId: string): Promise
     sb.from('tcg_graded_prices_current').select('*').in('tcg_printing_id', ids),
     sb.from('tcg_market_price_daily').select('observed_on').in('tcg_printing_id', ids).order('observed_on', { ascending: false }).limit(1),
   ])
+  const gradedRows = ((graded ?? []) as TcgGradedRow[])
+  const marketRows = ((market ?? []) as TcgMarketRow[])
+  const { raw, graded: slabbedAndAny } = partitionRawAndGraded(gradedRows)
   return {
     mtgPrintingId,
     tcgPrintings: prints as TcgPrintingBundle['tcgPrintings'],
-    market: (market ?? []) as TcgMarketRow[],
-    graded: (graded ?? []) as TcgGradedRow[],
+    market: marketRows,
+    rawPrice: raw,
+    gradedPrices: slabbedAndAny,
+    lastSourceUpdate: newestTimestamp([...marketRows, ...gradedRows]),
     latestObservationDate: (latest?.[0] as { observed_on?: string } | undefined)?.observed_on ?? null,
   }
 }
 
-/** Convenience: batch version for a page of MTG printings. */
+/** Batch. Same semantics as the single form. Returns a Map keyed by
+ *  mtg_printings.id. Printings with no tcg row are simply absent. */
 export async function getTcgBundlesForMtgPrintings(mtgPrintingIds: string[]): Promise<Map<string, TcgPrintingBundle>> {
   const out = new Map<string, TcgPrintingBundle>()
   if (mtgPrintingIds.length === 0) return out
@@ -95,8 +169,8 @@ export async function getTcgBundlesForMtgPrintings(mtgPrintingIds: string[]): Pr
     sb.from('tcg_market_prices_current').select('*').in('tcg_printing_id', allTcgIds),
     sb.from('tcg_graded_prices_current').select('*').in('tcg_printing_id', allTcgIds),
   ])
-  const marketByTcg  = new Map<string, TcgMarketRow[]>()
-  const gradedByTcg  = new Map<string, TcgGradedRow[]>()
+  const marketByTcg = new Map<string, TcgMarketRow[]>()
+  const gradedByTcg = new Map<string, TcgGradedRow[]>()
   for (const m of (market ?? []) as TcgMarketRow[]) {
     const arr = marketByTcg.get(m.tcg_printing_id) ?? []; arr.push(m); marketByTcg.set(m.tcg_printing_id, arr)
   }
@@ -106,14 +180,24 @@ export async function getTcgBundlesForMtgPrintings(mtgPrintingIds: string[]): Pr
   for (const mtgId of mtgPrintingIds) {
     const prs = printsByMtg.get(mtgId) ?? []
     if (prs.length === 0) continue
-    const m = prs.flatMap((p) => marketByTcg.get(p.id) ?? [])
-    const g = prs.flatMap((p) => gradedByTcg.get(p.id) ?? [])
+    const flatMarket = prs.flatMap((p) => marketByTcg.get(p.id) ?? [])
+    const flatGraded = prs.flatMap((p) => gradedByTcg.get(p.id) ?? [])
+    const { raw, graded: slab } = partitionRawAndGraded(flatGraded)
     out.set(mtgId, {
       mtgPrintingId: mtgId,
       tcgPrintings: prs.map((p) => ({ id: p.id, tcggraph_card_id: p.tcggraph_card_id, tcggraph_printing_key: p.tcggraph_printing_key, finish: p.finish, mapping_confidence: p.mapping_confidence })),
-      market: m, graded: g,
-      latestObservationDate: null,     // caller can add if needed
+      market: flatMarket,
+      rawPrice: raw,
+      gradedPrices: slab,
+      lastSourceUpdate: newestTimestamp([...flatMarket, ...flatGraded]),
+      latestObservationDate: null,
     })
   }
   return out
 }
+
+// ---------------------------------------------------------------------
+// Test-visible helpers. Kept exported so unit tests can hit them
+// without spinning up Supabase.
+// ---------------------------------------------------------------------
+export const __testables = { partitionRawAndGraded, sortGraded, pickRaw, newestTimestamp }
