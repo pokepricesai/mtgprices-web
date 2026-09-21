@@ -11,6 +11,7 @@ import {
   has7dCoverage,
   has30dCoverage,
   has90dCoverage,
+  formatCoveragePct,
   emptyAggregate,
   type SetAggregate,
 } from '@/lib/mtg/set-aggregate'
@@ -99,6 +100,22 @@ describe('set-aggregate methodology', () => {
     expect(has7dCoverage(recentSet)).toBe(true)
     expect(has30dCoverage(recentSet)).toBe(true)
     expect(has90dCoverage(recentSet)).toBe(false)
+  })
+
+  it('formatCoveragePct: exact 100% only when priced === eligible; one decimal otherwise', () => {
+    // The bug: 452 / 453 was displaying as 100% via Math.round, which
+    // reads as "we have every card" and is misleading.
+    expect(formatCoveragePct(452, 453)).toBe('99.8%')
+    expect(formatCoveragePct(426, 426)).toBe('100%')
+    expect(formatCoveragePct(391, 426)).toBe('91.8%')
+    expect(formatCoveragePct(258, 461)).toBe('56.0%')
+    // Edge cases must not crash.
+    expect(formatCoveragePct(0, 0)).toBe('0%')
+    expect(formatCoveragePct(0, 100)).toBe('0%')
+    expect(formatCoveragePct(100, 100)).toBe('100%')
+    // Priced > eligible (shouldn't happen but guard anyway) still
+    // reads as 100%, not 101% or NaN.
+    expect(formatCoveragePct(120, 100)).toBe('100%')
   })
 
   it('never treats a missing card as $0 in the coverage calculation', () => {

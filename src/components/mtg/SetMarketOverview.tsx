@@ -6,7 +6,7 @@
 
 import Link from 'next/link'
 import type { SetMarket, SetMoverTile, SetValueTile } from '@/lib/mtg/set-market'
-import { SET_VALUE_COVERAGE_THRESHOLD } from '@/lib/mtg/set-aggregate'
+import { SET_VALUE_COVERAGE_THRESHOLD, formatCoveragePct } from '@/lib/mtg/set-aggregate'
 
 type Props = { market: SetMarket; setName: string }
 
@@ -15,7 +15,7 @@ export default function SetMarketOverview({ market, setName }: Props) {
   const coverage = market.totalPrinted > 0
     ? market.totalPriced / market.totalPrinted
     : 0
-  const coveragePct = Math.round(coverage * 100)
+  const coverageLabel = formatCoveragePct(market.totalPriced, market.totalPrinted)
   const showsFullValue = coverage >= SET_VALUE_COVERAGE_THRESHOLD
   const valueLabel = showsFullValue ? 'Set value' : 'Priced-card subtotal'
   const valueSublabel = showsFullValue
@@ -43,7 +43,7 @@ export default function SetMarketOverview({ market, setName }: Props) {
             {valueSublabel}
           </div>
         </div>
-        <MiniStat label="Priced cards" value={`${market.totalPriced} / ${market.totalPrinted}`} sub={`${coveragePct}% coverage`} />
+        <MiniStat label="Priced cards" value={`${market.totalPriced} / ${market.totalPrinted}`} sub={`${coverageLabel} coverage`} />
         <MiniStat label="Unpriced" value={String(market.totalUnpriced)} sub="No current observation on this basis" />
       </div>
 

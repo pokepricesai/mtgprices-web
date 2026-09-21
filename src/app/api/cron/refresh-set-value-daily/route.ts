@@ -1,18 +1,24 @@
 // src/app/api/cron/refresh-set-value-daily/route.ts
 // Daily Vercel Cron endpoint. Recomputes today's row in
-// mtg_set_value_daily so the /browse 30D chip stays accurate as time
-// rolls forward. See migrations/2026-09-20-mtg-set-value-daily.sql.
+// mtg_set_value_daily so /browse's 7D / 30D / 90D chips stay
+// accurate as time rolls forward. See migrations/2026-09-20-mtg-set-
+// value-daily.sql.
 //
-// The RPC pulls from mtg_price_observations, which is populated by an
-// external MTGJSON ingest that lands on its own schedule. This
-// endpoint refuses to write a row if the ingest for the requested
-// date has not landed yet: an all-zero row would poison /browse's
-// "most recent" anchor and hide every 30D chip.
+// The underlying observations come from an external MTGJSON ingest
+// (repo: pokeprices-ingest / GitHub Actions "nightly"). The ingest
+// records completion in public.market_import_runs. This endpoint
+// gates on that completion signal:
 //
-// Observed behaviour: the 2026-09-21 ingest had not landed by 03:15
-// UTC when the previous cron fired. It inserted 957 zero-value rows
-// which had to be manually deleted. The pre-check below prevents
-// that failure mode.
+//   provider           = 'mtgjson'
+//   parser_version     = 'mtgjson_all_prices@v1'
+//   status             = 'success'
+//   notes->>'only_date' = today's date
+//
+// The row count in mtg_price_observations for today is used as a
+// secondary sanity check only.
+//
+// Idempotent: the RPC uses ON CONFLICT DO UPDATE, so re-firing the
+// same date is safe.
 
 import { NextResponse } from 'next/server'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
@@ -22,10 +28,9 @@ export const maxDuration = 60
 export const dynamic = 'force-dynamic'
 
 const BASIS = { provider: 'tcgplayer', currency: 'USD', market: 'paper', priceType: 'retail' } as const
+const OBS_SANITY_MIN = 10_000     // typical daily total is ~146 000
 
 export async function GET(req: Request) {
-  // Vercel Cron authenticates itself via a shared secret. Reject
-  // anything else so this endpoint is not scrapeable.
   const secret = process.env.CRON_SECRET
   if (!secret) return NextResponse.json({ ok: false, reason: 'CRON_SECRET_not_set' }, { status: 500 })
   const auth = req.headers.get('authorization')
@@ -34,17 +39,31 @@ export async function GET(req: Request) {
   const supabase = getSupabaseServiceClient()
   const today = new Date().toISOString().slice(0, 10)
 
-  // Guard: refuse to upsert if the ingest for today has not landed
-  // yet. The check is a light row-count against the same basis. Any
-  // non-zero count means at least some observations for today are
-  // present; the RPC will then produce a coverage figure per set.
-  const ingestOk = await hasIngestForDate(supabase, today)
-  if (!ingestOk) {
+  // Primary gate: an mtgjson_all_prices@v1 run for TODAY must exist
+  // with status='success' in market_import_runs. Without this, the
+  // observations table may be partially populated - or empty - even
+  // if there are already 10k rows from a stale earlier retry.
+  const ingest = await getIngestRunForDate(supabase, today)
+  if (!ingest.completed) {
     return NextResponse.json({
       ok: false,
-      reason: 'ingest_not_landed',
+      reason: 'ingest_not_complete',
       observed_on: today,
-      note: 'mtg_price_observations has no rows for today on this basis; refusing to write a zero row',
+      details: ingest,
+    }, { status: 202 })
+  }
+
+  // Secondary sanity check: even if market_import_runs says success,
+  // require at least OBS_SANITY_MIN rows for the basis before we
+  // write. Guards against a schema drift where the run row was
+  // recorded but observations were not.
+  const obsRows = await countObservationsForDate(supabase, today)
+  if (obsRows < OBS_SANITY_MIN) {
+    return NextResponse.json({
+      ok: false,
+      reason: 'ingest_sanity_check_failed',
+      observed_on: today,
+      observations: obsRows,
     }, { status: 202 })
   }
 
@@ -58,13 +77,54 @@ export async function GET(req: Request) {
   })
   const ms = Date.now() - t0
   if (error) return NextResponse.json({ ok: false, error: error.message, ms }, { status: 500 })
-  return NextResponse.json({ ok: true, observed_on: today, rows: data, ms })
+  return NextResponse.json({
+    ok: true, observed_on: today, rows: data, ms,
+    ingest_completed_at: ingest.completed_at,
+  })
 }
 
-async function hasIngestForDate(supabase: ReturnType<typeof getSupabaseServiceClient>, observedOn: string): Promise<boolean> {
-  // head:true + count returns just the row count, no rows shipped.
-  // Range-limit to one row so the count returns fast on a partition
-  // that already has 100k+ rows for the day.
+type IngestState = {
+  completed: boolean
+  completed_at: string | null
+  status: string | null
+  run_id: string | null
+}
+
+async function getIngestRunForDate(
+  supabase: ReturnType<typeof getSupabaseServiceClient>,
+  observedOn: string,
+): Promise<IngestState> {
+  // Most recent mtgjson_all_prices@v1 run whose notes.only_date is
+  // today. Filtering on JSONB via ->>'only_date' with an EQ text
+  // predicate is index-free but the row volume here is tiny (~200/yr).
+  const { data, error } = await supabase
+    .from('market_import_runs')
+    .select('id, status, completed_at, notes')
+    .eq('provider', 'mtgjson')
+    .eq('parser_version', 'mtgjson_all_prices@v1')
+    .order('started_at', { ascending: false })
+    .limit(20)
+  if (error) {
+    console.warn('cron ingest-check failed:', error.message)
+    return { completed: false, completed_at: null, status: null, run_id: null }
+  }
+  for (const row of (data ?? []) as Array<{ id: string; status: string; completed_at: string | null; notes: any }>) {
+    const noteDate = (row.notes && row.notes.only_date) ?? null
+    if (noteDate !== observedOn) continue
+    return {
+      completed: row.status === 'success' && !!row.completed_at,
+      completed_at: row.completed_at,
+      status: row.status,
+      run_id: row.id,
+    }
+  }
+  return { completed: false, completed_at: null, status: null, run_id: null }
+}
+
+async function countObservationsForDate(
+  supabase: ReturnType<typeof getSupabaseServiceClient>,
+  observedOn: string,
+): Promise<number> {
   const { count, error } = await supabase
     .from('mtg_price_observations')
     .select('*', { count: 'exact', head: true })
@@ -75,10 +135,8 @@ async function hasIngestForDate(supabase: ReturnType<typeof getSupabaseServiceCl
     .eq('price_type', BASIS.priceType)
     .limit(1)
   if (error) {
-    console.warn('refresh-set-value-daily: ingest-check failed, assuming ok:', error.message)
-    return true
+    console.warn('cron obs-count failed:', error.message)
+    return 0
   }
-  // Require a reasonable minimum so a partial ingest of a few hundred
-  // rows still gets skipped. The typical daily total is ~146k rows.
-  return (count ?? 0) >= 10_000
+  return count ?? 0
 }

@@ -102,6 +102,22 @@ export function has90dCoverage(agg: Pick<SetAggregate, 'pct90d' | 'coverage'>): 
   return agg.pct90d !== null && agg.coverage >= SET_VALUE_COVERAGE_THRESHOLD
 }
 
+/** Shared coverage-percentage formatter. /browse tile and
+ *  /set/[setCode] market panel both use this so the numbers agree
+ *  visually. Rules:
+ *    - priced === eligible: show whole 100% (mathematically exact).
+ *    - priced === 0 or eligible === 0: show whole 0%.
+ *    - Otherwise: one decimal place. Keeps 452/453 = 99.8% instead
+ *      of the misleading 100% you get from Math.round().
+ */
+export function formatCoveragePct(priced: number, eligible: number): string {
+  if (eligible <= 0) return '0%'
+  if (priced <= 0) return '0%'
+  if (priced >= eligible) return '100%'
+  const pct = (priced / eligible) * 100
+  return `${pct.toFixed(1)}%`
+}
+
 export function emptyAggregate(setCode: string): SetAggregate {
   return {
     setCode,

@@ -19,7 +19,14 @@ export const metadata: Metadata = {
 }
 
 export default async function BrowsePage() {
-  const sets = await listSets({ limit: 800 })
+  // No limit: /browse is the "every set" discovery hub. There are
+  // ~600 public-type non-digital sets today; sending them all is well
+  // under 100 kB of JSON once trimmed. The prior 800 cap combined
+  // with client-side type filtering was silently dropping older
+  // public sets (RAV etc.) whenever the newest-800 slice was full of
+  // tokens and other excluded types.
+  const rawSets = await listSets({ limit: 2000 })
+  const sets = rawSets.map(pickBrowseFields)
   const aggregates = await getSetAggregates(sets.map((s) => s.code))
 
   return (
@@ -40,4 +47,19 @@ export default async function BrowsePage() {
       />
     </div>
   )
+}
+
+// Trim MtgSet to exactly the fields the tile renders + filter/sort
+// uses. Cuts ~40% off the serialized payload versus shipping the
+// whole catalogue row per set.
+function pickBrowseFields(s: import('@/lib/mtg/sets').MtgSet) {
+  return {
+    id: s.id,
+    code: s.code,
+    name: s.name,
+    set_type: s.set_type,
+    released_at: s.released_at,
+    card_count: s.card_count,
+    icon_svg_uri: s.icon_svg_uri,
+  }
 }

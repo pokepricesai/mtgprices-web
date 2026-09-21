@@ -8,16 +8,28 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import type { MtgSet } from '@/lib/mtg/sets'
 import type { SetAggregate } from '@/lib/mtg/set-market-batch'
 import {
   setValueLabel,
   has30dCoverage,
+  formatCoveragePct,
   SET_VALUE_COVERAGE_THRESHOLD,
 } from '@/lib/mtg/set-aggregate'
 import { slugifyCardName } from '@/lib/mtg/slug'
 
-export type BrowseSet = MtgSet
+/** Minimal slice of MtgSet that /browse actually renders. Kept
+ *  narrow so the /browse RSC payload does not carry catalogue fields
+ *  the tile does not use (block, parent_set_code, digital flags,
+ *  etc.). Trims about 40% off the serialized set list. */
+export type BrowseSet = {
+  id: string
+  code: string
+  name: string
+  set_type: string | null
+  released_at: string | null
+  card_count: number | null
+  icon_svg_uri: string | null
+}
 
 type Sort =
   | 'newest'
@@ -281,7 +293,7 @@ function cardCountForTile(set: BrowseSet, agg: SetAggregate | null | undefined):
 function SetValueBlock({ set, agg }: { set: BrowseSet; agg: SetAggregate | null }) {
   if (!agg || agg.pricedCount === 0) return null
   const label = setValueLabel(agg)
-  const coveragePct = Math.round(agg.coverage * 100)
+  const coverageLabel = formatCoveragePct(agg.pricedCount, agg.eligibleCount)
   const showsFullValue = agg.coverage >= SET_VALUE_COVERAGE_THRESHOLD
   const mostValuableHref = agg.mostValuableName && agg.mostValuableCollectorNumber
     ? `/set/${set.code}/card/${agg.mostValuableCollectorNumber}-${slugifyCardName(agg.mostValuableName)}`
@@ -311,7 +323,7 @@ function SetValueBlock({ set, agg }: { set: BrowseSet; agg: SetAggregate | null 
         )}
       </div>
       <div style={{ fontSize: 10.5, color: 'var(--text-muted)', lineHeight: 1.4 }}>
-        {agg.pricedCount.toLocaleString()} of {agg.eligibleCount.toLocaleString()} cards priced · {coveragePct}% coverage
+        {agg.pricedCount.toLocaleString()} of {agg.eligibleCount.toLocaleString()} cards priced · {coverageLabel} coverage
       </div>
       {agg.mostValuableName && agg.mostValuablePrice !== null && (
         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
