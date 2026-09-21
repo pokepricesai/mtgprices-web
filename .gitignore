@@ -28,3 +28,4 @@ manual-assets/jp/inbox/
 
 # Supabase CLI local link state
 supabase/.temp/
+.indexnow-bootstrap.json
