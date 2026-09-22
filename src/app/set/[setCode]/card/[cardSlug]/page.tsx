@@ -27,6 +27,11 @@ import CardSeoContent from '@/components/mtg/CardSeoContent'
 import RulingsList from '@/components/mtg/RulingsList'
 import SimilarCards from '@/components/mtg/SimilarCards'
 import CardPageClient from './CardPageClient'
+import GradedPricesPanel from '@/components/mtg/GradedPricesPanel'
+import CardColorAccent from '@/components/mtg/CardColorAccent'
+import { getTcgBundleForMtgPrinting } from '@/lib/tcggraph/read-model'
+import { buildGradedView } from '@/lib/mtg/graded-view'
+import { buildCardTheme } from '@/lib/mtg/color-theme'
 
 export const revalidate = 300
 
@@ -65,9 +70,22 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   if (!detail) return { title: 'Card not found' }
   const canonical = `${SITE_URL}/set/${detail.printing.set_code}/card/${cardSlug}`
   const setUpper = detail.printing.set_code.toUpperCase()
+  //  Enrich the description ONLY when graded pricing genuinely exists
+  //  for this exact printing. No keyword stuffing; no hidden SEO text.
+  const bundle = await getTcgBundleForMtgPrinting(detail.printing.id)
+  const graded = buildGradedView(bundle)
+  const gradedTailBits: string[] = []
+  if (graded.hasSlabbedData) {
+    const grades = new Set<string>()
+    for (const c of graded.slabTen) grades.add(`${c.grader} ${c.grade}`)
+    if (grades.size > 0) gradedTailBits.push(`${Array.from(grades).slice(0, 4).join(', ')} graded market prices`)
+  }
+  const description = gradedTailBits.length > 0
+    ? `${detail.printing.name} from ${setUpper}. Live paper price, 7d, 30d and 90d charts, format legality, rulings, every English printing, and ${gradedTailBits.join(' + ')}.`
+    : `${detail.printing.name} from ${setUpper}. Live paper price, 7d, 30d and 90d charts, format legality, rulings and every English printing.`
   return {
     title: `${detail.printing.name} Price, Printings and MTG Card Details`,
-    description: `${detail.printing.name} from ${setUpper}. Live paper price, 7d, 30d and 90d charts, format legality, rulings and every English printing.`,
+    description,
     alternates: { canonical },
     openGraph: { url: canonical },
   }
@@ -95,9 +113,9 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
         card_faces: oracle.card_faces,
       })
 
-  // Prices + chart data + market summary + set name + owner holdings.
+  // Prices + chart data + market summary + set name + owner holdings + graded bundle.
   const finishIds = finishes.map((f) => f.id)
-  const [currentByFinish, otherPricesByPrinting, marketSummary, setRow, ownedRows] = await Promise.all([
+  const [currentByFinish, otherPricesByPrinting, marketSummary, setRow, ownedRows, tcgBundle] = await Promise.all([
     getCurrentPricesForFinishes(finishIds),
     otherPrintings.length > 0
       ? getHeadlinePricesByPrinting(otherPrintings.map((p) => p.id))
@@ -105,7 +123,9 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
     getCardMarketSummary(oracle.id, printing.id),
     getSetByCode(printing.set_code),
     getOwnedPrintings(oracle.id),        // returns [] when unauthenticated
+    getTcgBundleForMtgPrinting(printing.id),
   ])
+  const cardTheme = buildCardTheme(oracle.colors ?? [])
   const setName = setRow?.name ?? printing.set_code.toUpperCase()
 
   // Roll up owned quantities per printing_id so the comparison table
@@ -171,12 +191,14 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
       {/* Hero: image(s) + summary */}
       <div className="mtg-card-hero" style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) 1fr', gap: 32, alignItems: 'start' }}>
         <div>
-          {/* Card image(s) */}
-          <div style={{ display: 'grid', gap: 12 }}>
-            <CardImage src={printing.image_uri} alt={printing.name} />
-            {backImage && (
-              <CardImage src={backImage} alt={`${printing.name}, back face`} caption="Back face (default printing artwork)" />
-            )}
+          {/* Card image(s), lit by a subtle colour-aware ambient. */}
+          <div className="mtg-card-halo" style={{ '--mtg-halo': cardTheme.ambient } as React.CSSProperties}>
+            <div style={{ display: 'grid', gap: 12 }}>
+              <CardImage src={printing.image_uri} alt={printing.name} />
+              {backImage && (
+                <CardImage src={backImage} alt={`${printing.name}, back face`} caption="Back face (default printing artwork)" />
+              )}
+            </div>
           </div>
 
           {/* Client: finish switcher + prices + chart */}
@@ -213,6 +235,11 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
 
         {/* Right column */}
         <div>
+          {/* Signature five-segment colour rail derived from oracle_colors. */}
+          <div style={{ marginBottom: 12 }}>
+            <CardColorAccent colours={oracle.colors ?? []} label={false} />
+          </div>
+
           {/* Title + tags */}
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
             <h1 style={{ fontSize: 32, margin: 0, lineHeight: 1.1 }}>{printing.name}</h1>
@@ -266,6 +293,16 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
               />
             </div>
           )}
+
+          {/* Graded market - hidden entirely if no slabbed data exists. */}
+          <div style={{ marginBottom: 24 }}>
+            <GradedPricesPanel
+              bundle={tcgBundle}
+              setCode={printing.set_code}
+              collectorNumber={printing.collector_number}
+              finish={defaultFinish?.finish ?? null}
+            />
+          </div>
 
           {/* Prominent Add to Collection + Add to Deck actions strip. */}
           <div style={{ marginBottom: 24 }}>

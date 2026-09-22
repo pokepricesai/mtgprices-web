@@ -13,6 +13,7 @@ import { getMarketMovers, type MoverCard } from '@/lib/mtg/movers'
 import HomeSearch from '@/components/HomeSearch'
 import { FORMATS } from '@/lib/mtg/formats.data'
 import { latestInsights, type InsightMeta } from '@/lib/insights'
+import { getGradedNetworkStats, getTopValueGradedPrintings, type GradedFeatureRow } from '@/lib/tcggraph/graded-stats'
 
 export const revalidate = 300
 
@@ -43,10 +44,12 @@ export default async function HomePage() {
   // helper (releasedBy) protect this behaviour independently of the
   // page.
   const today = new Date().toISOString().slice(0, 10)
-  const [counts, recentSets, movers] = await Promise.all([
+  const [counts, recentSets, movers, gradedStats, gradedTop] = await Promise.all([
     getCatalogueCounts(),
     listSets({ limit: 6, releasedBy: today }),
     getMarketMovers({ windowDays: 30, topN: 4 }),
+    getGradedNetworkStats(),
+    getTopValueGradedPrintings(3),
   ])
 
   const latestSet = recentSets[0] ?? null
@@ -59,6 +62,7 @@ export default async function HomePage() {
     <>
       <Hero counts={counts} latestSet={latestSet} movers={movers} />
       <MarketPulseSection movers={movers} />
+      <GradedPromoSection stats={gradedStats} top={gradedTop} />
       <StartExploringSection />
       <PlayersAndCollectorsSection />
       <DeckLabSection />
@@ -67,6 +71,71 @@ export default async function HomePage() {
       <RecentSetsSection sets={recentSets} />
       <FinalCtaSection />
     </>
+  )
+}
+
+/**
+ * Slice 6 launch banner. Only renders when at least one live slabbed
+ * printing exists in the network; the count number is queried live
+ * and never hardcoded. Featured cards come from the real DB.
+ */
+function GradedPromoSection({ stats, top }: { stats: Awaited<ReturnType<typeof getGradedNetworkStats>>; top: GradedFeatureRow[] }) {
+  if (!stats.reliable || stats.distinctSlabPrintings === 0) return null
+  const shownCount = new Intl.NumberFormat('en-US').format(stats.distinctSlabPrintings)
+  return (
+    <section style={{ padding: '48px 24px', background: 'var(--bg)' }} aria-label="New: graded card prices">
+      <div style={{ maxWidth: 1180, margin: '0 auto' }}>
+        <div className="mtg-graded-promo">
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.05fr) minmax(0, 0.95fr)', gap: 32, alignItems: 'center' }} className="mtg-graded-promo-grid">
+            <div>
+              <span className="promo-tag">New</span>
+              <h2 className="display" style={{ margin: '10px 0 8px', fontSize: 34, lineHeight: 1.1, color: '#FFF6D9' }}>
+                Graded card prices are live.
+              </h2>
+              <p style={{ margin: 0, fontSize: 15.5, lineHeight: 1.6, color: '#C4C9D6', maxWidth: 560 }}>
+                PSA, BGS, CGC and SGC market values are now available across <strong style={{ color: '#FFD98A', fontWeight: 700 }}>{shownCount}</strong>+
+                collectible MTG printings. Explore raw and slab prices for vintage cards, chase printings and premium collectibles,
+                every value tied to the exact physical printing you are looking at.
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 18 }}>
+                <Link href="/graded" className="btn btn-gold btn-lg" style={{ textDecoration: 'none' }}>Explore graded cards →</Link>
+                <Link href="/browse" className="btn btn-dark btn-lg" style={{ textDecoration: 'none' }}>Browse all sets</Link>
+              </div>
+              <div style={{ marginTop: 12, fontSize: 11.5, color: '#A6ADBE' }}>
+                Additional graded market data: TCGGraph. Raw / market data remains sourced from MTGJSON, Scryfall and paper marketplaces.
+              </div>
+            </div>
+            <div style={{ display: 'grid', gap: 10 }} aria-hidden={top.length === 0}>
+              {top.slice(0, 3).map((r) => (
+                <Link key={r.mtgPrintingId} href={r.cardHref} style={{ display: 'grid', gridTemplateColumns: '68px 1fr auto', gap: 12, alignItems: 'center', padding: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(232,169,75,0.20)', borderRadius: 12, color: '#F6EED9', textDecoration: 'none' }}>
+                  <div style={{ aspectRatio: '5 / 7', background: 'rgba(0,0,0,0.35)', borderRadius: 6, overflow: 'hidden' }}>
+                    {r.imageUri ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={r.imageUri} alt={r.cardName} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : null}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12.5, fontWeight: 700 }}>{r.cardName}</div>
+                    <div style={{ fontSize: 10.5, color: '#A6ADBE', marginTop: 2 }}>{r.setCode.toUpperCase()}{r.collectorNumber && ` #${r.collectorNumber}`}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 10.5, color: '#FFD98A', fontWeight: 700, letterSpacing: '0.06em' }}>{r.headline.grader} {r.headline.grade}</div>
+                    <div style={{ fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 15, fontWeight: 800, color: '#FFF6D9' }}>
+                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: r.headline.currency, maximumFractionDigits: 0 }).format(r.headline.price)}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+        <style>{`
+          @media (max-width: 900px) {
+            .mtg-graded-promo-grid { grid-template-columns: 1fr !important; }
+          }
+        `}</style>
+      </div>
+    </section>
   )
 }
 
