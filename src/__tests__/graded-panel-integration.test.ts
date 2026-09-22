@@ -22,6 +22,7 @@ function bundle(rawPrice: number | null, graded: Array<[string, string, number, 
       tcg_printing_id: 'test-tcg', grader, grade, currency: currency ?? 'USD', price,
       card_sales_volume: null, updated_at: RECENT,
     })),
+    cardScopedGraded: [],
     lastSourceUpdate: RECENT,
     latestObservationDate: '2026-09-22',
   }

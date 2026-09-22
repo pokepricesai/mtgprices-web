@@ -38,6 +38,11 @@ export type TcgGradedRow = {
   price: number
   card_sales_volume: number | null
   updated_at: string | null
+  /** 'printing' rows describe a specific physical printing. 'card' rows
+   *  are card-level (edition-ambiguous) provider aggregates - a
+   *  frontend that treats them as printing-specific IS a bug. */
+  attribution?: 'printing' | 'card' | null
+  tcg_card_id?: string | null
 }
 
 export type TcgRawQuote = {
@@ -60,8 +65,16 @@ export type TcgPrintingBundle = {
   market: TcgMarketRow[]
   /** Absent-safe: null when there is genuinely no raw quote. */
   rawPrice: TcgRawQuote | null
-  /** True slab / any-graded quotes only. Never contains grader='raw'. */
+  /** True slab / any-graded quotes for THIS specific printing only.
+   *  Card-level (edition-ambiguous) quotes are separated out and only
+   *  surfaced through `cardScopedGraded`. Consumers must NEVER label
+   *  a `cardScopedGraded` value as an edition-specific slab. */
   gradedPrices: TcgGradedRow[]
+  /** Card-level edition-ambiguous graded quotes that apply to any
+   *  edition of the same tcg_card_id. Frontend must render these under
+   *  a distinct "edition-ambiguous" label (never as 1st Edition or
+   *  Unlimited slab values). Empty when the card has no such rows. */
+  cardScopedGraded: TcgGradedRow[]
   /** Most recent updated_at observed on any TCGGraph row for this
    *  MTG printing (market or graded). */
   lastSourceUpdate: string | null
@@ -100,10 +113,24 @@ function pickRaw(rows: TcgGradedRow[]): TcgRawQuote | null {
   }
 }
 
-function partitionRawAndGraded(rows: TcgGradedRow[]): { raw: TcgRawQuote | null; graded: TcgGradedRow[] } {
+function partitionRawAndGraded(rows: TcgGradedRow[]): {
+  raw: TcgRawQuote | null
+  graded: TcgGradedRow[]
+  cardScoped: TcgGradedRow[]
+} {
+  const nonRaw = rows.filter((r) => r.grader.toLowerCase() !== 'raw')
+  //  Attribution boundary: attribution='card' quotes are card-level
+  //  aggregates. Never fold them into the printing-scoped list; every
+  //  read path that renders a specific printing MUST exclude them from
+  //  its slab display and surface them separately (or not at all).
+  //  Rows written before the ambiguity migration have attribution=null
+  //  or undefined - those default to 'printing' by policy.
+  const printingScoped = nonRaw.filter((r) => (r.attribution ?? 'printing') === 'printing')
+  const cardScoped     = nonRaw.filter((r) => r.attribution === 'card')
   return {
     raw: pickRaw(rows),
-    graded: sortGraded(rows.filter((r) => r.grader.toLowerCase() !== 'raw')),
+    graded: sortGraded(printingScoped),
+    cardScoped: sortGraded(cardScoped),
   }
 }
 
@@ -134,13 +161,14 @@ export async function getTcgBundleForMtgPrinting(mtgPrintingId: string): Promise
   ])
   const gradedRows = ((graded ?? []) as TcgGradedRow[])
   const marketRows = ((market ?? []) as TcgMarketRow[])
-  const { raw, graded: slabbedAndAny } = partitionRawAndGraded(gradedRows)
+  const { raw, graded: slabbedAndAny, cardScoped } = partitionRawAndGraded(gradedRows)
   return {
     mtgPrintingId,
     tcgPrintings: prints as TcgPrintingBundle['tcgPrintings'],
     market: marketRows,
     rawPrice: raw,
     gradedPrices: slabbedAndAny,
+    cardScopedGraded: cardScoped,
     lastSourceUpdate: newestTimestamp([...marketRows, ...gradedRows]),
     latestObservationDate: (latest?.[0] as { observed_on?: string } | undefined)?.observed_on ?? null,
   }
@@ -182,18 +210,34 @@ export async function getTcgBundlesForMtgPrintings(mtgPrintingIds: string[]): Pr
     if (prs.length === 0) continue
     const flatMarket = prs.flatMap((p) => marketByTcg.get(p.id) ?? [])
     const flatGraded = prs.flatMap((p) => gradedByTcg.get(p.id) ?? [])
-    const { raw, graded: slab } = partitionRawAndGraded(flatGraded)
+    const { raw, graded: slab, cardScoped } = partitionRawAndGraded(flatGraded)
     out.set(mtgId, {
       mtgPrintingId: mtgId,
       tcgPrintings: prs.map((p) => ({ id: p.id, tcggraph_card_id: p.tcggraph_card_id, tcggraph_printing_key: p.tcggraph_printing_key, finish: p.finish, mapping_confidence: p.mapping_confidence })),
       market: flatMarket,
       rawPrice: raw,
       gradedPrices: slab,
+      cardScopedGraded: cardScoped,
       lastSourceUpdate: newestTimestamp([...flatMarket, ...flatGraded]),
       latestObservationDate: null,
     })
   }
   return out
+}
+
+/** Card-scoped graded quotes for a single tcg_cards.id. Returns rows
+ *  the collector-network printing-page code can display under an
+ *  explicit "edition-ambiguous" label. Never returns attribution!='card'
+ *  rows and never includes raw. Safe to call from public YGO card pages. */
+export async function getCardScopedGradedRows(tcgCardId: string): Promise<TcgGradedRow[]> {
+  const sb = getSupabaseServiceClient()
+  const { data } = await sb
+    .from('tcg_graded_prices_current')
+    .select('*')
+    .eq('tcg_card_id', tcgCardId)
+    .eq('attribution', 'card')
+    .neq('grader', 'raw')
+  return sortGraded((data ?? []) as TcgGradedRow[])
 }
 
 /** Lightweight: given a list of mtg_printings.id values, return the
@@ -233,6 +277,8 @@ export async function getSlabbedMtgPrintingSet(mtgPrintingIds: string[]): Promis
       .select('tcg_printing_id')
       .in('tcg_printing_id', slice)
       .not('grader', 'in', '("raw")')
+      //  Attribution boundary. See read-model comments.
+      .eq('attribution', 'printing')
     if (error) throw new Error(`tcg_graded_prices_current lookup failed: ${error.message}`)
     for (const r of data ?? []) slabbedTcgIds.add(r.tcg_printing_id)
   }
@@ -248,3 +294,4 @@ export async function getSlabbedMtgPrintingSet(mtgPrintingIds: string[]): Promis
 // without spinning up Supabase.
 // ---------------------------------------------------------------------
 export const __testables = { partitionRawAndGraded, sortGraded, pickRaw, newestTimestamp }
+

@@ -37,6 +37,11 @@ export async function getGradedNetworkStats(): Promise<GradedNetworkStats> {
         .select('tcg_printing_id')
         .eq('game_id', 'mtg')
         .not('grader', 'in', '("raw")')
+        //  Attribution boundary: never let an edition-ambiguous card-
+        //  scoped quote inflate a "distinct printings with slab data"
+        //  count. Those quotes are card-level and belong on a
+        //  separate surface.
+        .eq('attribution', 'printing')
         .range(offset, offset + 999)
       if (error) throw new Error(error.message)
       if (!data || data.length === 0) break
@@ -51,6 +56,7 @@ export async function getGradedNetworkStats(): Promise<GradedNetworkStats> {
         .select('tcg_printing_id')
         .eq('game_id', 'mtg')
         .eq('grader', 'raw')
+        .eq('attribution', 'printing')
         .range(offset, offset + 999)
       if (error) throw new Error(error.message)
       if (!data || data.length === 0) break
@@ -113,6 +119,7 @@ export async function getTopValueGradedPrintings(limit = 12): Promise<GradedFeat
       .eq('game_id', 'mtg')
       .in('grader', ['psa', 'bgs', 'cgc', 'sgc'])
       .eq('grade', '10')
+      .eq('attribution', 'printing')
       .order('price', { ascending: false })
       .limit(limit * 6) // headroom to dedupe by mtg_printings.id
     if (error) throw new Error(error.message)
@@ -184,12 +191,14 @@ export async function getTopPremiumPrintings(limit = 12): Promise<GradedFeatureR
       sb.from('tcg_graded_prices_current')
         .select('tcg_printing_id, price, currency')
         .eq('game_id', 'mtg').eq('grader', 'raw')
+        .eq('attribution', 'printing')
         .range(0, 9999),
       sb.from('tcg_graded_prices_current')
         .select('tcg_printing_id, grader, grade, price, currency')
         .eq('game_id', 'mtg')
         .in('grader', ['psa', 'bgs', 'cgc', 'sgc'])
         .eq('grade', '10')
+        .eq('attribution', 'printing')
         .range(0, 9999),
     ])
     if (!rawRows || !slabRows) return []

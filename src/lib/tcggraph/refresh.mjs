@@ -188,6 +188,10 @@ export async function refreshCatalogue(opts) {
         tcg_printing_id: g.tcg_printing_id, observed_on: observedOn,
         grader: g.grader, grade: g.grade, currency: g.currency, game_id: g.game_id,
         price: g.price, card_sales_volume: g.card_sales_volume, source_run_id: runId,
+        //  Carry the current-row semantics into daily history so a
+        //  future audit can distinguish edition-ambiguous observations
+        //  from genuine printing-specific ones without a schema join.
+        attribution: g.attribution, tcg_card_id: g.tcg_card_id,
       }))
 
       if (!dryRun) {

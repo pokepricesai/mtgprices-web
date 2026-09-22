@@ -18,7 +18,8 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { loadEnv, requireEnv, getSupabase, SUPPORTED_GAMES, BOOTSTRAP_DAILY_RESERVE } from './lib/tcggraph-ingest.mjs'
+import { loadEnv, requireEnv, getSupabase, SUPPORTED_GAMES,
+  PRODUCTION_DAILY_RESERVE, PRODUCTION_MONTHLY_RESERVE } from './lib/tcggraph-ingest.mjs'
 import { refreshCatalogue } from '../src/lib/tcggraph/refresh.mjs'
 
 loadEnv()
@@ -45,6 +46,27 @@ const MAX_PAGES = Number(arg('max-pages') ?? Infinity)
 const DRY_RUN = flag('dry-run')
 const RESUME  = flag('resume')
 
+//  Credit safety. The CLI bootstrap now matches the production cron
+//  reserves by default (500 daily, 5,000 monthly) - the pre-fix
+//  defaults of 100/0 were laxer than intended and could drain daily
+//  credits below the production cron's own guardrail, blocking the
+//  scheduled MTG/OP/Lorcana refresh. Operators can still opt into
+//  aggressive spend explicitly:
+//    --daily-reserve N     override daily reserve (>=0)
+//    --monthly-reserve N   override monthly reserve (>=0)
+const DAILY_RESERVE_OVERRIDE   = arg('daily-reserve')
+const MONTHLY_RESERVE_OVERRIDE = arg('monthly-reserve')
+const DAILY_RESERVE = DAILY_RESERVE_OVERRIDE == null
+  ? PRODUCTION_DAILY_RESERVE
+  : Math.max(0, Number(DAILY_RESERVE_OVERRIDE))
+const MONTHLY_RESERVE = MONTHLY_RESERVE_OVERRIDE == null
+  ? PRODUCTION_MONTHLY_RESERVE
+  : Math.max(0, Number(MONTHLY_RESERVE_OVERRIDE))
+if (!Number.isFinite(DAILY_RESERVE) || !Number.isFinite(MONTHLY_RESERVE)) {
+  console.error(`invalid --daily-reserve or --monthly-reserve; both must be non-negative integers`)
+  process.exit(2)
+}
+
 const CHECKPOINT_FILE = join(CHECKPOINT_DIR, `${gameId}.cards.full.json`)
 function readCheckpoint() { if (!existsSync(CHECKPOINT_FILE)) return null; try { return JSON.parse(readFileSync(CHECKPOINT_FILE, 'utf8')) } catch { return null } }
 function writeCheckpoint(cp) { writeFileSync(CHECKPOINT_FILE, JSON.stringify(cp, null, 2)) }
@@ -55,7 +77,7 @@ async function main() {
   const startPage = cp?.next_page ?? FROM_PAGE
 
   console.log(`[bootstrap] game=${gameId} (${gameSlug})  dry-run=${DRY_RUN}  resume=${RESUME}`)
-  console.log(`[bootstrap] start page=${startPage}  max pages=${MAX_PAGES === Infinity ? 'unlimited' : MAX_PAGES}  daily reserve=${BOOTSTRAP_DAILY_RESERVE}`)
+  console.log(`[bootstrap] start page=${startPage}  max pages=${MAX_PAGES === Infinity ? 'unlimited' : MAX_PAGES}  daily reserve=${DAILY_RESERVE}  monthly reserve=${MONTHLY_RESERVE}`)
 
   const result = await refreshCatalogue({
     gameSlug, sb,
@@ -63,11 +85,16 @@ async function main() {
     fromPage: startPage,
     maxPages: MAX_PAGES,
     dryRun: DRY_RUN,
-    // CLI bootstrap tolerates deeper credit usage than cron
-    dailyReserve: BOOTSTRAP_DAILY_RESERVE,
-    monthlyReserve: 0,
+    //  Production reserves by default. Overridable via CLI flags for
+    //  operator scenarios that intentionally drain credits (e.g. a
+    //  full bootstrap on a new game outside the cron cadence).
+    dailyReserve:   DAILY_RESERVE,
+    monthlyReserve: MONTHLY_RESERVE,
     logger: { info: (m, x) => console.log('[bootstrap]', m, x ?? {}), warn: (m, x) => console.warn('[bootstrap]', m, x ?? {}), error: (m, x) => console.error('[bootstrap]', m, x ?? {}) },
-    preflightCredits: false,      // CLI is one-shot; stop-mid-way behaviour is fine
+    //  Preflight ON so we refuse to start a run that would breach the
+    //  daily reserve. Was off before, which is how the previous YGO
+    //  bootstrap ran below the intended guardrail.
+    preflightCredits: true,
   })
 
   writeCheckpoint({

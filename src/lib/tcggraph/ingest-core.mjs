@@ -312,18 +312,78 @@ export function buildMarketRows(gameId, card, runId) {
   return out
 }
 
+/**
+ * Decide the attribution mode for a card's graded quotes.
+ *
+ * TCGGraph's gradedPrices[] payload carries no per-printing metadata
+ * whatsoever - only {grader, grade, currency, price, salesVolume,
+ * updatedAt}. Verified against LOB-001/005/070/124 and against the
+ * broader foil-vs-nonfoil sample (Earthbound Spirit DB1-EN249, etc.).
+ * The quotes are card-level aggregates. Attaching them to any single
+ * printing implies a precision the provider does not offer.
+ *
+ * Contract:
+ *   * If the card has MORE THAN ONE physical printing AND upstream did
+ *     not include an explicit per-quote printing/edition hint, mark
+ *     the quotes as attribution='card'. A canonical anchor printing
+ *     is chosen deterministically ('1st-edition' preferred, then
+ *     'normal', then 'unlimited', then printings[0]) so the row PK
+ *     stays valid, BUT read paths must never treat the anchor as
+ *     provenance - they must key off tcg_card_id + attribution='card'.
+ *   * If the card has exactly one printing, keep attribution='printing'
+ *     (there is nothing to be ambiguous about).
+ *   * If upstream ever DOES include a per-quote printing hint, honour
+ *     it and keep attribution='printing'.
+ *
+ * This predicate MUST match the SQL rule in migrations/2026-09-22-
+ * ygo-graded-ambiguity.sql. If you change one, change the other.
+ *
+ * Frontends must NEVER surface an attribution='card' row inside an
+ * exact-printing display without a clear "edition-ambiguous" label.
+ * See src/lib/tcggraph/read-model.ts for the enforced boundary.
+ */
+export function resolveGradedAttribution(card) {
+  const prints = Array.isArray(card.printings) && card.printings.length > 0 ? card.printings : []
+  const graded = Array.isArray(card.gradedPrices) ? card.gradedPrices : []
+  const gradedHasPrintingHint = graded.some((g) =>
+    g && (g.printingKey != null || g.printing != null || g.edition != null || g.variant != null),
+  )
+  const multiPrinting = prints.length > 1
+  const isCardScoped = multiPrinting && !gradedHasPrintingHint
+  //  Deterministic canonical anchor. For card-scoped quotes, prefer
+  //  '1st-edition' since it is what collectors most often ask for.
+  //  The choice is otherwise arbitrary and consumers MUST NOT rely on
+  //  the specific anchor key. For printing-scoped quotes, keep
+  //  printings[0] (existing behaviour) so MTG and single-printing
+  //  games are unchanged.
+  let anchorKey
+  if (isCardScoped) {
+    const byKey = new Map(prints.map((p) => [p.key, p]))
+    anchorKey = byKey.has('1st-edition') ? '1st-edition'
+              : byKey.has('normal')       ? 'normal'
+              : byKey.has('unlimited')    ? 'unlimited'
+              : prints[0]?.key ?? 'normal'
+  } else {
+    anchorKey = prints[0]?.key ?? 'normal'
+  }
+  return { attribution: isCardScoped ? 'card' : 'printing', anchorKey }
+}
+
 export function buildGradedRows(gameId, card, runId) {
   const out = []
   const graded = Array.isArray(card.gradedPrices) ? card.gradedPrices : []
   if (graded.length === 0) return out
   const lang = card.language ?? 'en'
-  const primaryPk = (card.printings?.[0]?.key) ?? 'normal'
-  const tcgId = tcgPrintingId(gameId, card.id, primaryPk, lang)
+  const { attribution, anchorKey } = resolveGradedAttribution(card)
+  const tcgId = tcgPrintingId(gameId, card.id, anchorKey, lang)
+  const cardId = tcgCardId(gameId, card.id)
   const volume = graded[0]?.salesVolume ?? null
   for (const g of graded) {
     if (g?.price == null) continue
     out.push({
       tcg_printing_id: tcgId,
+      tcg_card_id: cardId,
+      attribution,
       game_id: gameId,
       grader: String(g.grader),
       grade:  String(g.grade),
