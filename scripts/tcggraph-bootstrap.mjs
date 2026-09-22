@@ -44,10 +44,14 @@ const REPO_ROOT = join(__dirname, '..')
 const CHECKPOINT_DIR = join(REPO_ROOT, '.tmp', 'tcggraph-bootstrap')
 mkdirSync(CHECKPOINT_DIR, { recursive: true })
 
+// TCGGraph slug -> internal short id. Do NOT rename existing internal
+// ids (swu, onepiece); downstream tables FK to them. New games are
+// appended.
 const GAMES = {
   'magic-the-gathering': 'mtg',
   'yugioh': 'ygo',
   'one-piece': 'onepiece',
+  'disney-lorcana': 'lorcana',
   'star-wars-unlimited': 'swu',
 }
 
