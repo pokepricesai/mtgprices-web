@@ -4,8 +4,16 @@
 // Read-only. Uses 1 credit (a /games probe) to fetch fresh headers.
 // Never prints the API key.
 
-import { loadEnv, getSupabase, tcgFetch } from './lib/tcggraph-ingest.mjs'
+import { loadEnv, getSupabase, tcgFetch, FRESHNESS_HEALTHY_HOURS, FRESHNESS_WARNING_HOURS, SCHEDULED_ALLOWLIST } from './lib/tcggraph-ingest.mjs'
 loadEnv()
+
+function freshnessBucket(finishedAt) {
+  if (!finishedAt) return { bucket: 'never', hoursAgo: null }
+  const hoursAgo = (Date.now() - new Date(finishedAt).getTime()) / 3_600_000
+  if (hoursAgo <= FRESHNESS_HEALTHY_HOURS) return { bucket: 'healthy',  hoursAgo }
+  if (hoursAgo <= FRESHNESS_WARNING_HOURS) return { bucket: 'warning',  hoursAgo }
+  return { bucket: 'stale', hoursAgo }
+}
 
 const LAUNCH_NETWORK = [
   { id: 'mtg',      label: 'MAGIC: THE GATHERING' },
@@ -65,8 +73,24 @@ async function reportGame(sb, g) {
     console.log(`    started:             ${r.started_at}`)
     console.log(`    finished:            ${r.finished_at ?? '(still running)'}`)
     if (r.notes?.stop_reason) console.log(`    stop reason:         ${r.notes.stop_reason}`)
+    if (r.notes?.source)      console.log(`    source:              ${r.notes.source}`)
   } else {
     console.log(`  last ingest:           (none)`)
+  }
+  //  Freshness bucket - only meaningful for allowlisted games in Slice 5.
+  //  For MTG/YGO/SWU the "last ingest" is a bootstrap so we report it but
+  //  don't alarm.
+  const scheduled = Object.values(SCHEDULED_ALLOWLIST).includes(g.id)
+  if (scheduled) {
+    //  Look up the most recent SUCCESSFUL run.
+    const { data: ok } = await sb.from('tcg_ingest_runs')
+      .select('finished_at')
+      .eq('game_id', g.id)
+      .eq('status', 'success')
+      .order('finished_at', { ascending: false }).limit(1).maybeSingle()
+    const fb = freshnessBucket(ok?.finished_at)
+    const hoursStr = fb.hoursAgo == null ? '?' : fb.hoursAgo.toFixed(1) + 'h'
+    console.log(`  data freshness:        ${fb.bucket.toUpperCase()}  (last success ${hoursStr} ago, healthy <=${FRESHNESS_HEALTHY_HOURS}h, warning <=${FRESHNESS_WARNING_HOURS}h)`)
   }
 }
 
@@ -109,12 +133,17 @@ async function main() {
   const { data: staleLocks } = await sb.from('tcg_ingest_locks').select('*').lt('leased_until', nowIso)
   const { data: activeLocks } = await sb.from('tcg_ingest_locks').select('*').gte('leased_until', nowIso)
   const { data: staleRuns }  = await sb.from('tcg_ingest_runs').select('*').eq('status', 'running').lt('started_at', fourHoursAgoIso)
-  const { data: failedRuns } = await sb.from('tcg_ingest_runs').select('*').eq('status', 'failure').order('started_at', { ascending: false }).limit(5)
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3600_000).toISOString()
+  const { data: failedRuns } = await sb.from('tcg_ingest_runs')
+    .select('game_id, resource, status, started_at, notes')
+    .in('status', ['failure', 'aborted_credit'])
+    .gte('started_at', sevenDaysAgo)
+    .order('started_at', { ascending: false }).limit(20)
   console.log(`  active locks:          ${activeLocks?.length ?? 0}`)
   console.log(`  stale locks:           ${staleLocks?.length ?? 0}`)
   console.log(`  stale 'running' runs:  ${staleRuns?.length ?? 0}`)
-  console.log(`  recent failures:       ${failedRuns?.length ?? 0}`)
-  for (const f of failedRuns ?? []) console.log(`    ${f.game_id}.${f.resource}  ${f.started_at}  ${f.notes?.stop_reason ?? '-'}`)
+  console.log(`  failed / aborted (7d): ${failedRuns?.length ?? 0}`)
+  for (const f of failedRuns ?? []) console.log(`    ${f.game_id}.${f.resource}  ${f.status}  ${f.started_at}  ${f.notes?.stop_reason ?? '-'}`)
   const warnings = []
   if ((probe.creditsRemaining ?? 0) < 2500) warnings.push(`monthly remaining below 2 500`)
   if ((probe.dailyRemaining ?? 0) < 200)    warnings.push(`daily remaining below 200`)
