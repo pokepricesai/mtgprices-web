@@ -6,6 +6,7 @@
 
 import type { CardMarketSummary } from '@/lib/mtg/card-market.types'
 import type { MtgOracleCard, MtgPrinting } from '@/lib/mtg/cards'
+import type { GradedView } from '@/lib/mtg/graded-view'
 
 type Legality = { format: string; legality: string }
 
@@ -15,6 +16,7 @@ type Props = {
   otherPrintings: MtgPrinting[]
   legalities: Legality[]
   market: CardMarketSummary | null
+  gradedView?: GradedView | null
   canonical: string
   setName: string
 }
@@ -30,8 +32,13 @@ const FEATURED_FORMATS: { key: string; label: string }[] = [
   { key: 'pauper',    label: 'Pauper' },
 ]
 
+function fmtMoney(price: number, currency: string): string {
+  try { return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 2 }).format(price) }
+  catch { return `${currency} ${price.toFixed(2)}` }
+}
+
 export default function CardSeoContent({
-  oracle, printing, otherPrintings, legalities, market, canonical, setName,
+  oracle, printing, otherPrintings, legalities, market, gradedView, canonical, setName,
 }: Props) {
   const cardName = printing.name
   const allPrintings = [printing, ...otherPrintings]
@@ -76,6 +83,23 @@ export default function CardSeoContent({
             <p style={{ margin: 0 }}>
               Current headline price on {providerLabel(market.basis.provider)}: {market.currencySymbol}{market.currentPrice.toFixed(2)}
               {market.d30.pct_delta !== null && ` (${market.d30.pct_delta >= 0 ? 'up' : 'down'} ${Math.abs(market.d30.pct_delta * 100).toFixed(1)}% over 30 days)`}.
+            </p>
+          )}
+          {gradedView && gradedView.hasSlabbedData && (
+            <p style={{ margin: '8px 0 0' }}>
+              This exact printing has {' '}
+              {gradedView.slabTen.length > 0
+                ? gradedView.slabTen.map((c, i, arr) => (
+                    <span key={`${c.grader}-${c.grade}-${c.currency}`}>
+                      <strong style={{ color: 'var(--text-strong)' }}>{c.grader} {c.grade}</strong> market price {fmtMoney(c.price, c.currency)}
+                      {i < arr.length - 1 && (i === arr.length - 2 ? ' and ' : ', ')}
+                    </span>
+                  ))
+                : 'graded market data available further up the page'}
+              {gradedView.premium && (
+                <>{'. '}The {gradedView.premium.slab.grader} {gradedView.premium.slab.grade} slab commands a {gradedView.premium.percentDisplay} premium over the raw market ({fmtMoney(gradedView.premium.raw.price, gradedView.premium.raw.currency)}) for this exact printing</>
+              )}
+              . Graded prices reflect professionally slabbed copies; missing (grader, grade) combinations do not appear.
             </p>
           )}
         </div>

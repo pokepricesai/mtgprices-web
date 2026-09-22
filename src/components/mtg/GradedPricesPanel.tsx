@@ -12,12 +12,17 @@
 import Link from 'next/link'
 import type { TcgPrintingBundle } from '@/lib/tcggraph/read-model'
 import { buildGradedView, type GradedCell } from '@/lib/mtg/graded-view'
+import EbayLinkButton from '@/components/mtg/EbayLinkButton'
 
 type Props = {
   bundle: TcgPrintingBundle | null
   setCode: string
   collectorNumber: string | null
   finish: string | null
+  //  Card name is only needed for the "View graded listings" eBay CTA
+  //  at the bottom of the panel. It defaults to a generic label so
+  //  existing callers can omit it.
+  cardName?: string
 }
 
 const GRADER_BADGE_CLASS: Record<string, string> = {
@@ -76,7 +81,7 @@ function Cell({ c, hero }: { c: GradedCell; hero?: boolean }) {
   )
 }
 
-export default function GradedPricesPanel({ bundle, setCode, collectorNumber, finish }: Props) {
+export default function GradedPricesPanel({ bundle, setCode, collectorNumber, finish, cardName }: Props) {
   const view = buildGradedView(bundle)
   //  No graded data? Render nothing at all. The user's Slice-6 rule.
   if (!view.hasSlabbedData) return null
@@ -153,6 +158,27 @@ export default function GradedPricesPanel({ bundle, setCode, collectorNumber, fi
             </div>
           </div>
         </>
+      )}
+
+      {/*  CTA: shop graded copies on eBay. Only rendered when we have a
+           real card name to search for. Uses the existing eBay affiliate
+           link builder so nothing bypasses the disclosure surface. */}
+      {cardName && (
+        <div style={{ marginTop: 16, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+          <EbayLinkButton
+            variant="gold"
+            cardName={`${cardName} PSA`}
+            setName={null}
+            setCode={setCode}
+            collectorNumber={collectorNumber}
+            finish={(finish === 'foil' || finish === 'etched') ? finish : 'nonfoil'}
+            source="mtg-graded-panel"
+            hideDisclosure
+          />
+          <span style={{ fontSize: 11, color: 'var(--graded-fg-muted, #A6ADBE)' }}>
+            Affiliate link, MTGPrices may earn a commission on qualifying purchases.
+          </span>
+        </div>
       )}
 
       <footer style={{ marginTop: 14, fontSize: 11.5, color: 'var(--graded-fg-muted, #A6ADBE)', display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' }}>

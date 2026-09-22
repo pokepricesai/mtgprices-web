@@ -29,7 +29,7 @@ import SimilarCards from '@/components/mtg/SimilarCards'
 import CardPageClient from './CardPageClient'
 import GradedPricesPanel from '@/components/mtg/GradedPricesPanel'
 import CardColorAccent from '@/components/mtg/CardColorAccent'
-import { getTcgBundleForMtgPrinting } from '@/lib/tcggraph/read-model'
+import { getTcgBundleForMtgPrinting, getSlabbedMtgPrintingSet } from '@/lib/tcggraph/read-model'
 import { buildGradedView } from '@/lib/mtg/graded-view'
 import { buildCardTheme } from '@/lib/mtg/color-theme'
 
@@ -113,9 +113,12 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
         card_faces: oracle.card_faces,
       })
 
-  // Prices + chart data + market summary + set name + owner holdings + graded bundle.
+  // Prices + chart data + market summary + set name + owner holdings +
+  // graded bundle for THIS printing + graded indicator set across
+  // other printings (so PrintingComparison can badge rows that carry
+  // slab data without an N+1 query per row).
   const finishIds = finishes.map((f) => f.id)
-  const [currentByFinish, otherPricesByPrinting, marketSummary, setRow, ownedRows, tcgBundle] = await Promise.all([
+  const [currentByFinish, otherPricesByPrinting, marketSummary, setRow, ownedRows, tcgBundle, gradedPrintingIdSet] = await Promise.all([
     getCurrentPricesForFinishes(finishIds),
     otherPrintings.length > 0
       ? getHeadlinePricesByPrinting(otherPrintings.map((p) => p.id))
@@ -124,8 +127,11 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
     getSetByCode(printing.set_code),
     getOwnedPrintings(oracle.id),        // returns [] when unauthenticated
     getTcgBundleForMtgPrinting(printing.id),
+    getSlabbedMtgPrintingSet([printing.id, ...otherPrintings.map((p) => p.id)]).catch(() => new Set<string>()),
   ])
   const cardTheme = buildCardTheme(oracle.colors ?? [])
+  const gradedIndicatorIds = Array.from(gradedPrintingIdSet)
+  const thisPrintingHasSlab = gradedPrintingIdSet.has(printing.id)
   const setName = setRow?.name ?? printing.set_code.toUpperCase()
 
   // Roll up owned quantities per printing_id so the comparison table
@@ -164,34 +170,112 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
       : null
 
   const rarityStyle = printing.rarity ? RARITY_STYLE[printing.rarity] : null
+  const releaseYear = printing.released_at ? printing.released_at.slice(0, 4) : null
 
+  //  JSON-LD. Kept minimal (WebPage) so we do not risk Rich Results
+  //  validity with fabricated Offers. Graded prices are NOT emitted as
+  //  additional Offers - they are provider estimates for slabbed
+  //  copies, not first-party sales offers.
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
-    name: `${printing.name} (${printing.set_code.toUpperCase()})`,
-    description: `${printing.name}. MTG card printing.`,
+    name: `${printing.name} (${printing.set_code.toUpperCase()}${printing.collector_number ? ` #${printing.collector_number}` : ''})`,
+    description: `${printing.name} from ${setName}${releaseYear ? `, released ${releaseYear}` : ''}. Live paper price, price history and format legality for this exact MTG printing.`,
     url: `${SITE_URL}/set/${printing.set_code}/card/${cardSlug}`,
   }
+
+  const attrLabels = [
+    printing.borderless && 'Borderless',
+    printing.full_art && 'Full art',
+    printing.promo && 'Promo',
+    printing.reprint && 'Reprint',
+    printing.textless && 'Textless',
+  ].filter(Boolean) as string[]
 
   return (
     <div style={{ maxWidth: 1180, margin: '0 auto', padding: '20px 24px 80px' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb" style={{ marginBottom: 16, fontSize: 12, color: 'var(--text-muted)' }}>
+      <nav aria-label="Breadcrumb" style={{ marginBottom: 12, fontSize: 12, color: 'var(--text-muted)' }}>
         <Link href="/browse" style={{ color: 'inherit' }}>Sets</Link>
         <span style={{ margin: '0 6px', opacity: 0.5 }}>›</span>
-        <Link href={`/set/${printing.set_code}`} style={{ color: 'inherit' }}>
-          {printing.set_code.toUpperCase()}
-        </Link>
+        <Link href={`/set/${printing.set_code}`} style={{ color: 'inherit' }}>{printing.set_code.toUpperCase()}</Link>
         <span style={{ margin: '0 6px', opacity: 0.5 }}>›</span>
         <span style={{ color: 'var(--text)' }}>{printing.name}</span>
       </nav>
 
-      {/* Hero: image(s) + summary */}
+      {/*
+        Full-width card header - anchored above the two-column grid so
+        the title, printing identity and card colour appear FIRST on
+        mobile (before the image), and give desktop a strong page
+        anchor. Everything the reader needs to answer "which exact
+        card am I on?" lives in this header.
+      */}
+      <header aria-label="Card identity" style={{ marginBottom: 20 }}>
+        <CardColorAccent colours={oracle.colors ?? []} label={false} />
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: 12, marginTop: 10 }}>
+          <h1 style={{ fontSize: 34, margin: 0, lineHeight: 1.05 }}>{printing.name}</h1>
+          {oracle.mana_cost && !faces.some((f) => f.mana_cost) && <ManaCost cost={oracle.mana_cost} size={22} />}
+        </div>
+
+        {/* Exact-printing fingerprint - the "which one am I on?" answer at a glance. */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, marginTop: 10 }}>
+          <span className="mtg-fingerprint" aria-label="This exact printing">
+            <strong style={{ color: 'var(--text-strong)' }}>{printing.set_code.toUpperCase()}</strong>
+            <span>{setName}</span>
+            {printing.collector_number && <><span className="sep">/</span><span>#{printing.collector_number}</span></>}
+            {releaseYear && <><span className="sep">/</span><span>{releaseYear}</span></>}
+            {printing.lang && printing.lang !== 'en' && <><span className="sep">/</span><span>{printing.lang.toUpperCase()}</span></>}
+          </span>
+          {rarityStyle && (
+            <span style={{
+              fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
+              background: rarityStyle.bg, color: rarityStyle.fg,
+              letterSpacing: 0.4, textTransform: 'uppercase',
+            }}>{rarityStyle.label}</span>
+          )}
+          {attrLabels.length > 0 && attrLabels.map((a) => (
+            <span key={a} className="chip" style={{ fontSize: 11 }}>{a}</span>
+          ))}
+          {thisPrintingHasSlab && (
+            <span className="chip chip-gold" style={{ fontSize: 11 }} title="This printing has graded market data further down the page.">◆ Graded data</span>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 10 }}>
+          {oracle.reserved && (
+            <span style={{
+              fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
+              background: 'rgba(180,65,70,0.14)', color: 'var(--red)', letterSpacing: 0.4, textTransform: 'uppercase',
+            }} title="On the WOTC Reserved List, will never be reprinted in a tournament-legal set.">Reserved list</span>
+          )}
+          {oracle.game_changer && (
+            <span style={{
+              fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
+              background: 'var(--accent-soft)', color: 'var(--amber)', letterSpacing: 0.4, textTransform: 'uppercase',
+            }} title="Flagged by WOTC as a Game Changer in Commander bracket 4.">Game changer</span>
+          )}
+          {oracle.color_identity && oracle.color_identity.length > 0 && (
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+              <span>Colour ID</span>
+              <ManaCost cost={oracle.color_identity.map((c) => `{${c}}`).join('')} size={14} />
+            </span>
+          )}
+          {oracle.mana_value != null && (
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>MV <strong style={{ color: 'var(--text)' }}>{oracle.mana_value}</strong></span>
+          )}
+        </div>
+
+        {oracle.type_line && !faces.some((f) => f.type_line) && (
+          <div style={{ fontSize: 15, color: 'var(--text-muted)', marginTop: 10 }}>{oracle.type_line}</div>
+        )}
+      </header>
+
+      {/* Hero: image (with halo) + market / gameplay two-column */}
       <div className="mtg-card-hero" style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) 1fr', gap: 32, alignItems: 'start' }}>
         <div>
-          {/* Card image(s), lit by a subtle colour-aware ambient. */}
           <div className="mtg-card-halo" style={{ '--mtg-halo': cardTheme.ambient } as React.CSSProperties}>
             <div style={{ display: 'grid', gap: 12 }}>
               <CardImage src={printing.image_uri} alt={printing.name} />
@@ -209,7 +293,7 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
             chartSeries={chartSeries}
           />
 
-          {/* Print meta */}
+          {/* Print meta - "this printing" facts, kept as a compact sidebar block. */}
           <div style={{ marginTop: 20, padding: 14, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 13, display: 'grid', gap: 6 }}>
             <div className="label-mono" style={{ marginBottom: 4 }}>This printing</div>
             <Row k="Set" v={<Link href={`/set/${printing.set_code}`} style={{ color: 'var(--accent)' }}>{printing.set_code.toUpperCase()}</Link>} />
@@ -219,69 +303,32 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
             <Row k="Artist" v={printing.artist ?? '-'} />
             <Row k="Language" v={(printing.lang ?? 'en').toUpperCase()} />
             <Row k="Layout" v={oracle.layout ?? 'normal'} />
-            {(printing.borderless || printing.full_art || printing.promo || printing.reprint) && (
-              <Row k="Attributes" v={[
-                printing.borderless && 'Borderless',
-                printing.full_art && 'Full art',
-                printing.promo && 'Promo',
-                printing.reprint && 'Reprint',
-              ].filter(Boolean).join(' · ')} />
-            )}
+            {attrLabels.length > 0 && <Row k="Attributes" v={attrLabels.join(' · ')} />}
             {printing.scryfall_uri && (
               <Row k="Scryfall" v={<a href={printing.scryfall_uri} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>Open ↗</a>} />
             )}
           </div>
         </div>
 
-        {/* Right column */}
+        {/*
+          Right column.  Two clearly separated stacks:
+            MARKET / COLLECTING
+              - CardMarketOverview  (raw current + 7/30/90d)
+              - GradedPricesPanel   (only when this printing has slabs)
+              - CardActionsStrip    (Add to collection / Add to deck)
+              - PrintingComparison  (compare other physical versions)
+            GAMEPLAY
+              - CardFaces
+              - Keywords
+              - Capabilities
+              - Format legality
+              - Rulings
+              - Similar cards
+        */}
         <div>
-          {/* Signature five-segment colour rail derived from oracle_colors. */}
-          <div style={{ marginBottom: 12 }}>
-            <CardColorAccent colours={oracle.colors ?? []} label={false} />
-          </div>
+          {/* MARKET section eyebrow */}
+          <SectionEyebrow accent="gold" label="Market and collecting" />
 
-          {/* Title + tags */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
-            <h1 style={{ fontSize: 32, margin: 0, lineHeight: 1.1 }}>{printing.name}</h1>
-            {oracle.mana_cost && !faces.some((f) => f.mana_cost) && <ManaCost cost={oracle.mana_cost} size={22} />}
-          </div>
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 12 }}>
-            {rarityStyle && (
-              <span style={{
-                fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
-                background: rarityStyle.bg, color: rarityStyle.fg,
-                letterSpacing: 0.4, textTransform: 'uppercase',
-              }}>{rarityStyle.label}</span>
-            )}
-            {oracle.reserved && (
-              <span style={{
-                fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
-                background: 'rgba(180,65,70,0.14)', color: 'var(--red)', letterSpacing: 0.4, textTransform: 'uppercase',
-              }} title="On the WOTC Reserved List, will never be reprinted in a tournament-legal set.">Reserved list</span>
-            )}
-            {oracle.game_changer && (
-              <span style={{
-                fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
-                background: 'var(--accent-soft)', color: 'var(--amber)', letterSpacing: 0.4, textTransform: 'uppercase',
-              }} title="Flagged by WOTC as a Game Changer in Commander bracket 4.">Game changer</span>
-            )}
-            {oracle.color_identity && oracle.color_identity.length > 0 && (
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-                <span>Colour ID</span>
-                <ManaCost cost={oracle.color_identity.map((c) => `{${c}}`).join('')} size={14} />
-              </span>
-            )}
-            {oracle.mana_value != null && (
-              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>MV <strong style={{ color: 'var(--text)' }}>{oracle.mana_value}</strong></span>
-            )}
-          </div>
-
-          {oracle.type_line && !faces.some((f) => f.type_line) && (
-            <div style={{ fontSize: 15, color: 'var(--text-muted)', marginBottom: 20 }}>{oracle.type_line}</div>
-          )}
-
-          {/* Market overview: deterministic price summary + insights. */}
           {marketSummary && (
             <div style={{ marginBottom: 16 }}>
               <CardMarketOverview
@@ -294,18 +341,19 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
             </div>
           )}
 
-          {/* Graded market - hidden entirely if no slabbed data exists. */}
-          <div style={{ marginBottom: 24 }}>
+          {/* Graded market. GradedPricesPanel returns null on no-slab. */}
+          <div style={{ marginBottom: 20 }}>
             <GradedPricesPanel
               bundle={tcgBundle}
               setCode={printing.set_code}
               collectorNumber={printing.collector_number}
               finish={defaultFinish?.finish ?? null}
+              cardName={printing.name}
             />
           </div>
 
-          {/* Prominent Add to Collection + Add to Deck actions strip. */}
-          <div style={{ marginBottom: 24 }}>
+          {/* Add to collection / deck. */}
+          <div style={{ marginBottom: 22 }}>
             <CardActionsStrip
               cardName={printing.name}
               oracleId={oracle.id}
@@ -316,13 +364,39 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
             />
           </div>
 
+          {/* Other printings + comparison. Kept in the Market section
+              because "which alternative version should I buy" is a
+              market-shopping question, not a gameplay question. */}
+          {marketSummary && marketSummary.pricedPrintings.length > 0 ? (
+            <div style={{ marginBottom: 32 }}>
+              <PrintingComparison
+                cardName={printing.name}
+                oracleId={oracle.id}
+                basis={marketSummary.basis}
+                pricedPrintings={marketSummary.pricedPrintings}
+                currentPrintingId={printing.id}
+                ownedByPrintingId={ownedTotal > 0 ? ownedByPrintingId : undefined}
+                gradedPrintingIds={gradedIndicatorIds}
+              />
+            </div>
+          ) : (
+            <div style={{ marginBottom: 32 }}>
+              <div className="label-mono" style={{ marginBottom: 8 }}>Other printings</div>
+              <OtherPrintings
+                currentPrintingId={printing.id}
+                otherPrintings={otherPrintings}
+                headlinePriceByPrinting={otherPricesByPrinting}
+              />
+            </div>
+          )}
 
-          {/* Faces / rules text */}
-          <div style={{ marginBottom: 24 }}>
+          {/* GAMEPLAY section eyebrow */}
+          <SectionEyebrow accent="arcane" label="Gameplay and rules" />
+
+          <div style={{ marginBottom: 22 }}>
             <CardFaces faces={faces} layoutKind={layoutKind} />
           </div>
 
-          {/* Keywords */}
           {oracle.keywords && oracle.keywords.length > 0 && (
             <div style={{ marginBottom: 20 }}>
               <div className="label-mono" style={{ marginBottom: 8 }}>Keywords</div>
@@ -337,7 +411,6 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
             </div>
           )}
 
-          {/* Capabilities */}
           {caps.length > 0 && (
             <div style={{ marginBottom: 24 }}>
               <div className="label-mono" style={{ marginBottom: 8 }}>Card capabilities</div>
@@ -348,42 +421,16 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
             </div>
           )}
 
-          {/* Legality */}
           <div style={{ marginBottom: 24 }}>
             <div className="label-mono" style={{ marginBottom: 8 }}>Format legality</div>
             <LegalityMatrix legalities={legalities} />
           </div>
 
-          {/* Printing comparison, sortable table on the current basis. */}
-          {marketSummary && marketSummary.pricedPrintings.length > 0 ? (
-            <div style={{ marginBottom: 24 }}>
-              <PrintingComparison
-                cardName={printing.name}
-                oracleId={oracle.id}
-                basis={marketSummary.basis}
-                pricedPrintings={marketSummary.pricedPrintings}
-                currentPrintingId={printing.id}
-                ownedByPrintingId={ownedTotal > 0 ? ownedByPrintingId : undefined}
-              />
-            </div>
-          ) : (
-            <div style={{ marginBottom: 24 }}>
-              <div className="label-mono" style={{ marginBottom: 8 }}>Other printings</div>
-              <OtherPrintings
-                currentPrintingId={printing.id}
-                otherPrintings={otherPrintings}
-                headlinePriceByPrinting={otherPricesByPrinting}
-              />
-            </div>
-          )}
-
-          {/* Rulings */}
           <div style={{ marginBottom: 24 }}>
             <div className="label-mono" style={{ marginBottom: 8 }}>Rulings {rulings.length > 0 && <span style={{ color: 'var(--text-muted)' }}>({rulings.length})</span>}</div>
             <RulingsList rulings={rulings} initialCount={6} />
           </div>
 
-          {/* Similar cards (deterministic) */}
           <div style={{ marginBottom: 12 }}>
             <SimilarCards oracleId={oracle.id} currentPrintingId={printing.id} />
           </div>
@@ -398,6 +445,7 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
           otherPrintings={otherPrintings}
           legalities={legalities}
           market={marketSummary}
+          gradedView={buildGradedView(tcgBundle)}
           canonical={`${SITE_URL}/set/${printing.set_code}/card/${cardSlug}`}
           setName={setName}
         />
@@ -412,6 +460,21 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
           `,
         }}
       />
+    </div>
+  )
+}
+
+/**
+ * Small section eyebrow separating MARKET / GAMEPLAY on the card page.
+ * Uses the .mtg-engraved hairline behind the text so it inherits the
+ * gilt treatment.
+ */
+function SectionEyebrow({ label, accent }: { label: string; accent: 'gold' | 'arcane' }) {
+  const colour = accent === 'gold' ? 'var(--gold-600)' : 'var(--primary-strong)'
+  return (
+    <div style={{ display: 'grid', gap: 6, margin: '4px 0 14px' }}>
+      <div className="mtg-engraved" aria-hidden />
+      <div className="label-mono" style={{ color: colour }}>{label}</div>
     </div>
   )
 }

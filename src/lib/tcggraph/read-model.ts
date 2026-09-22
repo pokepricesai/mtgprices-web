@@ -196,6 +196,53 @@ export async function getTcgBundlesForMtgPrintings(mtgPrintingIds: string[]): Pr
   return out
 }
 
+/** Lightweight: given a list of mtg_printings.id values, return the
+ *  subset that carries at least one slabbed graded row (grader is NOT
+ *  'raw'). Used by the card page to decorate the printing-comparison
+ *  table with a "has graded data" indicator per row. Runs in two
+ *  small queries; chunks input at 100 ids to stay under PostgREST URL
+ *  length limits. */
+export async function getSlabbedMtgPrintingSet(mtgPrintingIds: string[]): Promise<Set<string>> {
+  const out = new Set<string>()
+  if (mtgPrintingIds.length === 0) return out
+  const sb = getSupabaseServiceClient()
+  //  1. mtg_printings.id -> tcg_printings.id
+  const tcgByMtg = new Map<string, string[]>()
+  const uniqueMtg = Array.from(new Set(mtgPrintingIds))
+  for (let i = 0; i < uniqueMtg.length; i += 100) {
+    const slice = uniqueMtg.slice(i, i + 100)
+    const { data, error } = await sb
+      .from('tcg_printings')
+      .select('id, mtg_printings_id')
+      .in('mtg_printings_id', slice)
+    if (error) throw new Error(`tcg_printings lookup failed: ${error.message}`)
+    for (const r of data ?? []) {
+      if (!r.mtg_printings_id) continue
+      const arr = tcgByMtg.get(r.mtg_printings_id) ?? []
+      arr.push(r.id)
+      tcgByMtg.set(r.mtg_printings_id, arr)
+    }
+  }
+  //  2. Which of those tcg_printings.id values have any non-raw graded row?
+  const allTcgIds = Array.from(new Set(Array.from(tcgByMtg.values()).flat()))
+  const slabbedTcgIds = new Set<string>()
+  for (let i = 0; i < allTcgIds.length; i += 100) {
+    const slice = allTcgIds.slice(i, i + 100)
+    const { data, error } = await sb
+      .from('tcg_graded_prices_current')
+      .select('tcg_printing_id')
+      .in('tcg_printing_id', slice)
+      .not('grader', 'in', '("raw")')
+    if (error) throw new Error(`tcg_graded_prices_current lookup failed: ${error.message}`)
+    for (const r of data ?? []) slabbedTcgIds.add(r.tcg_printing_id)
+  }
+  //  3. Reverse: any mtg_printings_id whose tcg mapping is in the set.
+  for (const [mtgId, tcgIds] of Array.from(tcgByMtg.entries())) {
+    if (tcgIds.some((id) => slabbedTcgIds.has(id))) out.add(mtgId)
+  }
+  return out
+}
+
 // ---------------------------------------------------------------------
 // Test-visible helpers. Kept exported so unit tests can hit them
 // without spinning up Supabase.

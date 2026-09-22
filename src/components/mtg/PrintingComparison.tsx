@@ -58,11 +58,16 @@ type Props = {
   // { printing_id: count } supplied when the current viewer is signed
   // in and their collection has been fetched server-side.
   ownedByPrintingId?: Record<string, number>
+  // Slice 7. mtg_printings.id values that carry at least one slabbed
+  // graded quote. Renders a small ◆ indicator on those rows so buyers
+  // can find graded-capable variants at a glance.
+  gradedPrintingIds?: string[]
 }
 
 export default function PrintingComparison({
-  cardName, oracleId, basis, pricedPrintings, currentPrintingId, ownedByPrintingId,
+  cardName, oracleId, basis, pricedPrintings, currentPrintingId, ownedByPrintingId, gradedPrintingIds,
 }: Props) {
+  const gradedSet = useMemo(() => new Set(gradedPrintingIds ?? []), [gradedPrintingIds])
   const [sort, setSort] = useState<SortKey>('cheapest')
   const [finishFilter, setFinishFilter] = useState<'any' | 'nonfoil' | 'foil' | 'etched'>('any')
   const [openActions, setOpenActions] = useState<string | null>(null)
@@ -195,7 +200,18 @@ export default function PrintingComparison({
                         {r.rarity ?? '-'}
                       </Td>
                       <Td align="right" style={{ fontFamily: 'ui-monospace, SFMono-Regular, monospace', fontWeight: 700 }}>
-                        {sym}{r.price.toFixed(2)}
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
+                          {sym}{r.price.toFixed(2)}
+                          {gradedSet.has(r.printing_id) && (
+                            <span title="This printing has graded market data" aria-label="Has graded data" style={{
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              width: 16, height: 16, borderRadius: 999,
+                              background: 'var(--accent-soft)', color: 'var(--gold-600)',
+                              border: '1px solid var(--accent-border)',
+                              fontSize: 10, fontWeight: 700, lineHeight: 1,
+                            }}>◆</span>
+                          )}
+                        </span>
                       </Td>
                       <Td align="right"><DeltaCell pct={r.pct_7d} /></Td>
                       <Td align="right"><DeltaCell pct={r.pct_30d} /></Td>
