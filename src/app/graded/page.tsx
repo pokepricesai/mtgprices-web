@@ -89,8 +89,8 @@ function Section({ title, subtitle, rows, empty }: { title: string; subtitle: st
     <section style={{ marginBottom: 40 }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
         <div>
-          <h2 style={{ margin: 0, fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 22, color: '#F6EED9', letterSpacing: '-0.01em' }}>{title}</h2>
-          <p style={{ margin: '2px 0 0', fontSize: 13, color: '#A6ADBE', maxWidth: 640 }}>{subtitle}</p>
+          <h2 style={{ margin: 0, fontFamily: 'Outfit, system-ui, sans-serif', fontSize: 19, color: '#F6EED9', letterSpacing: '-0.015em' }}>{title}</h2>
+          <p style={{ margin: '2px 0 0', fontSize: 12.5, color: '#A6ADBE', maxWidth: 640, lineHeight: 1.55 }}>{subtitle}</p>
         </div>
       </header>
       {rows.length === 0 ? (
@@ -120,17 +120,22 @@ export default async function GradedPage() {
   }
 
   return (
-    <div style={{ background: 'linear-gradient(180deg, #0B1428 0%, #060C1B 100%)', minHeight: '100vh', color: '#ECE3C7' }}>
-      <div style={{ maxWidth: 1180, margin: '0 auto', padding: '32px 24px 80px' }}>
+    <div style={{ background: 'linear-gradient(180deg, #0B1428 0%, #060C1B 100%)', minHeight: '100vh', color: '#ECE3C7', position: 'relative' }}>
+      {/* Dark-theme MTG accent: gold arcane glyphs at low opacity + a
+          soft WUBRG halo. Kept subtle enough not to fight the graded
+          cards themselves. */}
+      <div className="mtg-arcane-veil dark" aria-hidden style={{ position: 'absolute', inset: 0 }} />
+      <div className="mtg-mana-crest dark" aria-hidden />
+      <div style={{ maxWidth: 1180, margin: '0 auto', padding: '32px 24px 80px', position: 'relative' }}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
         {/* Header */}
-        <header style={{ marginBottom: 28 }}>
+        <header style={{ marginBottom: 24 }}>
           <div className="label-mono" style={{ color: '#FFD98A' }}>MTG graded market</div>
-          <h1 className="display" style={{ margin: '6px 0 12px', fontSize: 40, lineHeight: 1.05, color: '#FFF6D9' }}>
+          <h1 className="display" style={{ margin: '4px 0 10px', fontSize: 34, lineHeight: 1.05, color: '#FFF6D9' }}>
             Graded MTG card prices
           </h1>
-          <p style={{ margin: 0, maxWidth: 720, color: '#C4C9D6', fontSize: 15.5, lineHeight: 1.55 }}>
+          <p style={{ margin: 0, maxWidth: 720, color: '#C4C9D6', fontSize: 14, lineHeight: 1.6 }}>
             Actual PSA, BGS, CGC and SGC market data across thousands of MTG printings. Every value below comes
             from a specific physical printing, not a name-level average. Missing quotes stay missing.
           </p>

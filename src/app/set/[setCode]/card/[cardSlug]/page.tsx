@@ -216,8 +216,8 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
         <CardColorAccent colours={oracle.colors ?? []} label={false} />
 
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: 12, marginTop: 10 }}>
-          <h1 style={{ fontSize: 34, margin: 0, lineHeight: 1.05 }}>{printing.name}</h1>
-          {oracle.mana_cost && !faces.some((f) => f.mana_cost) && <ManaCost cost={oracle.mana_cost} size={22} />}
+          <h1 style={{ fontSize: 30, margin: 0, lineHeight: 1.05, letterSpacing: '-0.015em' }}>{printing.name}</h1>
+          {oracle.mana_cost && !faces.some((f) => f.mana_cost) && <ManaCost cost={oracle.mana_cost} size={20} />}
         </div>
 
         {/* Exact-printing fingerprint - the "which one am I on?" answer at a glance. */}

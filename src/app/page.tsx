@@ -89,10 +89,10 @@ function GradedPromoSection({ stats, top }: { stats: Awaited<ReturnType<typeof g
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.05fr) minmax(0, 0.95fr)', gap: 32, alignItems: 'center' }} className="mtg-graded-promo-grid">
             <div>
               <span className="promo-tag">New</span>
-              <h2 className="display" style={{ margin: '10px 0 8px', fontSize: 34, lineHeight: 1.1, color: '#FFF6D9' }}>
+              <h2 className="display" style={{ margin: '10px 0 8px', fontSize: 30, lineHeight: 1.1, color: '#FFF6D9' }}>
                 Graded card prices are live.
               </h2>
-              <p style={{ margin: 0, fontSize: 15.5, lineHeight: 1.6, color: '#C4C9D6', maxWidth: 560 }}>
+              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: '#C4C9D6', maxWidth: 560 }}>
                 PSA, BGS, CGC and SGC market values are now available across <strong style={{ color: '#FFD98A', fontWeight: 700 }}>{shownCount}</strong>+
                 collectible MTG printings. Explore raw and slab prices for vintage cards, chase printings and premium collectibles,
                 every value tied to the exact physical printing you are looking at.
@@ -173,11 +173,11 @@ function InsightsSection({ items }: { items: InsightMeta[] }) {
                   {new Date(a.publishedAt + 'T00:00:00Z').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })} · {a.readingTimeMin} min
                 </span>
               </div>
-              <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-strong)', lineHeight: 1.3 }}>
+              <div style={{ fontSize: 15.5, fontWeight: 700, color: 'var(--text-strong)', lineHeight: 1.3, letterSpacing: '-0.01em' }}>
                 {a.title}
               </div>
               {a.description && (
-                <p style={{ margin: 0, fontSize: 13.5, color: 'var(--text-muted)', lineHeight: 1.55 }}>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.55 }}>
                   {a.description}
                 </p>
               )}
@@ -203,7 +203,11 @@ function Hero({
   const heroPulse = movers?.active[0] ?? movers?.risers[0] ?? null
 
   return (
-    <section className="hero-shell" style={{ padding: '56px 24px 68px', position: 'relative' }}>
+    <section className="hero-shell" style={{ padding: '52px 24px 60px', position: 'relative' }}>
+      {/* Subtle MTG-native atmosphere. All three layers are purely
+          decorative and gated on prefers-reduced-motion where relevant. */}
+      <div className="mtg-mana-crest" aria-hidden />
+      <div className="mtg-arcane-veil" aria-hidden />
       <div className="spark-field" aria-hidden />
 
       <div style={{ maxWidth: 1180, margin: '0 auto', position: 'relative' }}>
@@ -221,16 +225,20 @@ function Hero({
               height={180}
               priority
               className="hero-logo"
-              style={{ display: 'block', height: 'auto', marginBottom: 22 }}
+              style={{ display: 'block', height: 'auto', marginBottom: 20 }}
             />
+            {/*
+              Hero H1 uses the site heading family (Outfit) rather than
+              the .display serif so the homepage reads as the same
+              product surface as /browse, /formats, /graded etc. The
+              inherited h1 rules already set family + weight + colour;
+              only clamp sizing is inline.
+            */}
             <h1
-              className="display"
               style={{
-                fontSize: 'clamp(38px, 5.4vw, 64px)',
+                fontSize: 'clamp(32px, 4.6vw, 54px)',
                 margin: 0,
-                lineHeight: 1.04,
-                fontWeight: 700,
-                color: 'var(--text-strong)',
+                lineHeight: 1.05,
                 letterSpacing: '-0.02em',
               }}
             >
@@ -238,8 +246,8 @@ function Hero({
             </h1>
 
             <p style={{
-              color: 'var(--text-muted)', fontSize: 17.5, lineHeight: 1.6, marginTop: 20,
-              maxWidth: 620,
+              color: 'var(--text-muted)', fontSize: 15.5, lineHeight: 1.6, marginTop: 18,
+              maxWidth: 600,
             }}>
               Live pricing, printings and rules for {counts.oracles.toLocaleString()} Magic cards
               across {counts.sets.toLocaleString()} sets. One place to find a card, price it,
@@ -262,7 +270,7 @@ function Hero({
                   key={q.label}
                   href={q.href}
                   style={{
-                    fontSize: 13, fontWeight: 600, padding: '8px 14px',
+                    fontSize: 12.5, fontWeight: 600, padding: '7px 13px',
                     borderRadius: 999,
                     background: 'var(--surface)',
                     color: 'var(--text)',
@@ -305,7 +313,7 @@ function Hero({
 function TrustChip({ label }: { label: string }) {
   return (
     <span style={{
-      fontSize: 12, fontWeight: 600, padding: '5px 11px', borderRadius: 999,
+      fontSize: 11.5, fontWeight: 600, padding: '4px 10px', borderRadius: 999,
       color: 'var(--text)',
       background: 'var(--surface)',
       border: '1px solid var(--border)',
@@ -341,8 +349,8 @@ function DeckIntelligenceCard() {
           Ask AI →
         </Link>
       </div>
-      <h3 style={{ margin: 0, fontSize: 20, lineHeight: 1.25 }}>Ask about cards, prices and decks.</h3>
-      <p style={{ marginTop: 8, color: 'var(--text-muted)', fontSize: 13.5, lineHeight: 1.55 }}>
+      <h3 style={{ margin: 0, fontSize: 18, lineHeight: 1.25, letterSpacing: '-0.01em' }}>Ask about cards, prices and decks.</h3>
+      <p style={{ marginTop: 8, color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.55 }}>
         Grounded in the live MTGPrices catalogue. Format aware Deck Builder, capability based
         card search and a rules aware Test Your Deck flow. No invented cards.
       </p>
@@ -718,13 +726,13 @@ function ExploreCardTile({ card }: { card: ExploreCard }) {
           color: accentIconColor[card.accent],
         }}>{card.icon}</span>
       </div>
-      <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2, color: 'var(--text-strong)' }}>
+      <div style={{ fontSize: 19, fontWeight: 700, lineHeight: 1.22, color: 'var(--text-strong)', letterSpacing: '-0.01em' }}>
         {card.title}
       </div>
-      <p style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.55, flex: 1 }}>
+      <p style={{ marginTop: 8, color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.55, flex: 1 }}>
         {card.body}
       </p>
-      <div style={{ marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 13.5, color: 'var(--primary-strong)' }}>
+      <div style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 12.5, color: 'var(--primary-strong)' }}>
         {card.cta} <span aria-hidden>→</span>
       </div>
     </Link>
@@ -757,7 +765,7 @@ function PlayersAndCollectorsSection() {
               <span className="gem gem-gold" aria-hidden />
               <span className="label-mono" style={{ color: 'var(--gold-600)' }}>For Collectors</span>
             </div>
-            <h3 className="display" style={{ margin: 0, fontSize: 30, lineHeight: 1.15, color: 'var(--text-strong)' }}>
+            <h3 style={{ margin: 0, fontSize: 24, lineHeight: 1.2, color: 'var(--text-strong)', letterSpacing: '-0.015em' }}>
               Every printing, every finish, every history.
             </h3>
             <ul style={{ listStyle: 'none', padding: 0, margin: '20px 0 0', display: 'grid', gap: 10 }}>
@@ -786,7 +794,7 @@ function PlayersAndCollectorsSection() {
               <span className="gem" aria-hidden />
               <span className="label-mono" style={{ color: 'var(--primary-strong)' }}>For Players</span>
             </div>
-            <h3 className="display" style={{ margin: 0, fontSize: 30, lineHeight: 1.15, color: 'var(--text-strong)' }}>
+            <h3 style={{ margin: 0, fontSize: 24, lineHeight: 1.2, color: 'var(--text-strong)', letterSpacing: '-0.015em' }}>
               Deckbuilding grounded in real rules.
             </h3>
             <ul style={{ listStyle: 'none', padding: 0, margin: '20px 0 0', display: 'grid', gap: 10 }}>
@@ -838,15 +846,16 @@ function DeckLabSection() {
     { n: 'V',   title: 'Complete', body: 'Cheapest missing printings from real market prices.', href: '/collection' },
   ]
   return (
-    <section className="feature-shell" style={{ padding: '80px 24px', position: 'relative' }}>
+    <section className="feature-shell" style={{ padding: '72px 24px', position: 'relative' }}>
+      <div className="mtg-arcane-veil" aria-hidden />
       <div className="spark-field" aria-hidden />
       <div style={{ maxWidth: 1180, margin: '0 auto', position: 'relative' }}>
-        <div style={{ textAlign: 'center', maxWidth: 720, margin: '0 auto 40px' }}>
-          <div className="label-mono" style={{ color: 'var(--gold-600)', marginBottom: 10 }}>Deck Lab</div>
-          <h2 className="display" style={{ margin: 0, fontSize: 'clamp(30px, 3.4vw, 44px)', color: 'var(--text-strong)', lineHeight: 1.15 }}>
+        <div style={{ textAlign: 'center', maxWidth: 720, margin: '0 auto 36px' }}>
+          <div className="label-mono" style={{ color: 'var(--gold-600)', marginBottom: 8 }}>Deck Lab</div>
+          <h2 style={{ margin: 0, fontSize: 'clamp(26px, 3vw, 38px)', color: 'var(--text-strong)', lineHeight: 1.15, letterSpacing: '-0.015em' }}>
             Take a deck from idea to tested list.
           </h2>
-          <p style={{ marginTop: 12, color: 'var(--text-muted)', fontSize: 16, lineHeight: 1.6 }}>
+          <p style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.6 }}>
             Every stage is a real product surface, not marketing. Follow the arc, or jump straight
             to any step.
           </p>
@@ -870,11 +879,11 @@ function DeckLabSection() {
               }}
             >
               <div className="display" style={{
-                fontSize: 34, color: 'var(--gold-500)', lineHeight: 1, marginBottom: 12,
+                fontSize: 30, color: 'var(--gold-500)', lineHeight: 1, marginBottom: 10,
               }}>{s.n}</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-strong)' }}>{s.title}</div>
-              <div style={{ marginTop: 8, fontSize: 13.5, lineHeight: 1.55, color: 'var(--text-muted)', flex: 1 }}>{s.body}</div>
-              <div style={{ marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 700, color: 'var(--gold-600)' }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-strong)' }}>{s.title}</div>
+              <div style={{ marginTop: 6, fontSize: 13, lineHeight: 1.55, color: 'var(--text-muted)', flex: 1 }}>{s.body}</div>
+              <div style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, color: 'var(--gold-600)' }}>
                 Open <span aria-hidden>›</span>
               </div>
               {i < steps.length - 1 && (
@@ -1049,10 +1058,10 @@ function FinalCtaSection() {
             height={64}
             style={{ width: 64, height: 64, margin: '0 auto 20px', display: 'block', filter: 'drop-shadow(0 6px 18px rgba(20,33,61,0.18))' }}
           />
-          <h2 className="display" style={{ margin: 0, fontSize: 'clamp(28px, 3.4vw, 40px)', color: 'var(--text-strong)', lineHeight: 1.15 }}>
+          <h2 style={{ margin: 0, fontSize: 'clamp(24px, 3vw, 34px)', color: 'var(--text-strong)', lineHeight: 1.15, letterSpacing: '-0.015em' }}>
             One home for MTG pricing, decks and rules.
           </h2>
-          <p style={{ marginTop: 14, color: 'var(--text-muted)', fontSize: 16, lineHeight: 1.6 }}>
+          <p style={{ marginTop: 12, color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.6 }}>
             Free to browse, no login required. Sign in to keep decks, track a collection and
             personalise Deck Builder.
           </p>
@@ -1085,24 +1094,28 @@ function SectionHeader({
     }}>
       <div style={{ maxWidth: 720 }}>
         {eyebrow && (
-          <div className="label-mono" style={{ marginBottom: 10, color: 'var(--gold-600)' }}>
+          <div className="label-mono" style={{ marginBottom: 8, color: 'var(--gold-600)' }}>
             <span className="gem gem-gold" aria-hidden style={{ marginRight: 8, transform: 'translateY(1px) rotate(45deg)' }} />
             {eyebrow}
           </div>
         )}
-        <h2 className="display" style={{ margin: 0, fontSize: 'clamp(28px, 3.2vw, 40px)', color: 'var(--text-strong)', lineHeight: 1.15 }}>
+        {/*
+          Section headings use the same Outfit sans language as the
+          rest of the site. .display is reserved for optional ornaments.
+        */}
+        <h2 style={{ margin: 0, fontSize: 'clamp(24px, 2.8vw, 34px)', color: 'var(--text-strong)', lineHeight: 1.15, letterSpacing: '-0.015em' }}>
           {title}
         </h2>
         {subtitle && (
-          <p style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 15.5, lineHeight: 1.6, maxWidth: 640 }}>
+          <p style={{ marginTop: 8, color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.6, maxWidth: 640 }}>
             {subtitle}
           </p>
         )}
       </div>
       {rightLink && (
         <Link href={rightLink.href} style={{
-          fontSize: 13.5, fontWeight: 700, color: 'var(--primary-strong)',
-          padding: '8px 12px', borderRadius: 8,
+          fontSize: 12.5, fontWeight: 700, color: 'var(--primary-strong)',
+          padding: '7px 11px', borderRadius: 8,
           background: 'var(--primary-soft)', border: '1px solid var(--primary-border)',
         }}>{rightLink.label}</Link>
       )}

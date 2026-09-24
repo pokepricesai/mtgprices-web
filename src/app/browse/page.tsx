@@ -31,15 +31,19 @@ export default async function BrowsePage() {
 
   return (
     <div style={{ maxWidth: 1180, margin: '0 auto', padding: '32px 24px 64px' }}>
-      <div style={{ marginBottom: 20 }}>
-        <div className="label-mono">Browse</div>
-        <h1 style={{ margin: '6px 0 0', fontSize: 30 }}>Magic sets</h1>
-        <p style={{ color: 'var(--text-muted)', marginTop: 8, maxWidth: 720, lineHeight: 1.6 }}>
-          {sets.length.toLocaleString()} sets indexed. Filter by set type (expansion, commander,
-          masters, promo, and more) or by release year. Sort by release date, name, size,
-          estimated value or 30 day change. Set values are cheapest nonfoil TCGplayer USD retail
-          per printing.
-        </p>
+      <div className="mtg-page-hero">
+        <div className="mtg-mana-crest right" aria-hidden />
+        <div className="mtg-arcane-veil" aria-hidden />
+        <div style={{ position: 'relative' }}>
+          <div className="label-mono">Browse</div>
+          <h1 style={{ margin: '4px 0 0', fontSize: 26, letterSpacing: '-0.015em' }}>Magic sets</h1>
+          <p style={{ color: 'var(--text-muted)', marginTop: 6, maxWidth: 720, lineHeight: 1.6, fontSize: 14 }}>
+            {sets.length.toLocaleString()} sets indexed. Filter by set type (expansion, commander,
+            masters, promo, and more) or by release year. Sort by release date, name, size,
+            estimated value or 30 day change. Set values are cheapest nonfoil TCGplayer USD retail
+            per printing.
+          </p>
+        </div>
       </div>
       <BrowseClient
         sets={sets}

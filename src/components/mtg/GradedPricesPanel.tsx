@@ -94,10 +94,10 @@ export default function GradedPricesPanel({ bundle, setCode, collectorNumber, fi
       <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 12 }}>
         <div>
           <div className="label-mono">Graded market</div>
-          <h2 style={{ margin: '4px 0 6px', fontSize: 22, lineHeight: 1.15, fontFamily: 'Outfit, system-ui, sans-serif', fontWeight: 700 }}>
+          <h2 style={{ margin: '4px 0 6px', fontSize: 19, lineHeight: 1.2, fontFamily: 'Outfit, system-ui, sans-serif', fontWeight: 700, letterSpacing: '-0.015em' }}>
             Graded card prices
           </h2>
-          <p style={{ margin: 0, fontSize: 12.5, color: 'var(--graded-fg-muted, #A6ADBE)', maxWidth: 520 }} title={helpText}>
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--graded-fg-muted, #A6ADBE)', maxWidth: 520, lineHeight: 1.55 }} title={helpText}>
             {helpText}
           </p>
         </div>

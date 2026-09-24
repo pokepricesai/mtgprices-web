@@ -27,13 +27,17 @@ export default async function FormatsIndex() {
 
   return (
     <div style={{ maxWidth: 1180, margin: '0 auto', padding: '32px 24px 80px' }}>
-      <div style={{ marginBottom: 24 }}>
-        <div className="label-mono" style={{ marginBottom: 6 }}>Play</div>
-        <h1 style={{ margin: 0, fontSize: 30 }}>MTG formats</h1>
-        <p style={{ color: 'var(--text-muted)', marginTop: 6, fontSize: 15, maxWidth: 720 }}>
-          Every format we have legality data for. Counts are derived directly from Scryfall's legality feed,
-          so bans and restrictions update as Wizards publishes them.
-        </p>
+      <div className="mtg-page-hero">
+        <div className="mtg-mana-crest right" aria-hidden />
+        <div className="mtg-arcane-veil" aria-hidden />
+        <div style={{ position: 'relative' }}>
+          <div className="label-mono" style={{ marginBottom: 4 }}>Play</div>
+          <h1 style={{ margin: 0, fontSize: 26, letterSpacing: '-0.015em' }}>MTG formats</h1>
+          <p style={{ color: 'var(--text-muted)', marginTop: 6, fontSize: 13.5, maxWidth: 720, lineHeight: 1.6 }}>
+            Every format we have legality data for. Counts are derived directly from Scryfall's legality feed,
+            so bans and restrictions update as Wizards publishes them.
+          </p>
+        </div>
       </div>
 
       {FORMAT_GROUPS.map((group) => {
@@ -55,16 +59,16 @@ export default async function FormatsIndex() {
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                    <h2 style={{ margin: 0, fontSize: 18 }}>{f.label}</h2>
+                    <h2 style={{ margin: 0, fontSize: 16, letterSpacing: '-0.01em' }}>{f.label}</h2>
                     <span style={{
-                      fontSize: 11, color: 'var(--text-muted)',
+                      fontSize: 10.5, color: 'var(--text-muted)',
                       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
                     }}>{f.key}</span>
                   </div>
-                  <p style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 6, lineHeight: 1.5, minHeight: 40 }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: 12.5, marginTop: 6, lineHeight: 1.5, minHeight: 38 }}>
                     {f.blurb}
                   </p>
-                  <div style={{ display: 'flex', gap: 12, marginTop: 12, fontSize: 12, color: 'var(--text-muted)' }}>
+                  <div style={{ display: 'flex', gap: 12, marginTop: 10, fontSize: 11.5, color: 'var(--text-muted)' }}>
                     <span><strong style={{ color: 'var(--green)' }}>{f.legal.toLocaleString()}</strong> legal</span>
                     {f.banned > 0 && <span><strong style={{ color: 'var(--red)' }}>{f.banned}</strong> banned</span>}
                     {f.restricted > 0 && <span><strong style={{ color: 'var(--amber)' }}>{f.restricted}</strong> restricted</span>}
