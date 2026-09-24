@@ -30,7 +30,9 @@ vi.mock('@/lib/tcggraph/ingest-core.mjs', async () => {
 const successResult = (gameSlug: string) => ({
   status: 'success',
   gameSlug,
-  gameId: gameSlug === 'one-piece' ? 'onepiece' : 'lorcana',
+  gameId: gameSlug === 'one-piece' ? 'onepiece'
+        : gameSlug === 'magic-the-gathering' ? 'mtg'
+        : 'lorcana',
   stopReason: 'catalogue_exhausted',
   runId: 'test-run-id',
   startedAt: new Date().toISOString(),
@@ -99,12 +101,23 @@ describe('tcggraph-refresh cron endpoint - env gate', () => {
     })
   })
 
-  it('default (env var unset) is disabled', async () => {
+  it('default (env var unset) is enabled - kill switch is opt-out only', async () => {
+    //  Post-Slice-5 the flag is a kill-switch. Unset means "run".
+    //  Only the explicit string 'false' disables the endpoint.
     await withEnv({ CRON_SECRET: 'sekret', TCGGRAPH_CRON_ENABLED: undefined }, async () => {
+      refreshMock.mockClear()
       const res = await GET(req({ authorization: 'Bearer sekret' }, 'https://mtgprices.io/api/cron/tcggraph-refresh?game=disney-lorcana'))
-      expect(res.status).toBe(202)
-      const body = await res.json()
-      expect(body.reason).toBe('cron_disabled')
+      expect(res.status).toBe(200)
+      expect(refreshMock).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('empty-string TCGGRAPH_CRON_ENABLED is treated as unset (enabled)', async () => {
+    await withEnv({ CRON_SECRET: 'sekret', TCGGRAPH_CRON_ENABLED: '' }, async () => {
+      refreshMock.mockClear()
+      const res = await GET(req({ authorization: 'Bearer sekret' }, 'https://mtgprices.io/api/cron/tcggraph-refresh?game=disney-lorcana'))
+      expect(res.status).toBe(200)
+      expect(refreshMock).toHaveBeenCalledTimes(1)
     })
   })
 })
@@ -117,20 +130,21 @@ describe('tcggraph-refresh cron endpoint - allowlist', () => {
       expect(res.status).toBe(400)
       const body = await res.json()
       expect(body.reason).toBe('missing_game_param')
-      expect(body.allowed).toEqual(expect.arrayContaining(['one-piece', 'disney-lorcana']))
+      expect(body.allowed).toEqual(expect.arrayContaining(['one-piece', 'disney-lorcana', 'magic-the-gathering']))
       expect(refreshMock).not.toHaveBeenCalled()
     })
   })
 
-  it('rejects MTG with 400 game_not_scheduled', async () => {
+  it('runs MTG when scheduled (every other day cadence, added after Slice 5)', async () => {
     await withEnv({ CRON_SECRET: 'sekret', TCGGRAPH_CRON_ENABLED: 'true' }, async () => {
       refreshMock.mockClear()
       const res = await GET(req({ authorization: 'Bearer sekret' }, 'https://mtgprices.io/api/cron/tcggraph-refresh?game=magic-the-gathering'))
-      expect(res.status).toBe(400)
+      expect(res.status).toBe(200)
       const body = await res.json()
-      expect(body.reason).toBe('game_not_scheduled')
-      expect(body.game).toBe('magic-the-gathering')
-      expect(refreshMock).not.toHaveBeenCalled()
+      expect(body.ok).toBe(true)
+      expect(body.gameSlug).toBe('magic-the-gathering')
+      expect(refreshMock).toHaveBeenCalledTimes(1)
+      expect(refreshMock).toHaveBeenCalledWith(expect.objectContaining({ gameSlug: 'magic-the-gathering', source: 'cron', preflightCredits: true }))
     })
   })
 

@@ -40,11 +40,14 @@ export async function GET(req: NextRequest | Request) {
   const auth = req.headers.get('authorization')
   if (auth !== `Bearer ${cronSecret}`) return unauthorized()
 
-  const enabled = (process.env.TCGGRAPH_CRON_ENABLED ?? 'false').trim() === 'true'
-  if (!enabled) {
+  //  Kill-switch. Defaults to enabled (post-Slice 5). Set
+  //  TCGGRAPH_CRON_ENABLED='false' explicitly if the pipeline needs to
+  //  be paused without a redeploy.
+  const disabled = (process.env.TCGGRAPH_CRON_ENABLED ?? '').trim().toLowerCase() === 'false'
+  if (disabled) {
     return NextResponse.json({
       ok: false, reason: 'cron_disabled',
-      note: 'set TCGGRAPH_CRON_ENABLED=true in Vercel Production to enable',
+      note: 'TCGGRAPH_CRON_ENABLED=false is set in the environment - unset it to resume',
     }, { status: 202 })
   }
 

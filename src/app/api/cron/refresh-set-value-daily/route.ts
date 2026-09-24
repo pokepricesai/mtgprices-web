@@ -95,8 +95,9 @@ async function getIngestRunForDate(
   observedOn: string,
 ): Promise<IngestState> {
   // Most recent mtgjson_all_prices@v1 run whose notes.only_date is
-  // today. Filtering on JSONB via ->>'only_date' with an EQ text
-  // predicate is index-free but the row volume here is tiny (~200/yr).
+  // today. market_import_runs.notes is a `text` column carrying stringified
+  // JSON (not jsonb), so `->>` filtering won't work and PostgREST
+  // returns the value as an unparsed string. Parse defensively here.
   const { data, error } = await supabase
     .from('market_import_runs')
     .select('id, status, completed_at, notes')
@@ -108,8 +109,9 @@ async function getIngestRunForDate(
     console.warn('cron ingest-check failed:', error.message)
     return { completed: false, completed_at: null, status: null, run_id: null }
   }
-  for (const row of (data ?? []) as Array<{ id: string; status: string; completed_at: string | null; notes: any }>) {
-    const noteDate = (row.notes && row.notes.only_date) ?? null
+  for (const row of (data ?? []) as Array<{ id: string; status: string; completed_at: string | null; notes: unknown }>) {
+    const parsed = parseNotes(row.notes)
+    const noteDate = (parsed && typeof parsed === 'object' && 'only_date' in parsed ? (parsed as { only_date?: unknown }).only_date : null) ?? null
     if (noteDate !== observedOn) continue
     return {
       completed: row.status === 'success' && !!row.completed_at,
@@ -119,6 +121,16 @@ async function getIngestRunForDate(
     }
   }
   return { completed: false, completed_at: null, status: null, run_id: null }
+}
+
+function parseNotes(raw: unknown): Record<string, unknown> | null {
+  if (raw == null) return null
+  if (typeof raw === 'string') {
+    try { const v = JSON.parse(raw); return v && typeof v === 'object' ? v as Record<string, unknown> : null }
+    catch { return null }
+  }
+  if (typeof raw === 'object') return raw as Record<string, unknown>
+  return null
 }
 
 async function countObservationsForDate(

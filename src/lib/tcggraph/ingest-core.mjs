@@ -67,12 +67,14 @@ export const SUPPORTED_GAMES = Object.freeze({
   'star-wars-unlimited':  'swu',
 })
 
-/** Games the scheduled cron may automatically refresh. Slice 5 launch
- *  scope. YGO and MTG are deliberately excluded; the operator must
- *  bump this map before enabling additional automated games. */
+/** Games the scheduled cron may automatically refresh. MTG runs every
+ *  other day (larger catalogue, ~2 112 credits/run). Lorcana and One
+ *  Piece run daily (cheap catalogues, <200 credits combined per day).
+ *  YGO is still refreshed manually - PokePrices owns that pipeline. */
 export const SCHEDULED_ALLOWLIST = Object.freeze({
-  'one-piece':        'onepiece',
-  'disney-lorcana':   'lorcana',
+  'magic-the-gathering': 'mtg',
+  'one-piece':           'onepiece',
+  'disney-lorcana':      'lorcana',
 })
 
 // ---------------------------------------------------------------------
