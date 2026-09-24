@@ -34,8 +34,20 @@
       "schedule": "45 6 * * *"
     },
     {
-      "path": "/api/cron/tcggraph-refresh?game=magic-the-gathering",
+      "path": "/api/cron/tcggraph-refresh?game=magic-the-gathering&maxPages=350",
       "schedule": "0 3 */2 * *"
+    },
+    {
+      "path": "/api/cron/tcggraph-refresh?game=magic-the-gathering&continue=1&maxPages=350",
+      "schedule": "20 3 */2 * *"
+    },
+    {
+      "path": "/api/cron/tcggraph-refresh?game=magic-the-gathering&continue=1&maxPages=350",
+      "schedule": "40 3 */2 * *"
+    },
+    {
+      "path": "/api/cron/tcggraph-refresh?game=magic-the-gathering&continue=1&maxPages=350",
+      "schedule": "0 4 */2 * *"
     }
   ],
   "functions": {

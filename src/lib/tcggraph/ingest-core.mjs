@@ -98,31 +98,54 @@ export const FRESHNESS_WARNING_HOURS = 72
 // TCGGraph fetch primitive.
 // ---------------------------------------------------------------------
 
+const FETCH_TIMEOUT_MS = 120_000
+
 export async function tcgFetch(path, query = {}) {
   const url = new URL('https://api.tcggraph.com/v1' + (path.startsWith('/') ? path : '/' + path))
   for (const [k, v] of Object.entries(query)) {
     if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v))
   }
-  const res = await fetch(url.toString(), {
-    headers: {
-      accept: 'application/json',
-      authorization: 'Bearer ' + requireEnv('TCGGRAPH_API_KEY'),
-      'user-agent': 'MTGPrices-tcg/1.0',
-    },
-    signal: AbortSignal.timeout(60_000),
-  })
-  const body = res.status === 200 ? await res.json() : null
-  return {
-    status: res.status,
-    body,
-    cost:              Number(res.headers.get('x-credits-cost'))       || 0,
-    creditsRemaining:  numberOrNull(res.headers.get('x-credits-remaining')),
-    dailyRemaining:    numberOrNull(res.headers.get('x-daily-remaining')),
-    dailyLimit:        numberOrNull(res.headers.get('x-daily-limit')),
-    creditsLimit:      numberOrNull(res.headers.get('x-credits-limit')),
-    retryAfter:        numberOrNull(res.headers.get('retry-after')),
+  //  Two attempts with exponential-ish backoff, gated by a 120s per-call
+  //  budget. Real-world observation: intermittent 10-15s hangs on the
+  //  first fetch of a session (likely DNS/TLS warm-up) then normal
+  //  <500 ms responses. Retrying protects the CLI from those.
+  const maxAttempts = 2
+  let lastErr = null
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await fetch(url.toString(), {
+        headers: {
+          accept: 'application/json',
+          authorization: 'Bearer ' + requireEnv('TCGGRAPH_API_KEY'),
+          'user-agent': 'MTGPrices-tcg/1.0',
+        },
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      })
+      const body = res.status === 200 ? await res.json() : null
+      return {
+        status: res.status,
+        body,
+        cost:              Number(res.headers.get('x-credits-cost'))       || 0,
+        creditsRemaining:  numberOrNull(res.headers.get('x-credits-remaining')),
+        dailyRemaining:    numberOrNull(res.headers.get('x-daily-remaining')),
+        dailyLimit:        numberOrNull(res.headers.get('x-daily-limit')),
+        creditsLimit:      numberOrNull(res.headers.get('x-credits-limit')),
+        retryAfter:        numberOrNull(res.headers.get('retry-after')),
+      }
+    } catch (err) {
+      lastErr = err
+      //  Only retry on network-level failures (abort, ECONN*). HTTP
+      //  status errors do NOT throw here so they are already returned.
+      if (attempt < maxAttempts) {
+        await sleep(1000 * attempt)
+        continue
+      }
+    }
   }
+  throw lastErr
 }
+
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)) }
 
 function numberOrNull(v) {
   if (v == null || v === '') return null
