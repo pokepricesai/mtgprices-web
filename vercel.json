@@ -34,6 +34,14 @@
       "schedule": "45 6 * * *"
     },
     {
+      "path": "/api/cron/tcggraph-refresh?game=yugioh&maxPages=400",
+      "schedule": "15 7 * * *"
+    },
+    {
+      "path": "/api/cron/tcggraph-refresh?game=yugioh&continue=1&maxPages=400",
+      "schedule": "35 7 * * *"
+    },
+    {
       "path": "/api/cron/tcggraph-refresh?game=magic-the-gathering&maxPages=350",
       "schedule": "0 3 */2 * *"
     },

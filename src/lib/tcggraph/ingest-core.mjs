@@ -70,11 +70,14 @@ export const SUPPORTED_GAMES = Object.freeze({
 /** Games the scheduled cron may automatically refresh. MTG runs every
  *  other day (larger catalogue, ~2 112 credits/run). Lorcana and One
  *  Piece run daily (cheap catalogues, <200 credits combined per day).
- *  YGO is still refreshed manually - PokePrices owns that pipeline. */
+ *  YGO joined this pipeline for the specialist-sites launch programme;
+ *  it runs daily in two 07:xx UTC chunks (maxPages=400 each) to cover
+ *  the ~770-page catalogue safely inside the Vercel maxDuration ceiling. */
 export const SCHEDULED_ALLOWLIST = Object.freeze({
   'magic-the-gathering': 'mtg',
   'one-piece':           'onepiece',
   'disney-lorcana':      'lorcana',
+  'yugioh':              'ygo',
 })
 
 // ---------------------------------------------------------------------
