@@ -77,33 +77,46 @@ export type MtgSetCard = MtgPrinting & {
   oracle_colors: string[] | null
 }
 
-/** All English printings in a given set, ordered by collector number. */
+/** All English printings in a given set, ordered by collector number.
+ *  Paginates in 1000-row windows because PostgREST enforces a
+ *  1000-row max regardless of the `.limit(3000)` hint. Secret Lair
+ *  (SLD) has 2,700+ printings; without pagination we silently
+ *  truncated the grid + set-completion denominator. */
 export async function listPrintingsForSet(setCode: string, opts: { includeDigital?: boolean } = {}): Promise<MtgSetCard[]> {
   const supabase = getSupabaseServiceClient()
   const normalised = setCode.trim().toLowerCase()
   if (!normalised) return []
 
-  let q = supabase
-    .from('mtg_printings')
-    .select(`
-      id, oracle_card_id, set_id, scryfall_id, set_code, collector_number, lang, name,
-      layout, rarity, artist, image_uri, image_uri_small, art_crop_uri, released_at,
-      borderless, full_art, promo, digital, scryfall_uri, reprint, textless, variation,
-      oracle:mtg_oracle_cards ( name, type_line, mana_cost, colors )
-    `)
-    .eq('set_code', normalised)
-    .eq('lang', 'en')
-    .order('collector_number', { ascending: true })
-    .limit(3000)
+  const PAGE = 1000
+  const all: any[] = []
+  for (let offset = 0; ; offset += PAGE) {
+    let q = supabase
+      .from('mtg_printings')
+      .select(`
+        id, oracle_card_id, set_id, scryfall_id, set_code, collector_number, lang, name,
+        layout, rarity, artist, image_uri, image_uri_small, art_crop_uri, released_at,
+        borderless, full_art, promo, digital, scryfall_uri, reprint, textless, variation,
+        oracle:mtg_oracle_cards ( name, type_line, mana_cost, colors )
+      `)
+      .eq('set_code', normalised)
+      .eq('lang', 'en')
+      .order('collector_number', { ascending: true })
+      .range(offset, offset + PAGE - 1)
+    if (!opts.includeDigital) q = q.eq('digital', false)
 
-  if (!opts.includeDigital) q = q.eq('digital', false)
-
-  const { data, error } = await q
-  if (error) {
-    console.error('listPrintingsForSet error:', error)
-    return []
+    const { data, error } = await q
+    if (error) {
+      console.error('listPrintingsForSet error:', error)
+      return []
+    }
+    const chunk = data ?? []
+    all.push(...chunk)
+    // Break when we got a partial page (i.e. no more rows).
+    if (chunk.length < PAGE) break
+    // Belt-and-braces cap so a malformed set can't spin forever.
+    if (offset + PAGE >= 10_000) break
   }
-  return (data ?? []).map((r: any) => ({
+  return (all ?? []).map((r: any) => ({
     id: r.id,
     oracle_card_id: r.oracle_card_id,
     set_id: r.set_id,

@@ -12,6 +12,7 @@ import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
 import type { CardCapability } from './capabilities'
 import { VALUATION_BASES, findBasis, type ValuationBasis } from './valuation.data'
+import { buildCardHref } from './slug'
 
 export type CardCondition =
   | 'near_mint'
@@ -427,6 +428,42 @@ export type CollectionMissingHolding = {
   quantity: number
   card_href: string
 }
+/** Per-set completion row.
+ *
+ *  Denominator = distinct `collector_number` values in this set with
+ *  `lang='en'` and `digital=false`. This is the "master-set" reading
+ *  most MTG collectors use: every slot in the set counts once,
+ *  regardless of finish (a foil-only or nonfoil-only ownership still
+ *  fills the slot). Ignores multi-language reprints and Arena/MTGO
+ *  digital printings.
+ *
+ *  Numerator = distinct collector_numbers in that set that the user
+ *  owns in ANY finish and ANY condition.
+ *
+ *  pct is null-safe when total_slots is 0 (an unknown / edge-case set
+ *  the collector still owns; UI should render "—"). */
+export type SetCompletionRow = {
+  set_code: string
+  set_name: string
+  owned_slots: number
+  total_slots: number
+  pct: number | null
+  set_href: string
+}
+
+/** Overall progression across every set the user has any card in. */
+export type CollectionProgression = {
+  setsStarted: number       // sets where user owns >= 1 slot
+  setsComplete: number      // sets where owned_slots === total_slots
+  setsHalfOrMore: number    // sets where pct >= 0.50 (excludes complete)
+  totalOwnedSlots: number
+  totalReachableSlots: number  // sum(total_slots) across setsStarted only
+  overallPct: number | null    // totalOwnedSlots / totalReachableSlots
+  /** Sets sorted by nearness-to-complete: highest pct first, then
+   *  smallest missing count. UI can slice for "closest to complete". */
+  bySet: SetCompletionRow[]
+}
+
 export type CollectionAnalytics = {
   basis: ValuationBasis
   totalValue: number
@@ -439,6 +476,7 @@ export type CollectionAnalytics = {
   valueByFinish: CollectionAnalyticsBucket[]
   topHoldings: CollectionAnalyticsHolding[]
   missingPrices: CollectionMissingHolding[]
+  progression: CollectionProgression
 }
 
 /**
@@ -577,6 +615,89 @@ export async function getCollectionAnalytics(): Promise<CollectionAnalytics | nu
   const topHoldings = holdings.sort((a, b) => b.line_value - a.line_value).slice(0, 20)
   const missingPrices = missing.sort((a, b) => b.quantity - a.quantity).slice(0, 20)
 
+  // ── Set completion ───────────────────────────────────────────
+  // Denominator per set = distinct collector_numbers in the set with
+  // lang='en' and digital=false. Numerator = distinct collector_numbers
+  // in that set the user owns. Only sets the user has at least one
+  // card in appear; we don't display "0% Alpha" as a completion goal.
+  const ownedSlotsBySet = new Map<string, Set<string>>()
+  for (const h of hydrated) {
+    const code = h.printing.set_code
+    const num = h.printing.collector_number
+    if (!code || !num) continue
+    let s = ownedSlotsBySet.get(code)
+    if (!s) { s = new Set(); ownedSlotsBySet.set(code, s) }
+    s.add(num)
+  }
+  const startedSetCodes = Array.from(ownedSlotsBySet.keys())
+  const totalsBySet = new Map<string, number>()
+  if (startedSetCodes.length > 0) {
+    const sSvc = getSupabaseServiceClient()
+    // Batch counts. Use head+count on distinct collector_numbers per
+    // set. Postgrest doesn't do DISTINCT counts cleanly, so we fetch
+    // rows and dedupe client-side. Each set is one query — a signed-in
+    // user with ~50 sets pays ~50 fast reads on cached indexes.
+    const CHUNK = 20
+    for (let i = 0; i < startedSetCodes.length; i += CHUNK) {
+      const codes = startedSetCodes.slice(i, i + CHUNK)
+      const { data: printings, error: perr } = await sSvc
+        .from('mtg_printings')
+        .select('set_code, collector_number')
+        .in('set_code', codes)
+        .eq('lang', 'en').eq('digital', false)
+        .not('collector_number', 'is', null)
+      if (perr) { console.error('progression: printings err', perr); continue }
+      const perSet = new Map<string, Set<string>>()
+      for (const r of (printings ?? []) as { set_code: string; collector_number: string }[]) {
+        let set = perSet.get(r.set_code)
+        if (!set) { set = new Set(); perSet.set(r.set_code, set) }
+        set.add(r.collector_number)
+      }
+      for (const [code, set] of Array.from(perSet.entries())) totalsBySet.set(code, set.size)
+    }
+  }
+  const bySet: SetCompletionRow[] = []
+  let totalOwnedSlots = 0
+  let totalReachableSlots = 0
+  for (const [code, owned] of Array.from(ownedSlotsBySet.entries())) {
+    const setName = setNameByCode.get(code) ?? code.toUpperCase()
+    const total = totalsBySet.get(code) ?? 0
+    const ownedCount = owned.size
+    const pct = total > 0 ? ownedCount / total : null
+    totalOwnedSlots += ownedCount
+    totalReachableSlots += total
+    bySet.push({
+      set_code: code,
+      set_name: setName,
+      owned_slots: ownedCount,
+      total_slots: total,
+      pct,
+      set_href: `/set/${code}`,
+    })
+  }
+  // Sort by "closest to complete but not yet there" — pct DESC among
+  // incomplete sets, then complete sets. The UI slices for "closest
+  // to finishing" and "top complete" separately.
+  bySet.sort((a, b) => {
+    const ap = a.pct ?? 0
+    const bp = b.pct ?? 0
+    if (ap === 1 && bp !== 1) return 1
+    if (bp === 1 && ap !== 1) return -1
+    if (ap !== bp) return bp - ap
+    return a.set_name.localeCompare(b.set_name)
+  })
+  const setsComplete = bySet.filter((s) => s.pct === 1).length
+  const setsHalfOrMore = bySet.filter((s) => s.pct != null && s.pct >= 0.5 && s.pct < 1).length
+  const progression: CollectionProgression = {
+    setsStarted: bySet.length,
+    setsComplete,
+    setsHalfOrMore,
+    totalOwnedSlots,
+    totalReachableSlots,
+    overallPct: totalReachableSlots > 0 ? totalOwnedSlots / totalReachableSlots : null,
+    bySet,
+  }
+
   return {
     basis,
     totalValue: Math.round(totalValue * 100) / 100,
@@ -589,6 +710,7 @@ export async function getCollectionAnalytics(): Promise<CollectionAnalytics | nu
     valueByFinish: bucketise(valueByFinishMap, 4),
     topHoldings,
     missingPrices,
+    progression,
   }
 }
 
@@ -599,9 +721,10 @@ function buildCardHrefFromPrinting(p: {
   set_code: string; collector_number: string | null; name: string;
 }): string {
   if (!p.set_code) return '#'
-  const nameSlug = p.name.toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-  const seg = p.collector_number ? `${p.collector_number}-${nameSlug}` : nameSlug
-  return `/set/${p.set_code}/card/${seg}`
+  // Uses the shared buildCardHref which percent-encodes collector numbers
+  // so Secret Lair "★" variants (and any non-ASCII promo markers) resolve
+  // on Vercel's router instead of returning 404.
+  return buildCardHref(p.set_code, p.collector_number, p.name)
 }
 
 /** Reusable helpers for the future Deck Builder. */

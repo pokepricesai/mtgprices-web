@@ -15,6 +15,7 @@ import { checkQuota, logUsage, AI_LIMITS } from '@/lib/ai/rate-limit'
 import { runAi } from '@/lib/ai/run'
 import { sanitiseUserData, aiConfigured } from '@/lib/ai/provider'
 import { bindPublicAiTools, PUBLIC_AI_SYSTEM_PROMPT } from '@/lib/ai/public-tools'
+import { buildCardHref } from '@/lib/mtg/slug'
 
 export const runtime = 'nodejs'
 
@@ -156,15 +157,13 @@ async function hydrateCards(oracleIds: string[]): Promise<Array<{
   for (const oracleId of oracleIds) {
     const p = bestPerOracle.get(oracleId)
     if (!p) continue
-    const nameSlug = String(p.name).toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-    const seg = p.collector_number ? `${p.collector_number}-${nameSlug}` : nameSlug
     rows.push({
       oracle_card_id: p.oracle_card_id,
       name: p.name,
       set_code: p.set_code,
       collector_number: p.collector_number,
       image_uri_small: p.image_uri_small,
-      card_href: `/set/${p.set_code}/card/${seg}`,
+      card_href: buildCardHref(p.set_code, p.collector_number, p.name),
     })
   }
   return rows

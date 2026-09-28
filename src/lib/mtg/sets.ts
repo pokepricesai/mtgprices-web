@@ -58,13 +58,21 @@ export async function listSets(opts: {
     releasedBy,
   } = opts
 
+  // Fetch a larger window than the caller asked for so the client-side
+  // PUBLIC_SET_TYPES filter doesn't return short. The DB has many
+  // set_types not in PUBLIC_SET_TYPES (token, art_series, memorabilia,
+  // funny, minigame, alchemy, …) — if the top-N by release-date are
+  // mostly tokens, the homepage "Recently released" grid comes back
+  // near-empty. 6× multiplier gives comfortable headroom without
+  // paying a real cost.
+  const fetchLimit = includeNonPublicTypes ? limit : Math.min(500, Math.max(limit, limit * 6))
   let q = supabase
     .from('mtg_sets')
     .select(
       'id, code, name, set_type, released_at, card_count, parent_set_code, block, digital, foil_only, nonfoil_only, icon_svg_uri'
     )
     .order('released_at', { ascending: false, nullsFirst: false })
-    .limit(limit)
+    .limit(fetchLimit)
 
   if (!includeDigital) q = q.eq('digital', false)
   if (releasedBy) q = q.lte('released_at', releasedBy)
@@ -76,7 +84,8 @@ export async function listSets(opts: {
   }
   const rows = (data ?? []) as MtgSet[]
   if (includeNonPublicTypes) return rows
-  return rows.filter((s) => !s.set_type || PUBLIC_SET_TYPES.has(s.set_type))
+  const publicRows = rows.filter((s) => !s.set_type || PUBLIC_SET_TYPES.has(s.set_type))
+  return publicRows.slice(0, limit)
 }
 
 /** Sets whose release date is strictly in the future. Used to power

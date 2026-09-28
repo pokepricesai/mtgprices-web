@@ -37,5 +37,26 @@ export function parseCardSlug(slug: string): { collectorNumber: string; nameSlug
 }
 
 export function buildCardSlug(collectorNumber: string, cardName: string): string {
-  return `${collectorNumber}-${slugifyCardName(cardName)}`
+  // Percent-encode the collector segment because Secret Lair (and a
+  // handful of other promo lines) use non-ASCII markers ("★" for
+  // star-foil variants) that Vercel's router rejects when raw. The
+  // trailing name-slug is already ASCII-safe from slugifyCardName.
+  // parseCardSlug decodes the collector back through Next.js's URL
+  // pipeline, so DB comparisons remain against the un-encoded value.
+  return `${encodeURIComponent(collectorNumber)}-${slugifyCardName(cardName)}`
+}
+
+/** Build the URL path to a card page. Percent-encodes the collector
+ *  number because Secret Lair and other promo printings use non-ASCII
+ *  markers ("★" for star-foil variants) that must be encoded in the
+ *  URL path per RFC 3986 — otherwise Vercel's router returns 404 on
+ *  the raw star. buildCardSlug returns the un-encoded pair so callers
+ *  that need the internal representation (sitemap indexing, slug
+ *  parsing) continue to work; buildCardHref is what UI code should
+ *  emit into href / Link. */
+export function buildCardHref(setCode: string, collectorNumber: string | null, cardName: string): string {
+  if (!collectorNumber) {
+    return `/set/${setCode}/card/${slugifyCardName(cardName)}`
+  }
+  return `/set/${setCode}/card/${encodeURIComponent(collectorNumber)}-${slugifyCardName(cardName)}`
 }

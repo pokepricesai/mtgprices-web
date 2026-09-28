@@ -10,6 +10,7 @@ import type {
   CollectionAnalyticsBucket,
   CollectionAnalyticsHolding,
   CollectionMissingHolding,
+  SetCompletionRow,
 } from '@/lib/mtg/collection'
 
 type Props = { analytics: CollectionAnalytics }
@@ -40,6 +41,8 @@ export default function CollectionAnalyticsPanel({ analytics }: Props) {
           {' '}{analytics.totalMissingPrice.toLocaleString()} without a price on this basis.
         </div>
       </div>
+
+      <ProgressionPanel progression={analytics.progression} />
 
       <div style={{
         display: 'grid', gap: 14,
@@ -195,4 +198,149 @@ function MissingRow({ m }: { m: CollectionMissingHolding }) {
 
 function currencySymbol(currency: 'USD' | 'EUR'): string {
   return currency === 'EUR' ? '€' : '$'
+}
+
+function fmtPct(pct: number | null): string {
+  if (pct == null) return '—'
+  const raw = pct * 100
+  if (raw >= 99.5 && pct < 1) return '99%'   // never round INcomplete to 100%
+  return `${Math.round(raw)}%`
+}
+
+function ProgressionPanel({ progression }: { progression: CollectionAnalytics['progression'] }) {
+  if (progression.setsStarted === 0) {
+    return (
+      <div style={{
+        padding: 16, background: 'var(--surface)', border: '1px solid var(--border)',
+        borderRadius: 14, fontSize: 13, color: 'var(--text-muted)',
+      }}>
+        <div className="label-mono" style={{ color: 'var(--gold-600)', marginBottom: 4 }}>Set completion</div>
+        Add cards from a set to start tracking your completion progress across MTG sets.
+      </div>
+    )
+  }
+  const closest = progression.bySet.filter((s) => s.pct != null && s.pct < 1).slice(0, 5)
+  const completed = progression.bySet.filter((s) => s.pct === 1).slice(0, 5)
+
+  return (
+    <div style={{
+      padding: 16, background: 'var(--surface)', border: '1px solid var(--border)',
+      borderRadius: 14, display: 'grid', gap: 14,
+    }}>
+      <div>
+        <div className="label-mono" style={{ color: 'var(--gold-600)' }}>Set completion</div>
+        <div style={{ marginTop: 4, fontSize: 12, color: 'var(--text-muted)', maxWidth: 640, lineHeight: 1.55 }}>
+          Completion counts each distinct <em>collector number</em> in a set as one slot.
+          Owning any finish (nonfoil, foil, etched) fills the slot. English printings only.
+          Digital-only printings and non-English reprints do not count.
+        </div>
+      </div>
+
+      <div style={{
+        display: 'grid', gap: 10,
+        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+      }}>
+        <StatTile
+          label="Sets started"
+          value={progression.setsStarted.toLocaleString()}
+          hint="Sets you own at least one card from."
+        />
+        <StatTile
+          label="Sets 100%"
+          value={progression.setsComplete.toLocaleString()}
+          hint="Sets where you own every collector-number slot."
+          highlight={progression.setsComplete > 0}
+        />
+        <StatTile
+          label="Sets ≥ 50%"
+          value={progression.setsHalfOrMore.toLocaleString()}
+          hint="Started sets that are more than half done (excludes 100%)."
+        />
+        <StatTile
+          label="Overall progress"
+          value={fmtPct(progression.overallPct)}
+          hint={`${progression.totalOwnedSlots.toLocaleString()} of ${progression.totalReachableSlots.toLocaleString()} slots owned across started sets.`}
+        />
+      </div>
+
+      {closest.length > 0 && (
+        <div>
+          <div className="label-mono" style={{ marginBottom: 6 }}>Closest to complete</div>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
+            {closest.map((s) => <SetRow key={s.set_code} s={s} />)}
+          </ul>
+        </div>
+      )}
+      {completed.length > 0 && (
+        <div>
+          <div className="label-mono" style={{ marginBottom: 6, color: 'var(--gold-600)' }}>Complete sets</div>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 6 }}>
+            {completed.map((s) => <SetRow key={s.set_code} s={s} />)}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function StatTile({ label, value, hint, highlight }: { label: string; value: string; hint: string; highlight?: boolean }) {
+  return (
+    <div
+      title={hint}
+      style={{
+        padding: '10px 12px', borderRadius: 10,
+        background: highlight ? 'var(--accent-soft)' : 'var(--bg-light)',
+        border: `1px solid ${highlight ? 'var(--accent-border)' : 'var(--border)'}`,
+      }}
+    >
+      <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.4, fontWeight: 600 }}>{label}</div>
+      <div style={{
+        fontSize: 22, fontWeight: 800, marginTop: 2,
+        fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+        color: highlight ? 'var(--gold-700, var(--gold-600))' : 'var(--text-strong)',
+      }}>{value}</div>
+    </div>
+  )
+}
+
+function SetRow({ s }: { s: SetCompletionRow }) {
+  const pct = s.pct ?? 0
+  const barWidth = Math.max(3, Math.round(pct * 100))
+  const missing = Math.max(0, s.total_slots - s.owned_slots)
+  return (
+    <li>
+      <Link
+        href={s.set_href}
+        style={{
+          display: 'grid', gap: 4,
+          padding: '8px 10px', borderRadius: 8, background: 'var(--bg-light)',
+          textDecoration: 'none', color: 'var(--text)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-strong)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {s.set_name}
+          </span>
+          <span style={{
+            fontSize: 12, fontWeight: 700,
+            fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+            color: pct === 1 ? 'var(--gold-600)' : 'var(--text-strong)',
+          }}>
+            {fmtPct(s.pct)} · {s.owned_slots}/{s.total_slots || '?'}
+          </span>
+        </div>
+        <div style={{ height: 4, background: 'var(--bg-strong)', borderRadius: 999, overflow: 'hidden' }}>
+          <div style={{
+            width: `${barWidth}%`, height: '100%',
+            background: pct === 1
+              ? 'linear-gradient(90deg, var(--gold-400), var(--gold-500))'
+              : 'linear-gradient(90deg, var(--gold-300), var(--gold-500))',
+          }} />
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+          {pct === 1 ? 'Complete' : missing > 0 ? `${missing.toLocaleString()} slot(s) remaining` : 'Slot count unknown'}
+        </div>
+      </Link>
+    </li>
+  )
 }
