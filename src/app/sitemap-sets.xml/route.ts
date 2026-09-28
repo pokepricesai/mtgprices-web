@@ -7,12 +7,15 @@
 
 import { NextResponse } from 'next/server'
 import { listSets } from '@/lib/mtg/sets'
-import { SITE_ORIGIN } from '@/lib/seo'
+import { SITE_ORIGIN, isPreviewBuild } from '@/lib/seo'
 
 const BUILD_ISO = new Date().toISOString()
 
 export async function GET() {
-  const sets = await listSets({ limit: 5000 })
+  // Preview deployments intentionally lack SUPABASE_SERVICE_ROLE_KEY,
+  // so listSets (service-role) would throw during prerender. Emit a
+  // valid empty sitemap on Preview — Preview is noindex.
+  const sets = isPreviewBuild() ? [] : await listSets({ limit: 5000 })
 
   const urls = sets
     .map((s) => {

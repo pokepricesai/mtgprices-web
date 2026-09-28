@@ -72,6 +72,17 @@ export function policyForPath(path: string): IndexPolicy {
 /** Public canonical origin. Never www, always https. */
 export const SITE_ORIGIN = 'https://mtgprices.io'
 
+/** True when the current build/runtime is a Vercel Preview deployment.
+ *  Preview builds intentionally lack the production SUPABASE_SERVICE_ROLE_KEY —
+ *  the service-role client is only present in Production. Sitemap prerender
+ *  paths call this to short-circuit DB access and emit an empty valid
+ *  sitemap on Preview. Preview is always noindex, so an empty sitemap
+ *  is harmless. Production behaviour is untouched — VERCEL_ENV is never
+ *  'preview' on Production. */
+export function isPreviewBuild(): boolean {
+  return process.env.VERCEL_ENV === 'preview'
+}
+
 /** Build an absolute canonical URL for an internal path. Strips
  *  query strings by default (this is what sitemap URLs should look
  *  like). Callers that want to allow specific query params should

@@ -4,6 +4,7 @@
 import 'server-only'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
 import { slugifyCardName } from '@/lib/mtg/slug'
+import { isPreviewBuild } from '@/lib/seo'
 
 /** Total number of card-sitemap shards. 5 shards × ~22K URLs each
  *  keeps us far under Google's 50K per-sitemap cap. */
@@ -30,6 +31,12 @@ export async function fetchCardShard(shard: number): Promise<
   { setCode: string; collector: string; name: string; released_at: string | null }[]
 > {
   if (shard < 1 || shard > CARD_SITEMAP_SHARDS) return []
+  // Preview deployments intentionally lack SUPABASE_SERVICE_ROLE_KEY, so
+  // instantiating the service-role client during prerender would throw.
+  // Return no rows on Preview: the shard route still emits a valid empty
+  // <urlset/>, and Preview is noindex so a stub sitemap is harmless.
+  // Production runs with VERCEL_ENV='production' and takes the real path.
+  if (isPreviewBuild()) return []
   const supabase = getSupabaseServiceClient()
 
   const { data, error } = await supabase.rpc('mtg_sitemap_card_shard', {
