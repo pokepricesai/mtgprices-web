@@ -135,6 +135,17 @@ export async function findCards(query: FinderQuery, opts: { page?: number; pageS
   const page = Math.max(1, opts.page ?? 1)
   const pageSize = Math.min(60, Math.max(1, opts.pageSize ?? PAGE_DEFAULT))
 
+  // ── FAST PATH: set-scoped query ─────────────────────────────────
+  // When a specific set is asked for, invert the flow. Fetch that
+  // set's printings first (bounded — even Secret Lair caps around
+  // 2,700), collect their distinct oracle_ids, then filter oracle-
+  // side facets in-JS. This avoids paging the entire mtg_oracle_cards
+  // table through the RPC just to throw out 99% of oracles at the
+  // printing step. Correctness identical, latency dramatically lower.
+  if (query.setCode && query.setCode.trim().length > 0) {
+    return findCardsSetScoped(query, { page, pageSize })
+  }
+
   // ── STEP 1: oracle filter via the RPC ──────────────────────────
   // Pre-Pass 2B mini: p_limit was a hard 400. That silently clipped
   // set-scoped / rarity-scoped / broad-legality searches because the
@@ -142,11 +153,9 @@ export async function findCards(query: FinderQuery, opts: { page?: number; pageS
   // oracles. The user-observable symptom was "?set=lea returns 2".
   //
   // Fix: page through mtg_search_oracle_cards using p_offset until
-  // exhausted. No arbitrary anchor cap; the RPC's oracle-side filters
-  // still do the heavy lifting DB-side. RPC_PAGE is a batch size, not
-  // a result cap. RPC_MAX_ORACLES is a defence-in-depth ceiling — an
-  // unfiltered query would otherwise pull ~40k oracle rows and blow
-  // server memory. Filtered queries never reach it in practice.
+  // exhausted. PostgREST caps SETOF RPCs at 1000 rows per response
+  // on this project, so PAGE=1000 and we burst 10 pages in parallel
+  // before checking for a partial page.
   const wantColors = sanColors(query.colors)
   const wantCI = sanColors(query.colorIdentity)
   const baseRpcArgs = {
@@ -163,17 +172,34 @@ export async function findCards(query: FinderQuery, opts: { page?: number; pageS
     p_game_changer: query.gameChanger ? true : null,
     p_exclude_oracles: query.excludeOracleIds && query.excludeOracleIds.length > 0 ? query.excludeOracleIds : null,
   }
-  const RPC_PAGE = 5000
-  const RPC_MAX_ORACLES = 60_000  // ceiling — total distinct mtg_oracle_cards is ~40k
+  // PostgREST caps SETOF RPC responses at 1000 rows on this project
+  // regardless of the SQL LIMIT inside the function. Page with
+  // p_offset in 1000-row batches. Fire a small burst of pages in
+  // parallel, stop when a page returns partial (< PAGE) — that's
+  // the natural end-of-results signal. Sequential fallback would
+  // take ~40 round-trips on unfiltered queries; parallel bursts
+  // keep p50 to a few hundred ms while still capping worst-case at
+  // RPC_MAX_ORACLES.
+  const RPC_PAGE = 1000
+  const RPC_BURST = 10           // 10k oracles per burst
+  const RPC_MAX_ORACLES = 60_000 // ceiling — total distinct mtg_oracle_cards is ~40k
   let oracleRows: OracleRow[] = []
-  for (let offset = 0; offset < RPC_MAX_ORACLES; offset += RPC_PAGE) {
-    const { data: rpcChunk, error: rpcErr } = await supabase.rpc('mtg_search_oracle_cards', {
-      ...baseRpcArgs, p_limit: RPC_PAGE, p_offset: offset,
-    })
-    if (rpcErr) { console.error('findCards rpc err:', rpcErr); return emptyResult(query, page, pageSize) }
-    const chunk = (rpcChunk ?? []) as OracleRow[]
-    oracleRows.push(...chunk)
-    if (chunk.length < RPC_PAGE) break
+  let finished = false
+  for (let base = 0; base < RPC_MAX_ORACLES && !finished; base += RPC_BURST * RPC_PAGE) {
+    const offsets: number[] = []
+    for (let i = 0; i < RPC_BURST; i++) offsets.push(base + i * RPC_PAGE)
+    const results = await Promise.all(offsets.map((off) =>
+      supabase.rpc('mtg_search_oracle_cards', {
+        ...baseRpcArgs, p_limit: RPC_PAGE, p_offset: off,
+      }),
+    ))
+    for (const { data, error } of results) {
+      if (error) { console.error('findCards rpc err:', error); return emptyResult(query, page, pageSize) }
+      const chunk = (data ?? []) as OracleRow[]
+      oracleRows.push(...chunk)
+      if (chunk.length < RPC_PAGE) { finished = true }
+    }
+    if (results.length === 0) break
   }
 
   // Client-side filter for a second/third type filter, RPC accepts a
@@ -277,6 +303,165 @@ export async function findCards(query: FinderQuery, opts: { page?: number; pageS
     pageSize,
     appliedFilters: query,
   }
+}
+
+/** Set-scoped Card Finder path. When the user has asked for a specific
+ *  set, we invert the usual oracle-first flow: fetch the set's printings
+ *  first (bounded by set size — SLD is the biggest at ~2,700), then
+ *  filter and hydrate their oracles. No RPC pagination needed.
+ *  Applies rarity / released / artist / finish printing-scoped filters
+ *  during the printing fetch, and colours / capabilities / MV /
+ *  legality / name / reserved / game-changer / exclude oracle-side in JS.
+ */
+async function findCardsSetScoped(
+  query: FinderQuery,
+  { page, pageSize }: { page: number; pageSize: number },
+): Promise<FinderResult> {
+  const supabase = getSupabaseServiceClient()
+  const setCode = query.setCode!.trim().toLowerCase()
+
+  // 1) All English non-digital printings in the set, paginated to bust
+  //    the PostgREST 1000-row cap. Applies printing-scoped filters up-
+  //    front to avoid hydrating rows we'll throw away.
+  const PAGE = 1000
+  const printings: PrintingRow[] = []
+  for (let offset = 0; offset < 20_000; offset += PAGE) {
+    let q = supabase
+      .from('mtg_printings')
+      .select('id, oracle_card_id, set_code, collector_number, name, image_uri, image_uri_small, rarity, released_at, artist')
+      .eq('set_code', setCode)
+      .eq('lang', 'en')
+      .eq('digital', false)
+      .order('collector_number', { ascending: true })
+      .range(offset, offset + PAGE - 1)
+    if (query.rarity) q = q.eq('rarity', query.rarity)
+    if (query.releasedFrom) q = q.gte('released_at', query.releasedFrom)
+    if (query.releasedTo) q = q.lte('released_at', query.releasedTo)
+    if (query.artist && query.artist.length >= 2) q = q.ilike('artist', `%${query.artist.trim()}%`)
+    const { data, error } = await q
+    if (error) { console.error('findCardsSetScoped printings err:', error); return emptyResult(query, page, pageSize) }
+    const chunk = (data ?? []) as PrintingRow[]
+    printings.push(...chunk)
+    if (chunk.length < PAGE) break
+  }
+  if (printings.length === 0) return emptyResult(query, page, pageSize)
+
+  // 2) Pick freshest-per-oracle within this set (release date, then id
+  //    for stability). Rare in practice — SLD is the only set with
+  //    duplicate collector-number-per-oracle scenarios worth caring about.
+  const freshest = new Map<string, PrintingRow>()
+  for (const p of printings) {
+    const existing = freshest.get(p.oracle_card_id)
+    if (!existing) { freshest.set(p.oracle_card_id, p); continue }
+    if ((p.released_at ?? '') > (existing.released_at ?? '')) freshest.set(p.oracle_card_id, p)
+  }
+  const oracleIds = Array.from(freshest.keys())
+
+  // 3) Fetch the matching oracle rows in chunks and filter oracle-side
+  //    facets in JS. Same shape as OracleRow so the rest of the pipeline
+  //    reuses buildHit unchanged.
+  const IN_ORACLE_CHUNK = 200
+  const oracleRows: OracleRow[] = []
+  const oracleChunks: string[][] = []
+  for (let i = 0; i < oracleIds.length; i += IN_ORACLE_CHUNK) oracleChunks.push(oracleIds.slice(i, i + IN_ORACLE_CHUNK))
+  const oracleResults = await Promise.all(oracleChunks.map((chunk) =>
+    supabase.from('mtg_oracle_cards')
+      .select('id, name, mana_cost, mana_value, type_line, oracle_text, colors, color_identity, keywords, capabilities, layout, reserved, game_changer')
+      .in('id', chunk),
+  ))
+  for (const { data, error } of oracleResults) {
+    if (error) { console.error('findCardsSetScoped oracles err:', error); return emptyResult(query, page, pageSize) }
+    for (const r of (data ?? []) as OracleRow[]) oracleRows.push(r)
+  }
+
+  // Oracle-side JS filtering. Kept aligned with the RPC's SQL.
+  const wantColors = sanColors(query.colors)
+  const wantCI = sanColors(query.colorIdentity)
+  const excludeSet = new Set((query.excludeOracleIds ?? []))
+  const nameNeedle = query.name?.trim().toLowerCase() ?? ''
+  const typeNeedles = (query.types ?? []).map((t) => t.toLowerCase())
+
+  // Legality is a separate table — fetch legal-in oracle_ids upfront
+  // when a format filter is present, then use the set as a whitelist.
+  let legalSet: Set<string> | null = null
+  if (query.legalIn && FORMAT_BY_KEY[query.legalIn]) {
+    const { data: legalRows } = await supabase
+      .from('mtg_oracle_legalities')
+      .select('oracle_card_id')
+      .eq('format', query.legalIn)
+      .eq('legality', 'legal')
+      .in('oracle_card_id', oracleIds)
+    legalSet = new Set(((legalRows ?? []) as { oracle_card_id: string }[]).map((r) => r.oracle_card_id))
+  }
+
+  const filtered = oracleRows.filter((o) => {
+    if (excludeSet.has(o.id)) return false
+    if (nameNeedle && !o.name.toLowerCase().includes(nameNeedle)) return false
+    if (typeNeedles.length > 0) {
+      const t = (o.type_line ?? '').toLowerCase()
+      if (!typeNeedles.every((n) => t.includes(n))) return false
+    }
+    if (query.caps && query.caps.length > 0) {
+      const oc = (o.capabilities ?? []) as string[]
+      if (!query.caps.every((c) => oc.includes(c))) return false
+    }
+    if (wantColors.length > 0) {
+      const oc = (o.colors ?? []) as string[]
+      const hasHit = wantColors.some((c) => oc.includes(c))
+      const isColourless = oc.length === 0
+      if (!(hasHit || (query.colorless && isColourless))) return false
+    } else if (query.colorless && ((o.colors ?? []) as string[]).length > 0) {
+      return false
+    }
+    if (wantCI.length > 0) {
+      const ci = (o.color_identity ?? []) as string[]
+      if (!ci.every((c) => wantCI.includes(c))) return false
+    }
+    if (typeof query.manaValueMax === 'number' && (o.mana_value == null || o.mana_value > query.manaValueMax)) return false
+    if (typeof query.manaValueMin === 'number' && (o.mana_value == null || o.mana_value < query.manaValueMin)) return false
+    if (query.reservedList && !o.reserved) return false
+    if (query.gameChanger && !o.game_changer) return false
+    if (legalSet && !legalSet.has(o.id)) return false
+    return true
+  })
+
+  if (filtered.length === 0) return emptyResult(query, page, pageSize)
+
+  const oracleById = new Map<string, OracleRow>()
+  for (const o of filtered) oracleById.set(o.id, o)
+  const survivingIds = filtered.map((o) => o.id)
+
+  // 4) Prices — reuse existing helper against the freshest printings
+  //    per surviving oracle.
+  const printingIds = survivingIds.map((id) => freshest.get(id)!.id)
+  const cheapestByPrinting = await getCheapestByPrinting(printingIds, {
+    currency: query.currency, finish: query.finish,
+  })
+
+  let assembled: FinderHit[] = survivingIds.map((id) => {
+    const o = oracleById.get(id)!
+    const p = freshest.get(id)!
+    const cheapest = cheapestByPrinting.get(p.id) ?? null
+    return buildHit(o, p, cheapest, query)
+  })
+
+  const hasPriceFilter =
+    typeof query.priceMax === 'number' || typeof query.priceMin === 'number' || Boolean(query.finish)
+  if (hasPriceFilter) {
+    assembled = assembled.filter((h) => {
+      if (!h.cheapest) return false
+      if (query.currency && h.cheapest.currency !== query.currency) return false
+      if (typeof query.priceMax === 'number' && h.cheapest.price > query.priceMax) return false
+      if (typeof query.priceMin === 'number' && h.cheapest.price < query.priceMin) return false
+      return true
+    })
+  }
+
+  assembled = sortHits(assembled, query)
+  const total = assembled.length
+  const start = (page - 1) * pageSize
+  const hits = assembled.slice(start, start + pageSize)
+  return { hits, total, page, pageSize, appliedFilters: query }
 }
 
 function emptyResult(query: FinderQuery, page: number, pageSize: number): FinderResult {
