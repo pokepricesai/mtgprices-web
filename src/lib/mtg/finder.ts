@@ -146,6 +146,17 @@ export async function findCards(query: FinderQuery, opts: { page?: number; pageS
     return findCardsSetScoped(query, { page, pageSize })
   }
 
+  // ── FAST PATH: legality-scoped query ────────────────────────────
+  // Legality is a pure oracle-level property in mtg_oracle_legalities.
+  // Seeding from that table gives us a bounded set (Standard ~5k,
+  // Modern ~23k, Vintage ~32k) and lets us include 'restricted' in
+  // formats where restricted cards are playable (Vintage). This
+  // avoids paging the entire 40k-oracle table through the RPC just
+  // to filter it back down.
+  if (query.legalIn && FORMAT_BY_KEY[query.legalIn]) {
+    return findCardsLegalityScoped(query, { page, pageSize })
+  }
+
   // ── STEP 1: oracle filter via the RPC ──────────────────────────
   // Pre-Pass 2B mini: p_limit was a hard 400. That silently clipped
   // set-scoped / rarity-scoped / broad-legality searches because the
@@ -218,50 +229,108 @@ export async function findCards(query: FinderQuery, opts: { page?: number; pageS
   const oracleById = new Map<string, OracleRow>()
   for (const r of oracleRows) oracleById.set(r.id, r)
 
-  // ── STEP 3: freshest printing per oracle ─────────────────────
-  // Chunk the .in(oracle_ids, [...]), PostgREST has a URL-size
-  // header cap around ~16KB. supabase-js automatically POSTs the
-  // filter body when the GET URL would exceed the limit, so we can
-  // safely batch larger chunks. 200 IDs per chunk × 36 chars is
-  // ~7KB — well under the cap. Fewer chunks means less connection
-  // pool pressure on broad legality queries (vintage-legal is 32k
-  // oracles, previously 533 parallel round-trips).
+  // ── STEP 3: representative printing per oracle ────────────────
+  // Semantics fix (Pass 2B mini2):
+  //
+  //   Oracle-level membership (legality, colours, capabilities, MV,
+  //   name, reserved, GC) is decided in the RPC above and MUST NOT
+  //   be reversed by representative-printing selection. The user's
+  //   "cards legal in Standard" filter answers "is this card legal
+  //   in Standard?", not "is the display printing we happened to pick
+  //   also Standard-legal?".
+  //
+  //   The old behaviour applied rarity / released / artist as a DB
+  //   WHERE on the printings query, then took the FRESHEST surviving
+  //   printing per oracle, then dropped oracles with zero surviving
+  //   printings. That silently changed oracle membership when the
+  //   freshest printing failed a printing-level filter. Concrete
+  //   symptom: ?legal=standard returned 1,032 of 5,164 Standard-legal
+  //   oracles — the 4,132 dropped had their freshest English printing
+  //   in a set that isn't Standard, or one that PostgREST couldn't
+  //   locate.
+  //
+  //   New rule:
+  //     - Fetch ALL English non-digital printings per oracle (no
+  //       filters).
+  //     - pickRepresentativePrinting() chooses one for display, giving
+  //       preference to rarity / released / artist matches when the
+  //       user asked for those, but falling back to the newest
+  //       overall printing when no match exists. The oracle keeps
+  //       its membership; we only vary what we render for it.
+  //     - The only reasons to drop an oracle here are (a) it has zero
+  //       English non-digital printings (data-quality) or (b) a price
+  //       filter that's applied later.
   const IN_ORACLE_CHUNK = 200
-  const buildPrintingsQuery = (chunk: string[]) => {
-    let q = supabase
+  const printingChunks: string[][] = []
+  for (let i = 0; i < oracleIds.length; i += IN_ORACLE_CHUNK) printingChunks.push(oracleIds.slice(i, i + IN_ORACLE_CHUNK))
+  const printingResults = await Promise.all(printingChunks.map((chunk) =>
+    supabase
       .from('mtg_printings')
-      .select('id, oracle_card_id, set_code, collector_number, name, image_uri, image_uri_small, rarity, released_at')
+      .select('id, oracle_card_id, set_code, collector_number, name, image_uri, image_uri_small, rarity, released_at, artist')
       .in('oracle_card_id', chunk)
       .eq('lang', 'en')
       .eq('digital', false)
       .order('released_at', { ascending: false, nullsFirst: false })
-    if (query.rarity) q = q.eq('rarity', query.rarity)
-    if (query.setCode) q = q.eq('set_code', query.setCode.toLowerCase())
-    if (query.releasedFrom) q = q.gte('released_at', query.releasedFrom)
-    if (query.releasedTo)   q = q.lte('released_at', query.releasedTo)
-    if (query.artist && query.artist.length >= 2) q = q.ilike('artist', `%${query.artist.trim()}%`)
-    return q
-  }
-  const printingChunks: string[][] = []
-  for (let i = 0; i < oracleIds.length; i += IN_ORACLE_CHUNK) printingChunks.push(oracleIds.slice(i, i + IN_ORACLE_CHUNK))
-  const printingResults = await Promise.all(printingChunks.map(buildPrintingsQuery))
-  const printings: PrintingRow[] = []
+  ))
+  const printingsByOracle = new Map<string, PrintingRow[]>()
   for (const { data, error } of printingResults) {
     if (error) { console.error('findCards printings err:', error); return emptyResult(query, page, pageSize) }
-    for (const p of (data ?? []) as PrintingRow[]) printings.push(p)
+    for (const p of (data ?? []) as PrintingRow[]) {
+      const arr = printingsByOracle.get(p.oracle_card_id) ?? []
+      arr.push(p)
+      printingsByOracle.set(p.oracle_card_id, arr)
+    }
   }
 
-  // Freshest per oracle_card_id.
-  const seen = new Set<string>()
-  const freshest = new Map<string, PrintingRow>()
-  for (const p of (printings ?? []) as PrintingRow[]) {
-    if (seen.has(p.oracle_card_id)) continue
-    seen.add(p.oracle_card_id)
-    freshest.set(p.oracle_card_id, p)
+  // Representative-printing semantics (Pass 2B mini2):
+  //
+  //   Some printing-scoped fields ARE membership predicates —
+  //   asking "?rarity=mythic" means "cards for which a mythic
+  //   printing exists". Others are display preferences only.
+  //
+  //   Membership predicates (drop oracle if no printing satisfies):
+  //     - rarity          → at least one printing at that rarity
+  //     - releasedFrom/To → at least one printing in the window
+  //     - artist          → at least one printing by that artist
+  //
+  //   Representative printing selection then picks a printing that
+  //   satisfies EVERY membership predicate the user set. When more
+  //   than one qualifies, the newest-first order is preserved
+  //   (already sorted DESC on released_at above). Oracles with no
+  //   qualifying printing are dropped from the result; oracle-side
+  //   membership (legality etc.) is never affected.
+  const wantRarity = query.rarity
+  const wantReleasedFrom = query.releasedFrom
+  const wantReleasedTo = query.releasedTo
+  const wantArtist = query.artist && query.artist.length >= 2 ? query.artist.trim().toLowerCase() : null
+  const hasPrintingMembership = Boolean(wantRarity || wantReleasedFrom || wantReleasedTo || wantArtist)
+
+  const rep = new Map<string, PrintingRow>()
+  for (const oid of oracleIds) {
+    const list = printingsByOracle.get(oid)
+    if (!list || list.length === 0) continue
+    if (!hasPrintingMembership) {
+      // No printing-side membership predicate — pick the freshest.
+      rep.set(oid, list[0])
+      continue
+    }
+    // Find the newest printing that satisfies every requested
+    // membership predicate. List is already newest-first.
+    const match = list.find((p) => {
+      if (wantRarity && p.rarity !== wantRarity) return false
+      if (wantReleasedFrom && !(p.released_at && p.released_at >= wantReleasedFrom)) return false
+      if (wantReleasedTo   && !(p.released_at && p.released_at <= wantReleasedTo))   return false
+      if (wantArtist) {
+        const a = (p as any).artist
+        if (!a || !String(a).toLowerCase().includes(wantArtist)) return false
+      }
+      return true
+    })
+    if (match) rep.set(oid, match)
   }
-  // Keep only oracles that survived the printing filter.
-  const filteredOracleIds = oracleIds.filter((id) => freshest.has(id))
+  const filteredOracleIds = oracleIds.filter((id) => rep.has(id))
   if (filteredOracleIds.length === 0) return emptyResult(query, page, pageSize)
+  const freshest = rep   // legacy alias — the sort/pagination code below still uses `freshest`.
 
   // ── STEP 4: prices (finish + currency-aware) ─────────────────
   const printingIds = filteredOracleIds.map((id) => freshest.get(id)!.id)
@@ -385,14 +454,16 @@ async function findCardsSetScoped(
   const typeNeedles = (query.types ?? []).map((t) => t.toLowerCase())
 
   // Legality is a separate table — fetch legal-in oracle_ids upfront
-  // when a format filter is present, then use the set as a whitelist.
+  // when a format filter is present. Vintage counts 'restricted' as
+  // playable (one-of), so include it there.
   let legalSet: Set<string> | null = null
   if (query.legalIn && FORMAT_BY_KEY[query.legalIn]) {
+    const LEGAL_STATUSES = query.legalIn === 'vintage' ? ['legal', 'restricted'] : ['legal']
     const { data: legalRows } = await supabase
       .from('mtg_oracle_legalities')
       .select('oracle_card_id')
       .eq('format', query.legalIn)
-      .eq('legality', 'legal')
+      .in('legality', LEGAL_STATUSES)
       .in('oracle_card_id', oracleIds)
     legalSet = new Set(((legalRows ?? []) as { oracle_card_id: string }[]).map((r) => r.oracle_card_id))
   }
@@ -460,6 +531,184 @@ async function findCardsSetScoped(
     })
   }
 
+  assembled = sortHits(assembled, query)
+  const total = assembled.length
+  const start = (page - 1) * pageSize
+  const hits = assembled.slice(start, start + pageSize)
+  return { hits, total, page, pageSize, appliedFilters: query }
+}
+
+/** Legality-scoped Card Finder path. Reads `mtg_oracle_legalities`
+ *  directly and treats the returned oracle_ids as the definitive
+ *  membership set for the requested format. This makes "?legal=X"
+ *  answer "cards that ARE legal in X" — nothing downstream is
+ *  allowed to reverse that membership. Includes 'restricted' rows
+ *  in formats where restricted cards remain playable (Vintage).
+ *  Other oracle-side facets and printing-scoped predicates apply on
+ *  top exactly as they do in the general path.
+ */
+async function findCardsLegalityScoped(
+  query: FinderQuery,
+  { page, pageSize }: { page: number; pageSize: number },
+): Promise<FinderResult> {
+  const supabase = getSupabaseServiceClient()
+  const fmt = query.legalIn!
+
+  // 1) Legal oracle set. Paginated to bust the 1000-row PostgREST cap.
+  //    Vintage restricted-list membership is treated as legal —
+  //    restricted cards are playable in Vintage as one-of.
+  const LEGAL_STATUSES = fmt === 'vintage' ? ['legal', 'restricted'] : ['legal']
+  const legalOracleIds: string[] = []
+  const PAGE = 1000
+  for (let offset = 0; offset < 100_000; offset += PAGE) {
+    const { data, error } = await supabase
+      .from('mtg_oracle_legalities')
+      .select('oracle_card_id')
+      .eq('format', fmt)
+      .in('legality', LEGAL_STATUSES)
+      .range(offset, offset + PAGE - 1)
+    if (error) { console.error('findCardsLegalityScoped legalities err:', error); return emptyResult(query, page, pageSize) }
+    const chunk = (data ?? []) as { oracle_card_id: string }[]
+    for (const r of chunk) legalOracleIds.push(r.oracle_card_id)
+    if (chunk.length < PAGE) break
+  }
+  if (legalOracleIds.length === 0) return emptyResult(query, page, pageSize)
+
+  // 2) Fetch oracle rows for those ids. Chunked; supabase-js POSTs the
+  //    filter body when the GET URL would exceed the header cap.
+  const IN_ORACLE_CHUNK = 200
+  const oracleRows: OracleRow[] = []
+  const oracleChunks: string[][] = []
+  for (let i = 0; i < legalOracleIds.length; i += IN_ORACLE_CHUNK) oracleChunks.push(legalOracleIds.slice(i, i + IN_ORACLE_CHUNK))
+  const oracleResults = await Promise.all(oracleChunks.map((chunk) =>
+    supabase.from('mtg_oracle_cards')
+      .select('id, name, mana_cost, mana_value, type_line, oracle_text, colors, color_identity, keywords, capabilities, layout, reserved, game_changer')
+      .in('id', chunk),
+  ))
+  for (const { data, error } of oracleResults) {
+    if (error) { console.error('findCardsLegalityScoped oracles err:', error); return emptyResult(query, page, pageSize) }
+    for (const r of (data ?? []) as OracleRow[]) oracleRows.push(r)
+  }
+
+  // 3) Oracle-side JS filtering. Mirrors mtg_search_oracle_cards WHERE.
+  const wantColors = sanColors(query.colors)
+  const wantCI = sanColors(query.colorIdentity)
+  const excludeSet = new Set((query.excludeOracleIds ?? []))
+  const nameNeedle = query.name?.trim().toLowerCase() ?? ''
+  const typeNeedles = (query.types ?? []).map((t) => t.toLowerCase())
+  const wantCaps = query.caps && query.caps.length > 0 ? query.caps : null
+
+  const filtered = oracleRows.filter((o) => {
+    if (excludeSet.has(o.id)) return false
+    if (nameNeedle && !o.name.toLowerCase().includes(nameNeedle)) return false
+    if (typeNeedles.length > 0) {
+      const t = (o.type_line ?? '').toLowerCase()
+      if (!typeNeedles.every((n) => t.includes(n))) return false
+    }
+    if (wantCaps) {
+      const oc = (o.capabilities ?? []) as string[]
+      if (!wantCaps.every((c) => oc.includes(c))) return false
+    }
+    if (wantColors.length > 0) {
+      const oc = (o.colors ?? []) as string[]
+      const hasHit = wantColors.some((c) => oc.includes(c))
+      const isColourless = oc.length === 0
+      if (!(hasHit || (query.colorless && isColourless))) return false
+    } else if (query.colorless && ((o.colors ?? []) as string[]).length > 0) {
+      return false
+    }
+    if (wantCI.length > 0) {
+      const ci = (o.color_identity ?? []) as string[]
+      if (!ci.every((c) => wantCI.includes(c))) return false
+    }
+    if (typeof query.manaValueMax === 'number' && (o.mana_value == null || o.mana_value > query.manaValueMax)) return false
+    if (typeof query.manaValueMin === 'number' && (o.mana_value == null || o.mana_value < query.manaValueMin)) return false
+    if (query.reservedList && !o.reserved) return false
+    if (query.gameChanger && !o.game_changer) return false
+    return true
+  })
+  if (filtered.length === 0) return emptyResult(query, page, pageSize)
+
+  const oracleById = new Map<string, OracleRow>()
+  for (const o of filtered) oracleById.set(o.id, o)
+  const oracleIds = filtered.map((o) => o.id)
+
+  // 4) All English non-digital printings per surviving oracle. No
+  //    printing-side filters at the DB — apply them in JS as
+  //    membership predicates so oracle qualification is not silently
+  //    changed by which printing is picked for display.
+  const printingsByOracle = new Map<string, PrintingRow[]>()
+  const printingChunks: string[][] = []
+  for (let i = 0; i < oracleIds.length; i += IN_ORACLE_CHUNK) printingChunks.push(oracleIds.slice(i, i + IN_ORACLE_CHUNK))
+  const printingResults = await Promise.all(printingChunks.map((chunk) =>
+    supabase.from('mtg_printings')
+      .select('id, oracle_card_id, set_code, collector_number, name, image_uri, image_uri_small, rarity, released_at, artist')
+      .in('oracle_card_id', chunk)
+      .eq('lang', 'en')
+      .eq('digital', false)
+      .order('released_at', { ascending: false, nullsFirst: false })
+  ))
+  for (const { data, error } of printingResults) {
+    if (error) { console.error('findCardsLegalityScoped printings err:', error); return emptyResult(query, page, pageSize) }
+    for (const p of (data ?? []) as PrintingRow[]) {
+      const arr = printingsByOracle.get(p.oracle_card_id) ?? []
+      arr.push(p)
+      printingsByOracle.set(p.oracle_card_id, arr)
+    }
+  }
+
+  // 5) Representative printing selection (same rules as the general
+  //    path: rarity / released / artist are membership predicates —
+  //    the oracle must have at least one printing matching them;
+  //    representative printing is that matching one).
+  const wantRarity = query.rarity
+  const wantReleasedFrom = query.releasedFrom
+  const wantReleasedTo = query.releasedTo
+  const wantArtist = query.artist && query.artist.length >= 2 ? query.artist.trim().toLowerCase() : null
+  const hasPrintingMembership = Boolean(wantRarity || wantReleasedFrom || wantReleasedTo || wantArtist)
+
+  const rep = new Map<string, PrintingRow>()
+  for (const oid of oracleIds) {
+    const list = printingsByOracle.get(oid)
+    if (!list || list.length === 0) continue
+    if (!hasPrintingMembership) { rep.set(oid, list[0]); continue }
+    const match = list.find((p) => {
+      if (wantRarity && p.rarity !== wantRarity) return false
+      if (wantReleasedFrom && !(p.released_at && p.released_at >= wantReleasedFrom)) return false
+      if (wantReleasedTo   && !(p.released_at && p.released_at <= wantReleasedTo))   return false
+      if (wantArtist) {
+        const a = (p as any).artist
+        if (!a || !String(a).toLowerCase().includes(wantArtist)) return false
+      }
+      return true
+    })
+    if (match) rep.set(oid, match)
+  }
+  const survivingIds = oracleIds.filter((id) => rep.has(id))
+  if (survivingIds.length === 0) return emptyResult(query, page, pageSize)
+
+  // 6) Prices + assemble + price filter + sort + paginate.
+  const printingIds = survivingIds.map((id) => rep.get(id)!.id)
+  const cheapestByPrinting = await getCheapestByPrinting(printingIds, {
+    currency: query.currency, finish: query.finish,
+  })
+  let assembled: FinderHit[] = survivingIds.map((id) => {
+    const o = oracleById.get(id)!
+    const p = rep.get(id)!
+    const cheapest = cheapestByPrinting.get(p.id) ?? null
+    return buildHit(o, p, cheapest, query)
+  })
+  const hasPriceFilter =
+    typeof query.priceMax === 'number' || typeof query.priceMin === 'number' || Boolean(query.finish)
+  if (hasPriceFilter) {
+    assembled = assembled.filter((h) => {
+      if (!h.cheapest) return false
+      if (query.currency && h.cheapest.currency !== query.currency) return false
+      if (typeof query.priceMax === 'number' && h.cheapest.price > query.priceMax) return false
+      if (typeof query.priceMin === 'number' && h.cheapest.price < query.priceMin) return false
+      return true
+    })
+  }
   assembled = sortHits(assembled, query)
   const total = assembled.length
   const start = (page - 1) * pageSize
