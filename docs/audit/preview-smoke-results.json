@@ -1,0 +1,531 @@
+[
+  {
+    "bucket": "core",
+    "label": "/",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "core",
+    "label": "/browse",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/browse",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "core",
+    "label": "/market",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/market",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "core",
+    "label": "/graded",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/graded",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "core",
+    "label": "/card-finder",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/card-finder",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "core",
+    "label": "/formats",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/formats",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "core",
+    "label": "/insights",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/insights",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "redirect",
+    "label": "/sets",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/sets",
+    "status": 308,
+    "location": "/browse",
+    "xRobots": "noindex, nofollow",
+    "expected": "/browse (308)"
+  },
+  {
+    "bucket": "redirect",
+    "label": "/sets/anything",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/sets/anything",
+    "status": 308,
+    "location": "/browse",
+    "xRobots": "noindex, nofollow",
+    "expected": "/browse (308)"
+  },
+  {
+    "bucket": "set-lea",
+    "label": "/set/lea",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/lea",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "sealed",
+    "label": "lea sealed CTA rendered",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/lea",
+    "status": 200,
+    "hasSealedCta": true,
+    "hasEbayCampid": true,
+    "canonicalOk": true,
+    "noVercelInCanonical": true
+  },
+  {
+    "bucket": "set-recent",
+    "label": "/set/pf27 (2027-01-01)",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/pf27",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "set-recent",
+    "label": "/set/trc (2026-11-13)",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/trc",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "set-recent",
+    "label": "/set/trk (2026-11-13)",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/trk",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "set-recent",
+    "label": "/set/sds (2026-11-13)",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/sds",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "set-recent",
+    "label": "/set/ttrk (2026-11-13)",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/ttrk",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "set-old",
+    "label": "/set/lea (1993-08-05)",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/lea",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "set-old",
+    "label": "/set/leb (1993-10-04)",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/leb",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "set-old",
+    "label": "/set/2ed (1993-12-01)",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/2ed",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "set-old",
+    "label": "/set/cei (1993-12-10)",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/cei",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "set-old",
+    "label": "/set/ced (1993-12-10)",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/ced",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Black Lotus",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/ovnt/card/2023NA-black-lotus",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Ragavan, Nimble Pilferer",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/fca/card/43-ragavan-nimble-pilferer",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Lightning Bolt",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/plst/card/CLB-187-lightning-bolt",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Counterspell",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/fdc/card/61-counterspell",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Sheoldred, the Apocalypse",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/sds/card/11-sheoldred-the-apocalypse",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "The One Ring",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/hoc/card/44-the-one-ring",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Orcish Bowmasters",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/hoc/card/19-orcish-bowmasters",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Chalice of the Void",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/lcc/card/105-chalice-of-the-void",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Force of Will",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/soa/card/19-force-of-will",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Ledger Shredder",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/spg/card/55-ledger-shredder",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Emrakul, the Aeons Torn",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/2x2/card/575-emrakul-the-aeons-torn",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Mox Ruby",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/30a/card/261-mox-ruby",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Mox Sapphire",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/30a/card/262-mox-sapphire",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Mox Emerald",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/30a/card/258-mox-emerald",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Mox Jet",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/30a/card/556-mox-jet",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Mox Pearl",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/30a/card/557-mox-pearl",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Ancestral Recall",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/ovnt/card/2022C-ancestral-recall",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Time Walk",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/ovnt/card/2022B-time-walk",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Timetwister",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/30a/card/381-timetwister",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "logical-card",
+    "label": "Underground Sea",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/30a/card/281-underground-sea",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "plst·MKC-297",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/plst/card/MKC-297-sungrass-prairie",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "ecc·132",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/ecc/card/132-risen-reef",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "plst·RIX-88",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/plst/card/RIX-88-twilight-prophet",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "cei·169",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/cei/card/169-raging-river",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "rix·36",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/rix/card/36-deadeye-rig-hauler",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "mor·121",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/mor/card/121-everbark-shaman",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "tbot·1",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/tbot/card/1-laserbeak",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "2x2·238",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/2x2/card/238-karador-ghost-chieftain",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "msc·627",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/msc/card/627-living-lies-of-loki",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "pc2·145",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/pc2/card/145-swamp",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "wc99·kb143a",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/wc99/card/kb143a-city-of-traitors",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "8ed·82",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/8ed/card/82-hibernation",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "clb·342",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/clb/card/342-universal-solvent",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "ori·261",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/ori/card/261-swamp",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "mh2·323",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/mh2/card/323-scion-of-draco",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "cns·19",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/cns/card/19-rousing-of-souls",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "fdc·278",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/fdc/card/278-palladium-myr",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "dgm·104",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/dgm/card/104-sire-of-insanity",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "j25·385",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/j25/card/385-warden-of-evos-isle",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "printing",
+    "label": "zen·81",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/set/zen/card/81-blood-tribute",
+    "status": 200,
+    "location": null,
+    "xRobots": "noindex, nofollow"
+  },
+  {
+    "bucket": "health",
+    "label": "no auth",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/api/admin/health",
+    "status": 401,
+    "location": null,
+    "xRobots": "noindex, nofollow",
+    "expected": 401
+  },
+  {
+    "bucket": "health",
+    "label": "wrong bearer",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/api/admin/health",
+    "status": 401,
+    "location": null,
+    "xRobots": "noindex, nofollow",
+    "expected": 401
+  },
+  {
+    "bucket": "health",
+    "label": "valid bearer",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/api/admin/health",
+    "status": 500,
+    "location": null,
+    "xRobots": "noindex, nofollow",
+    "bodyLeadingChars": 43,
+    "ok200OrExpected": 500
+  },
+  {
+    "bucket": "seo",
+    "label": "home canonical + noindex",
+    "url": "https://mtgprices-ou92pig5l-lukepierce.vercel.app/",
+    "status": 200,
+    "canonicalIsProd": true,
+    "noVercelInCanonical": true,
+    "xRobotsHeader": "noindex, nofollow"
+  }
+]
