@@ -6,6 +6,7 @@
 
 import 'server-only'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
+import { robustHeadlinePrice } from './ranking'
 
 export type MtgCurrentPrice = {
   printing_finish_id: string
@@ -23,17 +24,6 @@ export type MtgPricePoint = {
   observed_on: string
   price: number
 }
-
-/** Preferred USD-paper-retail order, used to pick a single "headline"
- *  price when we want one number. This is a display convention only
- *  and does NOT imply any commercial redistribution decision. */
-const PREFERRED_PROVIDER_ORDER = [
-  'tcgplayer',
-  'cardkingdom',
-  'cardmarket',
-  'manapool',
-  'cardhoarder',
-]
 
 /** All current-price rows for a set of printing_finish ids. Returns
  *  a Map keyed by printing_finish_id for O(1) lookup on card pages.
@@ -70,20 +60,18 @@ export async function getCurrentPricesForFinishes(
 }
 
 /** Pick a single headline price from a set of current-price rows.
- *  Priority: paper USD retail from the preferred provider list.
- *  Returns null if no matching row. */
+ *  Filters to paper USD retail, then delegates to robustHeadlinePrice
+ *  for cross-source outlier suppression. A source's price is dropped
+ *  when it exceeds CROSS_SOURCE_MAX_RATIO x the minimum of the other
+ *  sources' prices. This is not a ceiling — a Black Lotus at $150k
+ *  still ranks correctly when multiple sources agree. See ranking.ts. */
 export function pickHeadlinePrice(rows: MtgCurrentPrice[] | undefined): MtgCurrentPrice | null {
   if (!rows || rows.length === 0) return null
   const candidates = rows.filter(
     (r) => r.market === 'paper' && r.currency === 'USD' && r.price_type === 'retail'
   )
   if (candidates.length === 0) return null
-  // Preferred provider order, then any survivor.
-  for (const provider of PREFERRED_PROVIDER_ORDER) {
-    const found = candidates.find((r) => r.provider === provider)
-    if (found) return found
-  }
-  return candidates[0]
+  return robustHeadlinePrice(candidates).price
 }
 
 // ─── 90-day history ─────────────────────────────────────────────────────

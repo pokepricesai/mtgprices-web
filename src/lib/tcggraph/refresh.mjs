@@ -111,6 +111,49 @@ export async function refreshCatalogue(opts) {
     }
   }
 
+  // ------- 2b. Sweep stale 'running' rows before starting a new one -------
+  // A Vercel hard-kill around the function timeout can terminate the
+  // process before the finally block writes `finished_at`. That leaves
+  // a `status='running', finished_at=null` row forever. On every new
+  // invocation, mark any such rows older than the lock lease
+  // (STALE_MIN minutes) as `status='timed_out'` so the observability
+  // signal stays truthful. Never touch runs younger than the lock
+  // lease — those might still be genuinely in-flight from a
+  // concurrent staggered burst.
+  if (!dryRun) {
+    try {
+      const STALE_MIN = 45
+      const staleCutoff = new Date(Date.now() - STALE_MIN * 60 * 1000).toISOString()
+      const { data: stale } = await sb
+        .from('tcg_ingest_runs')
+        .select('id, notes, started_at')
+        .eq('game_id', gameId)
+        .eq('resource', RESOURCE)
+        .eq('status', 'running')
+        .is('finished_at', null)
+        .lt('started_at', staleCutoff)
+      if (stale && stale.length > 0) {
+        for (const r of stale) {
+          await sb.from('tcg_ingest_runs').update({
+            status: 'timed_out',
+            finished_at: new Date().toISOString(),
+            notes: {
+              ...(r.notes || {}),
+              stop_reason: 'timed_out_swept_by_next_invocation',
+              swept_by: workerId,
+              swept_at: new Date().toISOString(),
+              original_started_at: r.started_at,
+            },
+          }).eq('id', r.id)
+        }
+        logger.warn('tcg.refresh.stale_swept', { game: gameId, count: stale.length })
+      }
+    } catch (err) {
+      // Non-fatal: sweep failures should not block a real run.
+      logger.warn('tcg.refresh.stale_sweep_failed', { err: err instanceof Error ? err.message : String(err) })
+    }
+  }
+
   // ------- 3. Insert 'running' run row -------
   const runInsert = {
     id: runId, game_id: gameId, resource: RESOURCE,
@@ -212,6 +255,32 @@ export async function refreshCatalogue(opts) {
       const totalPages = r.body?.meta?.totalPages ?? null
       if (page === 1 || page % 25 === 0 || totalPages && page === totalPages) {
         logger.info('tcg.refresh.page', { game: gameId, page, totalPages, cost: r.cost, dailyRemaining: r.dailyRemaining, mkt: marketRows.length, graded: gradedRows.length })
+        // Heartbeat: write partial progress so a Vercel hard-kill
+        // leaves an observably-progressing row instead of an
+        // opaque `running, finished_at=null`. Best-effort — a
+        // failed heartbeat MUST NOT interrupt the ingest loop.
+        if (!dryRun) {
+          try {
+            await sb.from('tcg_ingest_runs').update({
+              pages_completed: stats.pagesCompleted,
+              rows_fetched: stats.rowsFetched,
+              credits_used: stats.creditsUsed,
+              credits_remaining: stats.lastMonthly,
+              daily_credits_remaining: stats.lastDaily,
+              errors: stats.errors,
+              notes: {
+                ...runInsert.notes,
+                heartbeat_at: new Date().toISOString(),
+                last_page: stats.lastPage,
+                market_rows_upserted: stats.marketRows,
+                graded_rows_upserted: stats.gradedRows,
+                mapping_counts: stats.mappingCounts,
+              },
+            }).eq('id', runId)
+          } catch (hbErr) {
+            logger.warn('tcg.refresh.heartbeat_failed', { err: hbErr instanceof Error ? hbErr.message : String(hbErr) })
+          }
+        }
       }
       if (r.body?.meta?.hasMore === false) { stats.stopReason = 'catalogue_exhausted'; break }
 
