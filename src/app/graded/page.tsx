@@ -9,6 +9,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getGradedNetworkStats, getTopValueGradedPrintings, getTopPremiumPrintings, type GradedFeatureRow } from '@/lib/tcggraph/graded-stats'
+import HubFaq, { A } from '@/components/mtg/HubFaq'
 
 const SITE_URL = 'https://mtgprices.io'
 export const revalidate = 900   // 15 min - graded refresh cadence still allows this
@@ -177,6 +178,67 @@ export default async function GradedPage() {
             Different printings of the same Oracle card have entirely independent graded markets.
           </div>
         </footer>
+
+        <HubFaq
+          heading="About MTG graded card prices"
+          entries={[
+            {
+              q: 'What is a graded MTG card?',
+              a: (
+                <>
+                  A graded card has been submitted to a third-party grading service (PSA, BGS,
+                  CGC, or SGC), authenticated, and sealed in a plastic slab with a numeric
+                  condition grade. Grades typically range from 1 to 10, with fractional half
+                  grades available from some graders. A 10 is essentially flawless.
+                </>
+              ),
+            },
+            {
+              q: 'Are these market estimates or completed sales?',
+              a: (
+                <>
+                  Every value on this page is a market estimate for a specific printing at a
+                  specific grade, derived from live listings and comparable sales aggregated by
+                  our graded-data provider. They are not first-party sales offers, and missing
+                  quotes stay missing rather than being interpolated from adjacent tiers.
+                </>
+              ),
+            },
+            {
+              q: 'Why do slabs of the "same" card at the same grade vary in price?',
+              a: (
+                <>
+                  Grading is per-printing, not per-Oracle card. An LEA Black Lotus PSA 10 is a
+                  fundamentally different market from a Beta or 2ED Lotus PSA 10. Each printing
+                  has its own supply, historical demand, and condition census. Prices reflect
+                  that.
+                </>
+              ),
+            },
+            {
+              q: 'How do I check a specific card?',
+              a: (
+                <>
+                  Open the card via <A href="/browse">Browse sets</A> or the
+                  {' '}<A href="/card-finder">Card Finder</A>. If graded data exists for that
+                  exact printing, the card page shows a "Graded market" panel with per-grader
+                  and per-tier prices.
+                </>
+              ),
+            },
+            {
+              q: 'Do you track graded cards in a personal collection?',
+              a: (
+                <>
+                  Yes. Signed-in users can record raw copies and graded copies of the same
+                  printing separately, with grader and grade fields, on
+                  {' '}<A href="/collection">your collection page</A>. Both surface in your
+                  set-checklist completion.
+                </>
+              ),
+            },
+          ]}
+        />
       </div>
     </div>
   )

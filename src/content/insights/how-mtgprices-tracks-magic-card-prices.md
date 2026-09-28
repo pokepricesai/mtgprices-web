@@ -18,7 +18,7 @@ Every price on MTGPrices is stored with four attributes that describe exactly wh
 - **Market.** Paper or MTGO.
 - **Price type.** Retail (what a buyer pays) or buylist (what a dealer offers).
 
-Together those four make up what we call the **valuation basis**. Every collection value, deck value, mover chip and card page headline number is computed against one and only one basis. When you compare two prices on MTGPrices, they are always the same basis, so a rise or a delta means what you expect it to mean.
+Together those four make up what we call the **valuation basis**. Every collection value, deck value, [market movers](/market) chip and card page headline number is computed against one and only one basis. When you compare two prices on MTGPrices, they are always the same basis, so a rise or a delta means what you expect it to mean.
 
 ## Why we do not blend currencies
 
@@ -30,6 +30,14 @@ If you shop in EUR, pick Cardmarket EUR retail as your default basis on the Sett
 
 Prices are refreshed daily where the provider allows it. Card pages show the exact observation date under the headline price. The 7 day, 30 day and 90 day chart windows on a card page are computed from actual observation history, not extrapolated from a single snapshot.
 
+You can see the same freshness discipline at set level. Open any set on [Browse sets](/browse) to see the estimated value, a value history chart and the most valuable cards on the same basis you picked in your settings. A specific vintage set like [Alpha](/set/lea) or a modern one like [Modern Horizons 3](/set/mh3) will both use the same rules.
+
+## Graded card prices
+
+For professionally slabbed cards, MTGPrices maintains a separate graded market panel. Grader (PSA, BGS, CGC, SGC) and grade tier are always shown on the card page, and the full landing page for slabbed values is at [/graded](/graded). Missing quotes stay missing rather than being interpolated from adjacent tiers.
+
 ## What we do not track
 
 MTGPrices does not track completed eBay sale prices, private trades or auction house results. If you rely on those for high-end collectibles, treat MTGPrices as one input in your view of the market, not the only one.
+
+If you want to look up cards by what they do rather than by name, the [Card Finder](/card-finder) filters by capability, colour, mana value, format legality and price, and every result respects the basis you picked.

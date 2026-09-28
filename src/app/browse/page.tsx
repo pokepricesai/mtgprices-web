@@ -8,6 +8,7 @@ import type { Metadata } from 'next'
 import { listSets } from '@/lib/mtg/sets'
 import { getSetAggregates } from '@/lib/mtg/set-market-batch'
 import BrowseClient from './BrowseClient'
+import HubFaq, { A } from '@/components/mtg/HubFaq'
 
 export const revalidate = 900   // 15 min
 
@@ -48,6 +49,66 @@ export default async function BrowsePage() {
       <BrowseClient
         sets={sets}
         aggregates={Object.fromEntries(Array.from(aggregates.entries()).map(([k, v]) => [k, v]))}
+      />
+
+      <HubFaq
+        heading="About MTG sets on MTGPrices"
+        entries={[
+          {
+            q: 'What sets are indexed here?',
+            a: (
+              <>
+                Every public-type English paper Magic set. Expansions, core sets,
+                Commander products, Masters/Masterpiece reprint sets, Secret Lair drops,
+                promos, and starter/duel/from-the-vault products all appear. Digital-only
+                and Alchemy sets are excluded because their prices do not map to paper.
+                We currently list {sets.length.toLocaleString()} sets.
+              </>
+            ),
+          },
+          {
+            q: 'How is set value calculated?',
+            a: (
+              <>
+                Value is the sum of the cheapest nonfoil TCGplayer USD retail price for every
+                English paper printing in the set. Cards without a current price on that basis
+                are counted as un-priced and reported separately, never imputed to zero. Foil
+                and etched premiums are intentionally not blended into the basket. See the
+                methodology footer on any set page for the exact rule.
+              </>
+            ),
+          },
+          {
+            q: 'Why do some sets show a much larger card count than expected?',
+            a: (
+              <>
+                Secret Lair (SLD), Special Guests (SPG), and other collector-oriented product
+                lines share a single set code but ship hundreds of separately-numbered printings.
+                We count every distinct collector number.
+              </>
+            ),
+          },
+          {
+            q: 'How can I browse a specific format instead of a specific set?',
+            a: (
+              <>
+                Use the <A href="/card-finder">Card Finder</A> with a legality filter to see every
+                card that is legal in a given format. Or open <A href="/formats">Formats</A> for
+                per-format overviews and banlists.
+              </>
+            ),
+          },
+          {
+            q: 'Where does the imagery come from?',
+            a: (
+              <>
+                Card and set-symbol imagery is served via Scryfall. Prices and printing metadata
+                are ingested from TCGplayer, Card Kingdom, Cardmarket, ManaPool, Cardhoarder,
+                and MTGJSON. Attribution is in the site footer.
+              </>
+            ),
+          },
+        ]}
       />
     </div>
   )

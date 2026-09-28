@@ -13,9 +13,9 @@ MTGPrices is a market and catalogue site, but it is also a home for your decks. 
 
 New decks start on the [Deck Builder](/decks/new). Pick a format and give the deck a name. Everything below then respects the format you chose, including legality on card searches and colour identity in Commander.
 
-The builder is manual by design. Every card you add is one you decided to add. The **Card Finder** search panel on the right lets you filter by capabilities (draw, removal, ramp, tokens), colour, mana value and price. Every result already respects the format you are building for.
+The builder is manual by design. Every card you add is one you decided to add. The **[Card Finder](/card-finder)** search panel on the right lets you filter by capabilities (draw, removal, ramp, tokens), colour, mana value and price. Every result already respects the format you are building for. Underlying legality data comes from the same source as the standalone [Formats index](/formats), so a card that is legal on your deck page is a card that will show up as legal everywhere else on the site.
 
-If you are signed in, the **owned vs missing** view sits next to the list. When you own a printing of a card, MTGPrices already knows which finish and condition, so the deck value calculation uses what you actually own for that entry and falls back to the cheapest available printing for the rest.
+If you are signed in, the **owned vs missing** view sits next to the list. When you own a printing of a card, MTGPrices already knows which finish and condition (recorded on [your collection page](/collection)), so the deck value calculation uses what you actually own for that entry and falls back to the cheapest available printing for the rest. If your Commander deck is anchored on an expensive centrepiece, check [market movers](/market) before pulling the trigger on the missing pieces.
 
 ## Testing a deck
 
@@ -47,3 +47,5 @@ If you are new to the deck features, the shortest useful path is:
 4. Apply the ones you like and rerun Test Your Deck.
 
 You will end up with a version of the deck that reflects the market view, your own collection and, if you want it, an AI second opinion on the composition. Nothing there is a black box.
+
+If you are looking for a specific card while brewing (say the [MH2 printing of Ragavan, Nimble Pilferer](/set/mh2/card/138-ragavan-nimble-pilferer) or the [LTR One Ring](/set/ltr/card/246-the-one-ring)), open its card page directly for the full printing history, current basis prices, format legality and the graded market where relevant. Slabbed staples aggregate on the [Graded market](/graded) landing page. To browse cards by format instead of by name, start with the [Formats index](/formats).

@@ -5,6 +5,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { getMarketMovers, type MoverWindow, type MoverCard } from '@/lib/mtg/movers'
+import HubFaq, { A } from '@/components/mtg/HubFaq'
 
 export const revalidate = 300
 
@@ -72,6 +73,64 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
           </div>
         </div>
       )}
+
+      <HubFaq
+        heading="About MTG market movers"
+        entries={[
+          {
+            q: 'What price basis is used?',
+            a: (
+              <>
+                Every mover on this page is computed on TCGplayer USD paper retail. We do
+                not blend Card Kingdom, Cardmarket EUR, ManaPool, or graded slabs into the
+                movers ranking. If a card has no TCGplayer price on the day, it does not
+                appear as a mover.
+              </>
+            ),
+          },
+          {
+            q: 'Why do some famously valuable cards not appear here?',
+            a: (
+              <>
+                A mover must have both an earliest and a latest observation with a genuine
+                span inside the selected window, a headline price of at least $2 (penny
+                cards are noisy), and an absolute delta over $0.25. Cards that are stable in
+                price simply have no movement to report. Use the "Most valuable" panel or
+                the <A href="/browse">Browse sets</A> value view for absolute worth.
+              </>
+            ),
+          },
+          {
+            q: 'Are risers a buy signal?',
+            a: (
+              <>
+                No. This is not financial advice. Movers show what changed on the retail
+                basis; they do not distinguish speculation from real reprint/format shifts.
+                Use the 7 / 30 / 90 day windows together to sanity check whether a rise or
+                fall is a spike or a sustained trend.
+              </>
+            ),
+          },
+          {
+            q: 'How do I see graded movers?',
+            a: (
+              <>
+                Graded pricing lives on <A href="/graded">/graded</A> and on each card page's
+                Graded Market panel. We do not currently rank graded movers site-wide.
+              </>
+            ),
+          },
+          {
+            q: 'How do I find cards under a specific price?',
+            a: (
+              <>
+                Use the <A href="/card-finder">Card Finder</A> with a max-price filter and a
+                format legality filter. Combine with a rarity or set filter to narrow further.
+              </>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }

@@ -14,6 +14,7 @@ import HomeSearch from '@/components/HomeSearch'
 import { FORMATS } from '@/lib/mtg/formats.data'
 import { latestInsights, type InsightMeta } from '@/lib/insights'
 import { getGradedNetworkStats, getTopValueGradedPrintings, type GradedFeatureRow } from '@/lib/tcggraph/graded-stats'
+import HubFaq, { A } from '@/components/mtg/HubFaq'
 
 export const revalidate = 300
 
@@ -69,8 +70,77 @@ export default async function HomePage() {
       <InsightsSection items={insights} />
       <FormatsSection formats={primaryFormats} />
       <RecentSetsSection sets={recentSets} />
+      <HomeFaq counts={counts} />
       <FinalCtaSection />
     </>
+  )
+}
+
+function HomeFaq({ counts }: { counts: Awaited<ReturnType<typeof getCatalogueCounts>> }) {
+  return (
+    <section style={{ maxWidth: 1180, margin: '0 auto', padding: '0 24px' }}>
+      <HubFaq
+        heading="About MTGPrices"
+        entries={[
+          {
+            q: 'What can I do here?',
+            a: (
+              <>
+                Look up any English paper Magic card, see its live prices across TCGplayer,
+                Card Kingdom, Cardmarket, ManaPool, Cardhoarder, and its graded market on PSA,
+                BGS, CGC, SGC. Track your <A href="/collection">collection</A> and set
+                checklist completion. Build a <A href="/decks/new">deck</A> with format
+                legality baked in. Filter cards by what they do on the
+                {' '}<A href="/card-finder">Card Finder</A>. All {counts.printings.toLocaleString()} English
+                paper printings across {counts.sets.toLocaleString()} public sets are indexed.
+              </>
+            ),
+          },
+          {
+            q: 'Where do the prices come from?',
+            a: (
+              <>
+                TCGplayer USD, Card Kingdom USD, Cardmarket EUR, ManaPool USD, Cardhoarder USD.
+                Every value is basis-locked and never silently converted between currencies.
+                Graded values come from our TCGGraph feed. See a card page for the exact
+                observed_on date on each quote.
+              </>
+            ),
+          },
+          {
+            q: 'How current is the data?',
+            a: (
+              <>
+                Raw market prices refresh daily via automated ingest. Graded market data
+                refreshes on a similar cadence. Every card page shows an observation date so
+                you can judge freshness at a glance.
+              </>
+            ),
+          },
+          {
+            q: 'Which formats are supported?',
+            a: (
+              <>
+                Standard, Modern, Pioneer, Legacy, Vintage, Commander, Pauper and every other
+                format Scryfall tracks. Legality labels update as Wizards publishes bans.
+                Full list on <A href="/formats">the Formats index</A>.
+              </>
+            ),
+          },
+          {
+            q: 'Do I need an account?',
+            a: (
+              <>
+                No, browsing is public. An account unlocks
+                {' '}<A href="/collection">personal collections</A> with raw and graded holdings,
+                {' '}<A href="/decks">deck saves</A>, and the AI assistant. Sign in with a
+                magic-link email or Google.
+              </>
+            ),
+          },
+        ]}
+      />
+    </section>
   )
 }
 

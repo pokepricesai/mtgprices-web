@@ -17,6 +17,7 @@ import { buildCardSlug } from '@/lib/mtg/slug'
 import ManaCost from '@/components/mtg/ManaCost'
 import AddToDeck from '@/components/mtg/AddToDeck'
 import CardFinderControls from './CardFinderControls'
+import HubFaq, { A } from '@/components/mtg/HubFaq'
 
 export const dynamic = 'force-dynamic'
 
@@ -214,6 +215,66 @@ export default async function CardFinderPage({ searchParams }: { searchParams: P
           )}
         </>
       )}
+
+      <HubFaq
+        heading="About the MTG Card Finder"
+        entries={[
+          {
+            q: 'How is this different from a plain card search?',
+            a: (
+              <>
+                Card search matches names. The Finder matches by what a card does. Filter by
+                capability (removal, ramp, card draw), colour identity, mana value, format
+                legality, rarity, price, finish, artist and more. Combine several filters at
+                once. To look up a single card by name, use the search box in the header or
+                {' '}<A href="/cards/search">the dedicated Cards page</A>.
+              </>
+            ),
+          },
+          {
+            q: 'What does the format legality filter mean?',
+            a: (
+              <>
+                It uses the Scryfall legality feed. A card qualifies when it is legal to run
+                in the requested format. Vintage additionally includes cards on the restricted
+                list, which are playable at one copy each. Banned cards are excluded.
+                Full banlists live on <A href="/formats">the Formats index</A>.
+              </>
+            ),
+          },
+          {
+            q: 'What is "Find for Play" vs "Find for Collecting"?',
+            a: (
+              <>
+                Play mode surfaces filters most relevant to deckbuilding: capabilities, colour
+                identity, mana value, legality. Collecting mode leans into set, rarity, finish,
+                era and printing-specific fields. Both share the same underlying data and can
+                combine freely with a search term.
+              </>
+            ),
+          },
+          {
+            q: 'How can I find cheap cards for a specific format?',
+            a: (
+              <>
+                Combine a legality filter, a max-price cap, and a mana-value or capability
+                filter. Sort by price ascending to see the cheapest candidates first. For
+                rising and falling prices instead, see <A href="/market">market movers</A>.
+              </>
+            ),
+          },
+          {
+            q: 'Why does one search sometimes take a few seconds?',
+            a: (
+              <>
+                Broad format filters like every Commander-legal card cross tens of thousands
+                of rows. Results are correct and complete; each subsequent hit on the same
+                URL is cached at the edge until the next revalidation.
+              </>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }
