@@ -214,8 +214,8 @@ function ProgressionPanel({ progression }: { progression: CollectionAnalytics['p
         padding: 16, background: 'var(--surface)', border: '1px solid var(--border)',
         borderRadius: 14, fontSize: 13, color: 'var(--text-muted)',
       }}>
-        <div className="label-mono" style={{ color: 'var(--gold-600)', marginBottom: 4 }}>Set completion</div>
-        Add cards from a set to start tracking your completion progress across MTG sets.
+        <div className="label-mono" style={{ color: 'var(--gold-600)', marginBottom: 4 }}>Set checklist completion</div>
+        Add cards from a set to start tracking your set checklist completion across MTG sets.
       </div>
     )
   }
@@ -228,11 +228,16 @@ function ProgressionPanel({ progression }: { progression: CollectionAnalytics['p
       borderRadius: 14, display: 'grid', gap: 14,
     }}>
       <div>
-        <div className="label-mono" style={{ color: 'var(--gold-600)' }}>Set completion</div>
+        <div className="label-mono" style={{ color: 'var(--gold-600)' }}>Set checklist completion</div>
         <div style={{ marginTop: 4, fontSize: 12, color: 'var(--text-muted)', maxWidth: 640, lineHeight: 1.55 }}>
-          Completion counts each distinct <em>collector number</em> in a set as one slot.
-          Owning any finish (nonfoil, foil, etched) fills the slot. English printings only.
-          Digital-only printings and non-English reprints do not count.
+          Each distinct <em>collector number</em> in a set is one checklist slot.
+          Owning any finish (nonfoil, foil, or etched) counts toward completion.
+          English printings only. Digital-only printings and non-English reprints do not count.
+          <br />
+          <span style={{ opacity: 0.85 }}>
+            This is a <em>checklist</em>, not a master-set inventory — foil + nonfoil of the same collector
+            number are one slot together, not two.
+          </span>
         </div>
       </div>
 

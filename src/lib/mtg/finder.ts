@@ -136,16 +136,22 @@ export async function findCards(query: FinderQuery, opts: { page?: number; pageS
   const pageSize = Math.min(60, Math.max(1, opts.pageSize ?? PAGE_DEFAULT))
 
   // ── STEP 1: oracle filter via the RPC ──────────────────────────
-  // mtg_search_oracle_cards packs the whole Oracle-side filter
-  // (capabilities/colours/CI/MV/name/type/exclusions/legality) into
-  // one SECURITY-DEFINER stored function so we hit the DB once
-  // instead of two PostgREST round-trips + a client-side intersect.
-  // Measured 7.7s → 105ms on the commander+cap+color+MV case.
+  // Pre-Pass 2B mini: p_limit was a hard 400. That silently clipped
+  // set-scoped / rarity-scoped / broad-legality searches because the
+  // downstream printing filter ran against only 400 name-alphabetical
+  // oracles. The user-observable symptom was "?set=lea returns 2".
+  //
+  // Fix: page through mtg_search_oracle_cards using p_offset until
+  // exhausted. No arbitrary anchor cap; the RPC's oracle-side filters
+  // still do the heavy lifting DB-side. RPC_PAGE is a batch size, not
+  // a result cap. RPC_MAX_ORACLES is a defence-in-depth ceiling — an
+  // unfiltered query would otherwise pull ~40k oracle rows and blow
+  // server memory. Filtered queries never reach it in practice.
   const wantColors = sanColors(query.colors)
   const wantCI = sanColors(query.colorIdentity)
-  const rpcArgs = {
+  const baseRpcArgs = {
     p_name: query.name && query.name.trim().length >= 2 ? query.name.trim() : null,
-    p_type: query.types && query.types.length > 0 ? query.types[0] : null, // one primary type; extra types filtered client-side
+    p_type: query.types && query.types.length > 0 ? query.types[0] : null,
     p_capabilities: query.caps && query.caps.length > 0 ? query.caps : null,
     p_colors: wantColors.length > 0 ? wantColors : null,
     p_include_colorless: Boolean(query.colorless),
@@ -156,12 +162,19 @@ export async function findCards(query: FinderQuery, opts: { page?: number; pageS
     p_reserved: query.reservedList ? true : null,
     p_game_changer: query.gameChanger ? true : null,
     p_exclude_oracles: query.excludeOracleIds && query.excludeOracleIds.length > 0 ? query.excludeOracleIds : null,
-    p_limit: 400,
-    p_offset: 0,
   }
-  const { data: rpcOracles, error: rpcErr } = await supabase.rpc('mtg_search_oracle_cards', rpcArgs)
-  if (rpcErr) { console.error('findCards rpc err:', rpcErr); return emptyResult(query, page, pageSize) }
-  let oracleRows = (rpcOracles ?? []) as OracleRow[]
+  const RPC_PAGE = 5000
+  const RPC_MAX_ORACLES = 60_000  // ceiling — total distinct mtg_oracle_cards is ~40k
+  let oracleRows: OracleRow[] = []
+  for (let offset = 0; offset < RPC_MAX_ORACLES; offset += RPC_PAGE) {
+    const { data: rpcChunk, error: rpcErr } = await supabase.rpc('mtg_search_oracle_cards', {
+      ...baseRpcArgs, p_limit: RPC_PAGE, p_offset: offset,
+    })
+    if (rpcErr) { console.error('findCards rpc err:', rpcErr); return emptyResult(query, page, pageSize) }
+    const chunk = (rpcChunk ?? []) as OracleRow[]
+    oracleRows.push(...chunk)
+    if (chunk.length < RPC_PAGE) break
+  }
 
   // Client-side filter for a second/third type filter, RPC accepts a
   // single primary type substring. Rare enough that we keep it simple.

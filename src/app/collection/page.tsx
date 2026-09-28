@@ -162,7 +162,15 @@ export default async function CollectionPage({ searchParams }: { searchParams: P
                       {h.printing.collector_number && <span>· #{h.printing.collector_number}</span>}
                       {h.printing.rarity && <span>· {h.printing.rarity}</span>}
                       <span>· {h.finish}</span>
-                      <span>· {CONDITION_SHORT[h.condition]}</span>
+                      {h.grader && h.grade ? (
+                        <span style={{
+                          padding: '1px 6px', borderRadius: 4,
+                          background: 'var(--accent-soft)', color: 'var(--gold-600)',
+                          fontWeight: 700,
+                        }}>· {h.grader} {h.grade}</span>
+                      ) : (
+                        <span>· {CONDITION_SHORT[h.condition]}</span>
+                      )}
                     </div>
                     {(h.acquiredTotalCents != null || h.acquired_currency) && (
                       <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>

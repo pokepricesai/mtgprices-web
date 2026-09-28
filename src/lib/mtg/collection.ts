@@ -39,6 +39,11 @@ export const CONDITIONS_ORDERED: CardCondition[] = [
   'near_mint', 'lightly_played', 'moderately_played', 'heavily_played', 'damaged',
 ]
 
+/** Grader ids stored on graded rows — matches the CHECK constraint on
+ *  `mtg_collection_items.grader` in the 2026-09-28 migration. `null`
+ *  on a row means the copy is raw (ungraded). */
+export type SlabGrader = 'PSA' | 'BGS' | 'CGC' | 'SGC'
+
 export type CollectionItemRow = {
   id: string
   user_id: string
@@ -51,6 +56,10 @@ export type CollectionItemRow = {
   notes: string | null
   created_at: string
   updated_at: string
+  /** Grader (PSA/BGS/CGC/SGC). NULL = raw / ungraded. Paired with grade. */
+  grader: SlabGrader | null
+  /** Grade tier as string ("10", "9.5", "9", …). NULL = raw. */
+  grade: string | null
 }
 
 export type HydratedCollectionItem = CollectionItemRow & {
@@ -826,13 +835,53 @@ export async function upsertCollectionItem(input: {
   acquired_currency?: 'USD' | 'EUR' | null
   acquired_at?: string | null
   notes?: string | null
+  /** Optional grader (PSA/BGS/CGC/SGC). When set, `grade` must also be
+   *  set; the row is stored as a graded copy and is separately keyed
+   *  from any raw copy of the same printing. */
+  grader?: SlabGrader | null
+  grade?: string | null
 }) {
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
-  // Idempotent upsert against the unique key (user, finish, condition).
-  const { data, error } = await supabase.from('mtg_collection_items').upsert({
+  // Split keys — raw vs graded uniqueness is enforced by the two
+  // partial-unique indexes added in the 2026-09-28 migration. Raw
+  // rows key on (user, finish, condition) with grader IS NULL;
+  // graded rows key on (user, finish, grader, grade). Postgrest's
+  // upsert onConflict only takes ONE index, so we route via a
+  // manual select-then-update-or-insert instead.
+  const isGraded = input.grader != null || input.grade != null
+  if (isGraded && (!input.grader || !input.grade)) {
+    throw new Error('Graded copies require both grader and grade.')
+  }
+
+  let existingQuery = supabase
+    .from('mtg_collection_items')
+    .select('id, quantity')
+    .eq('printing_finish_id', input.printing_finish_id)
+  if (isGraded) {
+    existingQuery = existingQuery.eq('grader', input.grader!).eq('grade', input.grade!)
+  } else {
+    existingQuery = existingQuery.eq('condition', input.condition).is('grader', null)
+  }
+  const { data: existing } = await existingQuery.maybeSingle()
+
+  if (existing) {
+    const { data, error } = await supabase.from('mtg_collection_items')
+      .update({
+        quantity: (existing as { quantity: number }).quantity + input.quantity,
+        acquired_price_cents: input.acquired_price_cents ?? null,
+        acquired_currency: input.acquired_currency ?? null,
+        acquired_at: input.acquired_at ?? null,
+        notes: input.notes ?? null,
+      })
+      .eq('id', (existing as { id: string }).id)
+      .select().single()
+    if (error) throw error
+    return data
+  }
+  const { data, error } = await supabase.from('mtg_collection_items').insert({
     user_id: user.id,
     printing_finish_id: input.printing_finish_id,
     condition: input.condition,
@@ -841,7 +890,9 @@ export async function upsertCollectionItem(input: {
     acquired_currency: input.acquired_currency ?? null,
     acquired_at: input.acquired_at ?? null,
     notes: input.notes ?? null,
-  }, { onConflict: 'user_id,printing_finish_id,condition' }).select().single()
+    grader: isGraded ? input.grader! : null,
+    grade:  isGraded ? input.grade!  : null,
+  }).select().single()
   if (error) throw error
   return data
 }
