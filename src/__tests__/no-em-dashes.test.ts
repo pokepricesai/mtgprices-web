@@ -1,14 +1,14 @@
 // no-em-dashes.test.ts
-// Guard rail. The MTGPrices writing rule is: no em dashes (—) anywhere
-// in visible UI copy or metadata. This test scans every .ts / .tsx / .css
-// / .md file under src/ and fails if one appears.
+// Guard rail. The MTGPrices writing rule is: no em dashes (U+2014) in
+// USER-FACING copy — JSX text, string literals, template literals, alt
+// text, aria labels, metadata descriptions, CSS content properties.
 //
-// The scan is deliberately dumb (no AST) so it catches every case: JSX
-// text, string literals, template literals, alt text, aria labels,
-// metadata descriptions and CSS comments. Third-party data flowing
-// through us (Oracle text, ruling comments, retailer names) is loaded
-// from the database at runtime, so those punctuations never land in
-// source files even if they contain em dashes at display time.
+// Code comments (line comments starting with //, block comments /* … */,
+// JSDoc /** … */) are NOT user-facing and are exempt. They can use em
+// dashes freely for internal readability.
+//
+// The scan strips comments before checking for U+2014. Anything the
+// browser could render is still inspected.
 
 import { describe, it, expect } from 'vitest'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
@@ -34,15 +34,60 @@ function walk(dir: string, acc: string[] = []): string[] {
   return acc
 }
 
+/** Remove line comments (//…), block comments (/* … *\/), and CSS
+ *  block comments so their U+2014s don't count as user-facing.
+ *  Scans character-by-character and respects string boundaries so
+ *  an em dash inside a "// this is fine" JSX string literal is
+ *  correctly retained. */
+function stripComments(src: string): string {
+  const out: string[] = []
+  const n = src.length
+  let i = 0
+  let inString: '"' | "'" | '`' | null = null
+  let escape = false
+  while (i < n) {
+    const c = src[i]
+    if (escape) { out.push(c); escape = false; i++; continue }
+    if (inString) {
+      out.push(c)
+      if (c === '\\') escape = true
+      else if (c === inString) inString = null
+      i++
+      continue
+    }
+    if (c === '"' || c === "'" || c === '`') { inString = c; out.push(c); i++; continue }
+    if (c === '/' && src[i + 1] === '/') {
+      // Preserve newlines so line numbers stay aligned.
+      while (i < n && src[i] !== '\n') { out.push(' '); i++ }
+      continue
+    }
+    if (c === '/' && src[i + 1] === '*') {
+      // /* … */ — preserve newlines, blank out everything else.
+      i += 2; out.push('  ')
+      while (i < n && !(src[i] === '*' && src[i + 1] === '/')) {
+        out.push(src[i] === '\n' ? '\n' : ' ')
+        i++
+      }
+      if (i < n) { i += 2; out.push('  ') }
+      continue
+    }
+    out.push(c)
+    i++
+  }
+  return out.join('')
+}
+
 describe('em dash guard', () => {
-  it('no source file under src/ contains U+2014 (em dash)', () => {
+  it('no user-facing source under src/ contains U+2014 (em dash)', () => {
     const offenders: { file: string; line: number; snippet: string }[] = []
     for (const file of walk(SRC)) {
       const rel = file.slice(SRC.length + 1).replace(/\\/g, '/')
       if (ALLOWLIST.has(rel)) continue
-      const text = readFileSync(file, 'utf8')
-      if (!text.includes(EM_DASH)) continue
-      const lines = text.split(/\r?\n/)
+      const raw = readFileSync(file, 'utf8')
+      if (!raw.includes(EM_DASH)) continue
+      const stripped = stripComments(raw)
+      if (!stripped.includes(EM_DASH)) continue
+      const lines = stripped.split(/\r?\n/)
       lines.forEach((ln, i) => {
         if (ln.includes(EM_DASH)) {
           offenders.push({ file: rel, line: i + 1, snippet: ln.trim().slice(0, 140) })
@@ -54,7 +99,7 @@ describe('em dash guard', () => {
         .map((o) => `  ${o.file}:${o.line}  ${o.snippet}`)
         .join('\n')
       throw new Error(
-        `Found ${offenders.length} em dash occurrence(s). Replace with commas, full stops, colons or parentheses.\n${msg}`,
+        `Found ${offenders.length} em dash occurrence(s) in user-facing source. Replace with commas, full stops, colons or parentheses.\n${msg}`,
       )
     }
     expect(offenders.length).toBe(0)

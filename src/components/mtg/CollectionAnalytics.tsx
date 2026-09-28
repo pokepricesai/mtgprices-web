@@ -201,7 +201,7 @@ function currencySymbol(currency: 'USD' | 'EUR'): string {
 }
 
 function fmtPct(pct: number | null): string {
-  if (pct == null) return '—'
+  if (pct == null) return '–'   // en dash (U+2013), never em dash in public copy
   const raw = pct * 100
   if (raw >= 99.5 && pct < 1) return '99%'   // never round INcomplete to 100%
   return `${Math.round(raw)}%`
@@ -235,7 +235,7 @@ function ProgressionPanel({ progression }: { progression: CollectionAnalytics['p
           English printings only. Digital-only printings and non-English reprints do not count.
           <br />
           <span style={{ opacity: 0.85 }}>
-            This is a <em>checklist</em>, not a master-set inventory — foil + nonfoil of the same collector
+            This is a <em>checklist</em>, not a master-set inventory: foil and nonfoil of the same collector
             number are one slot together, not two.
           </span>
         </div>

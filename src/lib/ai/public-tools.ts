@@ -94,7 +94,7 @@ export function bindPublicAiTools(): { tools: Record<string, any>; authorised: A
 
     getCardFacts: tool({
       description:
-        'Get full oracle text, legality across every format, metadata, and (for double-faced cards) both faces for one or more oracle_card_id values previously returned by searchCards. Never invent an oracle_card_id. When `faces` is present, treat it as the ground truth for the back face — do NOT compose a back face from memory when `faces` is absent.',
+        'Get full oracle text, legality across every format, metadata, and (for double-faced cards) both faces for one or more oracle_card_id values previously returned by searchCards. Never invent an oracle_card_id. When `faces` is present, treat it as the ground truth for the back face. Do NOT compose a back face from memory when `faces` is absent.',
       inputSchema: z.object({
         oracle_card_ids: z.array(z.string().uuid()).min(1).max(6),
       }),

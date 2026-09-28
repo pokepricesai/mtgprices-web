@@ -83,7 +83,7 @@ function Cell({ c, hero }: { c: GradedCell; hero?: boolean }) {
         {c.currency}
         {c.updatedAt && (<> &middot; updated {daysAgo(c.updatedAt)}</>)}
         {hasVolume && (
-          <> &middot; <span title="Card-level graded sales volume reported by TCGGraph — not specific to this grade tier.">{c.volume} sales</span></>
+          <> &middot; <span title="Card-level graded sales volume reported by TCGGraph. Not specific to this grade tier.">{c.volume} sales</span></>
         )}
       </div>
     </div>
