@@ -23,7 +23,7 @@
 
 import 'server-only'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
-import { slugifyCardName as slug } from './slug'
+import { buildCardHref } from './slug'
 
 const PROVIDER = 'tcgplayer'
 const CURRENCY = 'USD'
@@ -230,9 +230,6 @@ export async function getMarketMovers(
     if (pr.digital) return null
     if (pr.lang && pr.lang !== 'en') return null
     const name = pr.name as string
-    const collectorSegment = pr.collector_number
-      ? `${pr.collector_number}-${slug(name)}`
-      : slug(name)
     return {
       finish_id: s.finish_id,
       printing_id: pr.id,
@@ -243,7 +240,7 @@ export async function getMarketMovers(
       collector_number: pr.collector_number,
       image_uri_small: pr.image_uri_small,
       finish: f.finish,
-      card_href: `/set/${pr.set_code}/card/${collectorSegment}`,
+      card_href: buildCardHref(pr.set_code, pr.collector_number, name),
       start_price: round2(s.start),
       latest_price: round2(s.latest),
       abs_delta: round2(s.abs),

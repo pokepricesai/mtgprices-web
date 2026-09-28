@@ -32,6 +32,7 @@ export const metadata: Metadata = {
 type SearchParams = {
   mode?: 'play' | 'collecting'
   q?: string           // natural-language box
+  name?: string        // explicit card-name filter (bypasses NL)
   // structured params (comma-separated where multi-valued)
   caps?: string
   colors?: string
@@ -63,9 +64,29 @@ function asList(v: string | undefined): string[] {
 }
 
 function paramsToQuery(sp: SearchParams): { query: FinderQuery; suggestions: string[]; warnings: string[] } {
-  // NL first, parse "q" into a query.
+  // NL first, parse "q" into a query. When an explicit `name=` is
+  // present it wins — the NL parser can misinterpret "black lotus" as
+  // colour=B (a Pass 2B fix). name= gives users a way to run a
+  // structured card-name search without natural-language ambiguity.
   const parsed = sp.q ? parseFinderText(sp.q) : { query: {} as FinderQuery, suggestions: [] as string[], warnings: [] as string[] }
   const q: FinderQuery = { ...parsed.query }
+  if (sp.name && sp.name.trim().length >= 2) {
+    q.name = sp.name.trim()
+  } else if (!q.name && sp.q && sp.q.trim().length >= 2) {
+    // Fallback: when the NL parser found NO structured facets from `q`
+    // (empty parsed.query beyond `name`), treat `q` as a card-name
+    // filter. This keeps the "Black Lotus" free-text search useful.
+    const nlHadStructure =
+      (parsed.query.caps?.length ?? 0) > 0 ||
+      (parsed.query.colors?.length ?? 0) > 0 ||
+      (parsed.query.colorIdentity?.length ?? 0) > 0 ||
+      Boolean(parsed.query.colorless) ||
+      (parsed.query.types?.length ?? 0) > 0 ||
+      Boolean(parsed.query.legalIn) ||
+      typeof parsed.query.manaValueMin === 'number' ||
+      typeof parsed.query.manaValueMax === 'number'
+    if (!nlHadStructure) q.name = sp.q.trim()
+  }
 
   // Structured overrides, always take precedence when explicitly set.
   const capsList = asList(sp.caps).filter((c): c is CardCapability => (CAPABILITY_TAGS as readonly string[]).includes(c))

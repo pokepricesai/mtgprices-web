@@ -32,6 +32,7 @@ import CardColorAccent from '@/components/mtg/CardColorAccent'
 import { getTcgBundleForMtgPrinting, getSlabbedMtgPrintingSet } from '@/lib/tcggraph/read-model'
 import { buildGradedView } from '@/lib/mtg/graded-view'
 import { buildCardTheme } from '@/lib/mtg/color-theme'
+import EbayLinkButton from '@/components/mtg/EbayLinkButton'
 
 export const revalidate = 300
 
@@ -329,7 +330,7 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
           {/* MARKET section eyebrow */}
           <SectionEyebrow accent="gold" label="Market and collecting" />
 
-          {marketSummary && (
+          {marketSummary ? (
             <div style={{ marginBottom: 16 }}>
               <CardMarketOverview
                 summary={marketSummary}
@@ -337,6 +338,30 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
                 setName={setName}
                 setCode={printing.set_code}
                 collectorNumber={printing.collector_number}
+              />
+            </div>
+          ) : (
+            // Basic lands, tokens, and cards without any priced printing
+            // still deserve an eBay discovery CTA — otherwise a whole
+            // class of card pages ship without any commercial action.
+            // CardMarketOverview normally owns the CTA; when it's absent
+            // we render a minimal fallback so no card page is CTA-less.
+            <div style={{
+              marginBottom: 16, padding: 14,
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 12,
+            }}>
+              <div className="label-mono" style={{ marginBottom: 6 }}>Find this card</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 10 }}>
+                No live paper price on file for this exact printing yet. Browse copies on eBay.
+              </div>
+              <EbayLinkButton
+                cardName={printing.name}
+                setName={setName}
+                setCode={printing.set_code}
+                collectorNumber={printing.collector_number}
+                finish={defaultFinish?.finish as 'nonfoil' | 'foil' | 'etched' | undefined}
+                source="mtg-card-no-market"
               />
             </div>
           )}

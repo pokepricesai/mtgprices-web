@@ -16,6 +16,16 @@ import { useRouter, usePathname } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser'
 import { CONDITIONS_ORDERED, CONDITION_LABEL, CONDITION_SHORT, type CardCondition } from '@/lib/mtg/collection.data'
 
+// Slab graders MTGPrices records against the collection. Same allowlist
+// as the check constraint added in the 2026-09-28 migration. When a
+// user picks "Graded" they must supply BOTH grader and grade.
+const GRADERS = ['PSA', 'BGS', 'CGC', 'SGC'] as const
+type SlabGrader = typeof GRADERS[number]
+
+// Grade tiers each grader actually issues. Full tenth-point scale from
+// 1 to 10; the constraint in the migration accepts all of them.
+const GRADES = ['10', '9.5', '9', '8.5', '8', '7.5', '7', '6.5', '6', '5.5', '5', '4.5', '4', '3.5', '3', '2.5', '2', '1.5', '1'] as const
+
 type FinishOption = { id: string; finish: 'nonfoil' | 'foil' | 'etched' }
 
 type Props = {
@@ -42,6 +52,11 @@ export default function AddToCollection({ finishes, cardName, compact = false }:
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [status, setStatus] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null)
+  // Graded track. Raw is the default because most collectors record
+  // ungraded stock; slabs are the deliberate exception.
+  const [isGraded, setIsGraded] = useState(false)
+  const [grader, setGrader] = useState<SlabGrader>('PSA')
+  const [grade, setGrade] = useState<string>('10')
 
   useEffect(() => {
     let cancelled = false
@@ -69,6 +84,10 @@ export default function AddToCollection({ finishes, cardName, compact = false }:
   async function save() {
     if (!finishId) { setStatus({ kind: 'err', msg: 'Pick a finish first.' }); return }
     if (!Number.isFinite(qty) || qty < 1) { setStatus({ kind: 'err', msg: 'Quantity must be at least 1.' }); return }
+    if (isGraded && (!grader || !grade)) {
+      setStatus({ kind: 'err', msg: 'Graded copies need both a grader and a grade.' })
+      return
+    }
     setSaving(true)
     setStatus(null)
 
@@ -80,13 +99,20 @@ export default function AddToCollection({ finishes, cardName, compact = false }:
       return
     }
 
-    // Look up existing row to decide insert-or-increment.
-    const { data: existing } = await supabase
+    // Look up existing row. Raw and graded are separately keyed:
+    //   raw    → (user, finish, condition), grader IS NULL
+    //   graded → (user, finish, grader, grade)
+    // Matches the partial-unique indexes in the 2026-09-28 migration.
+    let existingQuery = supabase
       .from('mtg_collection_items')
       .select('id, quantity, acquired_price_cents, acquired_currency, acquired_at, notes')
       .eq('printing_finish_id', finishId)
-      .eq('condition', condition)
-      .maybeSingle()
+    if (isGraded) {
+      existingQuery = existingQuery.eq('grader', grader).eq('grade', grade)
+    } else {
+      existingQuery = existingQuery.eq('condition', condition).is('grader', null)
+    }
+    const { data: existing } = await existingQuery.maybeSingle()
 
     const priceCents = price ? Math.round(parseFloat(price) * 100) : null
 
@@ -112,13 +138,16 @@ export default function AddToCollection({ finishes, cardName, compact = false }:
         acquired_currency: priceCents != null ? priceCurrency : null,
         acquired_at: acquiredAt || null,
         notes: notes || null,
+        grader: isGraded ? grader : null,
+        grade:  isGraded ? grade  : null,
       })
       error = e
     }
 
     setSaving(false)
     if (error) { setStatus({ kind: 'err', msg: error.message ?? 'Save failed.' }); return }
-    setStatus({ kind: 'ok', msg: `Added ${qty} × ${cardName} (${CONDITION_SHORT[condition]}).` })
+    const suffix = isGraded ? `${grader} ${grade}` : CONDITION_SHORT[condition]
+    setStatus({ kind: 'ok', msg: `Added ${qty} × ${cardName} (${suffix}).` })
     setQty(1); setPrice(''); setAcquiredAt(''); setNotes('')
     router.refresh()
   }
@@ -150,6 +179,9 @@ export default function AddToCollection({ finishes, cardName, compact = false }:
               priceCurrency={priceCurrency} setPriceCurrency={setPriceCurrency}
               acquiredAt={acquiredAt} setAcquiredAt={setAcquiredAt}
               notes={notes} setNotes={setNotes}
+              isGraded={isGraded} setIsGraded={setIsGraded}
+              grader={grader} setGrader={setGrader}
+              grade={grade} setGrade={setGrade}
               saving={saving} save={save} status={status}
               cardName={cardName}
             />
@@ -184,6 +216,9 @@ export default function AddToCollection({ finishes, cardName, compact = false }:
             priceCurrency={priceCurrency} setPriceCurrency={setPriceCurrency}
             acquiredAt={acquiredAt} setAcquiredAt={setAcquiredAt}
             notes={notes} setNotes={setNotes}
+            isGraded={isGraded} setIsGraded={setIsGraded}
+            grader={grader} setGrader={setGrader}
+            grade={grade} setGrade={setGrade}
             saving={saving} save={save} status={status}
             cardName={cardName}
           />
@@ -228,6 +263,9 @@ function FormBody(props: {
   priceCurrency: 'USD' | 'EUR'; setPriceCurrency: (v: 'USD' | 'EUR') => void
   acquiredAt: string; setAcquiredAt: (v: string) => void
   notes: string; setNotes: (v: string) => void
+  isGraded: boolean; setIsGraded: (v: boolean) => void
+  grader: SlabGrader; setGrader: (v: SlabGrader) => void
+  grade: string; setGrade: (v: string) => void
   saving: boolean; save: () => void
   status: { kind: 'ok' | 'err'; msg: string } | null
   cardName: string
@@ -237,19 +275,44 @@ function FormBody(props: {
   return (
     <div style={{ display: 'grid', gap: 10 }}>
       <div style={{ fontSize: 15, fontWeight: 700 }}>Add {p.cardName}</div>
-      <div style={{ display: 'grid', gap: 8, gridTemplateColumns: '1fr 1fr 1fr' }}>
+
+      {/* Raw / Graded track. Graded rows are stored separately so a PSA 10
+          coexists with a raw NM copy for the same printing. */}
+      <div role="tablist" aria-label="Copy type" style={{ display: 'flex', gap: 6, background: 'var(--bg-light)', border: '1px solid var(--border)', borderRadius: 999, padding: 4 }}>
+        <TrackButton active={!p.isGraded} onClick={() => p.setIsGraded(false)}>Raw</TrackButton>
+        <TrackButton active={p.isGraded} onClick={() => p.setIsGraded(true)}>Graded</TrackButton>
+      </div>
+
+      <div style={{ display: 'grid', gap: 8, gridTemplateColumns: p.isGraded ? '1fr 1fr 1fr' : '1fr 1fr 1fr' }}>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span className="label-mono">Finish</span>
           <select value={p.finishId} onChange={(e) => p.setFinishId(e.target.value)} style={inputStyle}>
             {p.finishes.map((f) => <option key={f.id} value={f.id}>{f.finish}</option>)}
           </select>
         </label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span className="label-mono">Condition</span>
-          <select value={p.condition} onChange={(e) => p.setCondition(e.target.value as CardCondition)} style={inputStyle}>
-            {CONDITIONS_ORDERED.map((c) => <option key={c} value={c}>{CONDITION_LABEL[c]}</option>)}
-          </select>
-        </label>
+        {p.isGraded ? (
+          <>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span className="label-mono">Grader</span>
+              <select value={p.grader} onChange={(e) => p.setGrader(e.target.value as SlabGrader)} style={inputStyle}>
+                {GRADERS.map((g) => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span className="label-mono">Grade</span>
+              <select value={p.grade} onChange={(e) => p.setGrade(e.target.value)} style={inputStyle}>
+                {GRADES.map((g) => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </label>
+          </>
+        ) : (
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span className="label-mono">Condition</span>
+            <select value={p.condition} onChange={(e) => p.setCondition(e.target.value as CardCondition)} style={inputStyle}>
+              {CONDITIONS_ORDERED.map((c) => <option key={c} value={c}>{CONDITION_LABEL[c]}</option>)}
+            </select>
+          </label>
+        )}
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span className="label-mono">Qty</span>
           <input type="number" min="1" max="9999" value={p.qty} onChange={(e) => p.setQty(parseInt(e.target.value, 10) || 1)} style={inputStyle} />
@@ -308,6 +371,27 @@ function FormBody(props: {
         }}>{p.status.msg}</div>
       )}
     </div>
+  )
+}
+
+function TrackButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      style={{
+        flex: 1,
+        padding: '6px 10px', borderRadius: 999,
+        border: 'none',
+        background: active ? 'var(--surface)' : 'transparent',
+        boxShadow: active ? '0 1px 3px rgba(20,33,61,0.10)' : 'none',
+        color: active ? 'var(--text-strong)' : 'var(--text-muted)',
+        fontWeight: 700, fontSize: 12,
+        cursor: 'pointer', fontFamily: 'inherit',
+      }}
+    >{children}</button>
   )
 }
 

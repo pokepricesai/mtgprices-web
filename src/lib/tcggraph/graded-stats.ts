@@ -7,7 +7,7 @@
 
 import 'server-only'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
-import { buildCardSlug } from '@/lib/mtg/slug'
+import { buildCardHref } from '@/lib/mtg/slug'
 
 export type GradedNetworkStats = {
   /** Distinct MTG printings that carry at least one slabbed (non-raw)
@@ -167,7 +167,7 @@ export async function getTopValueGradedPrintings(limit = 12): Promise<GradedFeat
         collectorNumber: mtg.collector_number ?? null,
         releasedAt: mtg.released_at ?? null,
         imageUri: mtg.image_uri ?? null,
-        cardHref: `/set/${mtg.set_code}/card/${buildCardSlug(mtg.collector_number ?? '', mtg.name)}`,
+        cardHref: buildCardHref(mtg.set_code, mtg.collector_number ?? null, mtg.name),
         headline: { grader: q.grader.toUpperCase(), grade: q.grade, price: q.price, currency: q.currency },
       })
       if (out.length >= limit) break
@@ -258,7 +258,7 @@ export async function getTopPremiumPrintings(limit = 12): Promise<GradedFeatureR
         collectorNumber: mtg.collector_number ?? null,
         releasedAt: mtg.released_at ?? null,
         imageUri: mtg.image_uri ?? null,
-        cardHref: `/set/${mtg.set_code}/card/${buildCardSlug(mtg.collector_number ?? '', mtg.name)}`,
+        cardHref: buildCardHref(mtg.set_code, mtg.collector_number ?? null, mtg.name),
         headline: { grader: c.slabGrader, grade: '10', price: c.slabPrice, currency: c.currency },
         raw: { price: c.rawPrice, currency: c.currency },
         premiumPercent: Math.round((c.premium - 1) * 100),

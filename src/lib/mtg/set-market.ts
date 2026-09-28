@@ -18,7 +18,7 @@
 
 import 'server-only'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
-import { slugifyCardName as slug } from './slug'
+import { buildCardHref } from './slug'
 import type { MarketBasis } from './card-market'
 import { DEFAULT_BASIS } from './card-market'
 
@@ -157,7 +157,7 @@ export async function getSetMarket(
       printing_id: pid, finish_id: v.finish_id, finish: v.finish,
       name: p.name, set_code: p.set_code, collector_number: p.collector_number,
       image_uri_small: p.image_uri_small, price: round2(v.price),
-      card_href: buildCardHref(p),
+      card_href: buildCardHref(p.set_code, p.collector_number, p.name),
     })
   }
   const mostValuable = tiles.slice().sort((a, b) => b.price - a.price).slice(0, topN)
@@ -210,7 +210,7 @@ export async function getSetMarket(
       start_price: round2(a.earliest.p),
       abs_delta: round2(abs), pct_delta: pct,
       period_days: days,
-      card_href: buildCardHref(p),
+      card_href: buildCardHref(p.set_code, p.collector_number, p.name),
     })
   }
   const risers = movers.filter((m) => m.pct_delta > 0).sort((a, b) => b.pct_delta - a.pct_delta).slice(0, topN)
@@ -228,10 +228,8 @@ export async function getSetMarket(
   }
 }
 
-function buildCardHref(p: { set_code: string; collector_number: string | null; name: string }): string {
-  const seg = p.collector_number ? `${p.collector_number}-${slug(p.name)}` : slug(p.name)
-  return `/set/${p.set_code}/card/${seg}`
-}
+// buildCardHref is imported from ./slug — includes percent-encoding for
+// non-ASCII collector numbers (Secret Lair "★" variants).
 function methodologyLine(basis: MarketBasis): string {
   const prov = basis.provider === 'tcgplayer' ? 'TCGplayer'
     : basis.provider === 'cardkingdom' ? 'Card Kingdom'

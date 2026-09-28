@@ -66,6 +66,12 @@ function Fingerprint({ setCode, collectorNumber, finish }: { setCode: string; co
 
 function Cell({ c, hero }: { c: GradedCell; hero?: boolean }) {
   const badge = GRADER_BADGE_CLASS[c.grader] ?? 'grade-badge grade-badge--any'
+  // Card-level sales volume from TCGGraph. The upstream feed carries
+  // one salesVolume figure per card_id, not per grade tier, so a
+  // meaningful reading is "how liquid is this card's graded market
+  // overall" — not "how many PSA 10s sold." We surface it as a small
+  // pill so a $8k slabbed quote next to `0 sales` reads honestly.
+  const hasVolume = c.volume != null && Number.isFinite(c.volume) && c.volume >= 0
   return (
     <div className={`mtg-graded-cell${hero ? ' hero' : ''}`}>
       <div className="grader-line">
@@ -76,6 +82,9 @@ function Cell({ c, hero }: { c: GradedCell; hero?: boolean }) {
       <div className="meta">
         {c.currency}
         {c.updatedAt && (<> &middot; updated {daysAgo(c.updatedAt)}</>)}
+        {hasVolume && (
+          <> &middot; <span title="Card-level graded sales volume reported by TCGGraph — not specific to this grade tier.">{c.volume} sales</span></>
+        )}
       </div>
     </div>
   )
