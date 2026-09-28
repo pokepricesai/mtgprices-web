@@ -220,10 +220,13 @@ export async function findCards(query: FinderQuery, opts: { page?: number; pageS
 
   // ── STEP 3: freshest printing per oracle ─────────────────────
   // Chunk the .in(oracle_ids, [...]), PostgREST has a URL-size
-  // header cap around ~16KB. 200 UUIDs (36 chars each) blows it
-  // out. Chunk to 60 IDs per request. Each chunk is a separate
-  // round-trip; run them in parallel.
-  const IN_ORACLE_CHUNK = 60
+  // header cap around ~16KB. supabase-js automatically POSTs the
+  // filter body when the GET URL would exceed the limit, so we can
+  // safely batch larger chunks. 200 IDs per chunk × 36 chars is
+  // ~7KB — well under the cap. Fewer chunks means less connection
+  // pool pressure on broad legality queries (vintage-legal is 32k
+  // oracles, previously 533 parallel round-trips).
+  const IN_ORACLE_CHUNK = 200
   const buildPrintingsQuery = (chunk: string[]) => {
     let q = supabase
       .from('mtg_printings')
