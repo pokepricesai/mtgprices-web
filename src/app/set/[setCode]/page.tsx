@@ -10,6 +10,7 @@ import { getSetValueHistory } from '@/lib/mtg/set-value-history'
 import SetGridClient, { type SetGridPrinting } from '@/components/mtg/SetGridClient'
 import SetMarketOverview from '@/components/mtg/SetMarketOverview'
 import SetValueHistoryChart from '@/components/mtg/SetValueHistoryChart'
+import SealedEbayCTA from '@/components/mtg/SealedEbayCTA'
 
 export const revalidate = 300
 
@@ -109,6 +110,7 @@ export default async function SetPage({ params }: { params: Promise<Params> }) {
           {(sv7 || sv30 || sv90) && (
             <SetValueHistoryChart windows={{ d7: sv7, d30: sv30, d90: sv90 }} />
           )}
+          <SealedEbayCTA setName={set.name} setCode={set.code} />
           <div style={{ marginTop: 24 }}>
             <SetGridClient setCode={set.code} printings={items} />
           </div>

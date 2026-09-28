@@ -67,5 +67,13 @@ const nextConfig = {
       },
     ]
   },
+  async redirects() {
+    return [
+      // /sets is a legacy path — the browse hub is /browse. 308 preserves
+      // method + is cacheable so search engines consolidate quickly.
+      { source: '/sets',           destination: '/browse', permanent: true },
+      { source: '/sets/:path*',    destination: '/browse', permanent: true },
+    ]
+  },
 }
 module.exports = nextConfig
