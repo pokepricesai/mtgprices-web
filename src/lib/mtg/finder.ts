@@ -330,51 +330,9 @@ export async function findCards(query: FinderQuery, opts: { page?: number; pageS
   }
   const filteredOracleIds = oracleIds.filter((id) => rep.has(id))
   if (filteredOracleIds.length === 0) return emptyResult(query, page, pageSize)
-  const freshest = rep   // legacy alias — the sort/pagination code below still uses `freshest`.
 
-  // ── STEP 4: prices (finish + currency-aware) ─────────────────
-  const printingIds = filteredOracleIds.map((id) => freshest.get(id)!.id)
-  const cheapestByPrinting = await getCheapestByPrinting(printingIds, {
-    currency: query.currency,
-    finish: query.finish,
-  })
-
-  // ── STEP 5: price filters + sort + paginate ──────────────────
-  let assembled: FinderHit[] = filteredOracleIds.map((id) => {
-    const o = oracleById.get(id)!
-    const p = freshest.get(id)!
-    const cheapest = cheapestByPrinting.get(p.id) ?? null
-    return buildHit(o, p, cheapest, query)
-  })
-
-  // Hard price constraints, currency-aware. Only cards that HAVE a
-  // matching-currency price survive when a price filter is set.
-  const hasPriceFilter =
-    typeof query.priceMax === 'number' || typeof query.priceMin === 'number' || Boolean(query.finish)
-  if (hasPriceFilter) {
-    assembled = assembled.filter((h) => {
-      if (!h.cheapest) return false
-      if (query.currency && h.cheapest.currency !== query.currency) return false
-      if (typeof query.priceMax === 'number' && h.cheapest.price > query.priceMax) return false
-      if (typeof query.priceMin === 'number' && h.cheapest.price < query.priceMin) return false
-      return true
-    })
-  }
-
-  // Sort.
-  assembled = sortHits(assembled, query)
-
-  const total = assembled.length
-  const start = (page - 1) * pageSize
-  const hits = assembled.slice(start, start + pageSize)
-
-  return {
-    hits,
-    total,
-    page,
-    pageSize,
-    appliedFilters: query,
-  }
+  // ── STEP 4-5: prices + filter + sort + paginate ──────────────
+  return assembleSortAndPaginate(filteredOracleIds, oracleById, rep, query, page, pageSize)
 }
 
 /** Set-scoped Card Finder path. When the user has asked for a specific
@@ -505,37 +463,9 @@ async function findCardsSetScoped(
   for (const o of filtered) oracleById.set(o.id, o)
   const survivingIds = filtered.map((o) => o.id)
 
-  // 4) Prices — reuse existing helper against the freshest printings
-  //    per surviving oracle.
-  const printingIds = survivingIds.map((id) => freshest.get(id)!.id)
-  const cheapestByPrinting = await getCheapestByPrinting(printingIds, {
-    currency: query.currency, finish: query.finish,
-  })
-
-  let assembled: FinderHit[] = survivingIds.map((id) => {
-    const o = oracleById.get(id)!
-    const p = freshest.get(id)!
-    const cheapest = cheapestByPrinting.get(p.id) ?? null
-    return buildHit(o, p, cheapest, query)
-  })
-
-  const hasPriceFilter =
-    typeof query.priceMax === 'number' || typeof query.priceMin === 'number' || Boolean(query.finish)
-  if (hasPriceFilter) {
-    assembled = assembled.filter((h) => {
-      if (!h.cheapest) return false
-      if (query.currency && h.cheapest.currency !== query.currency) return false
-      if (typeof query.priceMax === 'number' && h.cheapest.price > query.priceMax) return false
-      if (typeof query.priceMin === 'number' && h.cheapest.price < query.priceMin) return false
-      return true
-    })
-  }
-
-  assembled = sortHits(assembled, query)
-  const total = assembled.length
-  const start = (page - 1) * pageSize
-  const hits = assembled.slice(start, start + pageSize)
-  return { hits, total, page, pageSize, appliedFilters: query }
+  // 4) Prices + filter + sort + paginate (deferred to the display
+  //    slice when the query doesn't need prices — see helper).
+  return assembleSortAndPaginate(survivingIds, oracleById, freshest, query, page, pageSize)
 }
 
 /** Legality-scoped Card Finder path. Reads `mtg_oracle_legalities`
@@ -554,23 +484,34 @@ async function findCardsLegalityScoped(
   const supabase = getSupabaseServiceClient()
   const fmt = query.legalIn!
 
-  // 1) Legal oracle set. Paginated to bust the 1000-row PostgREST cap.
-  //    Vintage restricted-list membership is treated as legal —
-  //    restricted cards are playable in Vintage as one-of.
+  // 1) Legal oracle set. Paginated in parallel bursts to bust the
+  //    PostgREST 1000-row cap. Vintage restricted-list membership is
+  //    treated as legal — restricted cards are playable in Vintage as
+  //    one-of. Sequential paging previously spent ~3s on Vintage
+  //    (~32k rows / 1000 per page → 32 sequential round-trips).
   const LEGAL_STATUSES = fmt === 'vintage' ? ['legal', 'restricted'] : ['legal']
   const legalOracleIds: string[] = []
   const PAGE = 1000
-  for (let offset = 0; offset < 100_000; offset += PAGE) {
-    const { data, error } = await supabase
-      .from('mtg_oracle_legalities')
-      .select('oracle_card_id')
-      .eq('format', fmt)
-      .in('legality', LEGAL_STATUSES)
-      .range(offset, offset + PAGE - 1)
-    if (error) { console.error('findCardsLegalityScoped legalities err:', error); return emptyResult(query, page, pageSize) }
-    const chunk = (data ?? []) as { oracle_card_id: string }[]
-    for (const r of chunk) legalOracleIds.push(r.oracle_card_id)
-    if (chunk.length < PAGE) break
+  const BURST = 10
+  const MAX_LEGAL = 100_000
+  let legalFinished = false
+  for (let base = 0; base < MAX_LEGAL && !legalFinished; base += BURST * PAGE) {
+    const offsets: number[] = []
+    for (let i = 0; i < BURST; i++) offsets.push(base + i * PAGE)
+    const results = await Promise.all(offsets.map((off) =>
+      supabase
+        .from('mtg_oracle_legalities')
+        .select('oracle_card_id')
+        .eq('format', fmt)
+        .in('legality', LEGAL_STATUSES)
+        .range(off, off + PAGE - 1),
+    ))
+    for (const { data, error } of results) {
+      if (error) { console.error('findCardsLegalityScoped legalities err:', error); return emptyResult(query, page, pageSize) }
+      const chunk = (data ?? []) as { oracle_card_id: string }[]
+      for (const r of chunk) legalOracleIds.push(r.oracle_card_id)
+      if (chunk.length < PAGE) legalFinished = true
+    }
   }
   if (legalOracleIds.length === 0) return emptyResult(query, page, pageSize)
 
@@ -687,33 +628,9 @@ async function findCardsLegalityScoped(
   const survivingIds = oracleIds.filter((id) => rep.has(id))
   if (survivingIds.length === 0) return emptyResult(query, page, pageSize)
 
-  // 6) Prices + assemble + price filter + sort + paginate.
-  const printingIds = survivingIds.map((id) => rep.get(id)!.id)
-  const cheapestByPrinting = await getCheapestByPrinting(printingIds, {
-    currency: query.currency, finish: query.finish,
-  })
-  let assembled: FinderHit[] = survivingIds.map((id) => {
-    const o = oracleById.get(id)!
-    const p = rep.get(id)!
-    const cheapest = cheapestByPrinting.get(p.id) ?? null
-    return buildHit(o, p, cheapest, query)
-  })
-  const hasPriceFilter =
-    typeof query.priceMax === 'number' || typeof query.priceMin === 'number' || Boolean(query.finish)
-  if (hasPriceFilter) {
-    assembled = assembled.filter((h) => {
-      if (!h.cheapest) return false
-      if (query.currency && h.cheapest.currency !== query.currency) return false
-      if (typeof query.priceMax === 'number' && h.cheapest.price > query.priceMax) return false
-      if (typeof query.priceMin === 'number' && h.cheapest.price < query.priceMin) return false
-      return true
-    })
-  }
-  assembled = sortHits(assembled, query)
-  const total = assembled.length
-  const start = (page - 1) * pageSize
-  const hits = assembled.slice(start, start + pageSize)
-  return { hits, total, page, pageSize, appliedFilters: query }
+  // 6) Prices + filter + sort + paginate (deferred to the display
+  //    slice when the query doesn't need prices — see helper).
+  return assembleSortAndPaginate(survivingIds, oracleById, rep, query, page, pageSize)
 }
 
 function emptyResult(query: FinderQuery, page: number, pageSize: number): FinderResult {
@@ -830,6 +747,102 @@ function buildReasons(
   }
   if (q.finish && cheapest?.finish === q.finish) reasons.push(`${q.finish} available`)
   return reasons
+}
+
+// ── Assemble → filter → sort → paginate tail ─────────────────────────
+//
+// Shared by all three Card Finder paths (main RPC, set-scoped,
+// legality-scoped). Handles one key performance case: when the sort
+// and filter don't need price data, we sort/paginate first and then
+// fetch prices only for the ~60 rows we'll actually display, instead
+// of fetching prices for every surviving oracle first. On broad
+// legality queries (Vintage ~32k, Modern ~23k, Commander ~30k) this
+// avoids running getCheapestByPrinting against tens of thousands of
+// printings for a page the user is never going to see.
+//
+// Correctness: no membership decisions happen here — the caller has
+// already decided which oracle_ids survive. This helper only decides
+// WHEN to fetch prices and applies the price filter/sort/pagination
+// the caller previously did inline. Result shape is identical.
+function needsPricesForQuery(query: FinderQuery): boolean {
+  const sort = query.sort ?? (query.budgetPreference ? 'price_asc' : 'relevance')
+  if (sort === 'price_asc' || sort === 'price_desc') return true
+  if (query.budgetPreference) return true
+  if (typeof query.priceMax === 'number' || typeof query.priceMin === 'number') return true
+  if (query.finish) return true
+  return false
+}
+
+async function assembleSortAndPaginate(
+  oracleIds: string[],
+  oracleById: Map<string, OracleRow>,
+  rep: Map<string, PrintingRow>,
+  query: FinderQuery,
+  page: number,
+  pageSize: number,
+): Promise<FinderResult> {
+  const printingIds = oracleIds.map((id) => rep.get(id)!.id)
+  const pricesNeeded = needsPricesForQuery(query)
+
+  if (pricesNeeded) {
+    const cheapestByPrinting = await getCheapestByPrinting(printingIds, {
+      currency: query.currency,
+      finish: query.finish,
+    })
+    let assembled: FinderHit[] = oracleIds.map((id) => {
+      const o = oracleById.get(id)!
+      const p = rep.get(id)!
+      const cheapest = cheapestByPrinting.get(p.id) ?? null
+      return buildHit(o, p, cheapest, query)
+    })
+    const hasPriceFilter =
+      typeof query.priceMax === 'number' ||
+      typeof query.priceMin === 'number' ||
+      Boolean(query.finish)
+    if (hasPriceFilter) {
+      assembled = assembled.filter((h) => {
+        if (!h.cheapest) return false
+        if (query.currency && h.cheapest.currency !== query.currency) return false
+        if (typeof query.priceMax === 'number' && h.cheapest.price > query.priceMax) return false
+        if (typeof query.priceMin === 'number' && h.cheapest.price < query.priceMin) return false
+        return true
+      })
+    }
+    assembled = sortHits(assembled, query)
+    const total = assembled.length
+    const start = (page - 1) * pageSize
+    const hits = assembled.slice(start, start + pageSize)
+    return { hits, total, page, pageSize, appliedFilters: query }
+  }
+
+  // Deferred-price path. Sort and paginate without price data, then
+  // fetch prices for just the display slice.
+  let assembled: FinderHit[] = oracleIds.map((id) => {
+    const o = oracleById.get(id)!
+    const p = rep.get(id)!
+    return buildHit(o, p, null, query)
+  })
+  assembled = sortHits(assembled, query)
+  const total = assembled.length
+  const start = (page - 1) * pageSize
+  const slice = assembled.slice(start, start + pageSize)
+  if (slice.length === 0) {
+    return { hits: slice, total, page, pageSize, appliedFilters: query }
+  }
+  const sliceCheapest = await getCheapestByPrinting(
+    slice.map((h) => h.printing.id),
+    { currency: query.currency, finish: query.finish },
+  )
+  const hits = slice.map((h) => {
+    const cheapest = sliceCheapest.get(h.printing.id) ?? null
+    // Rebuild so buildReasons() sees the resolved price (buildReasons
+    // is a pure function of the assembled inputs; cheaper to rebuild
+    // than to try to mutate reasons in place).
+    const o = oracleById.get(h.oracle_card_id)!
+    const p = rep.get(h.oracle_card_id)!
+    return buildHit(o, p, cheapest, query)
+  })
+  return { hits, total, page, pageSize, appliedFilters: query }
 }
 
 // ── Cheapest-per-printing helper ─────────────────────────────────────

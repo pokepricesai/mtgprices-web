@@ -6,7 +6,7 @@ import { getSetByCode } from '@/lib/mtg/sets'
 import { listPrintingsForSet } from '@/lib/mtg/cards'
 import { getHeadlinePricesByPrinting, getFinishesByPrinting } from '@/lib/mtg/prices'
 import { getSetMarket } from '@/lib/mtg/set-market'
-import { getSetValueHistory } from '@/lib/mtg/set-value-history'
+import { getSetValueHistoryWindows } from '@/lib/mtg/set-value-history'
 import SetGridClient, { type SetGridPrinting } from '@/components/mtg/SetGridClient'
 import SetMarketOverview from '@/components/mtg/SetMarketOverview'
 import SetValueHistoryChart from '@/components/mtg/SetValueHistoryChart'
@@ -34,15 +34,21 @@ export default async function SetPage({ params }: { params: Promise<Params> }) {
   const set = await getSetByCode(setCode)
   if (!set) notFound()
 
-  const printings = await listPrintingsForSet(set.code)
+  // Non-printing reads (setMarket, 7/30/90-day value history) don't
+  // depend on the printing list — start them in parallel with the
+  // printings fetch instead of serialising after it. The three history
+  // windows are also consolidated into a single anchor + max-window
+  // read that slices locally (see getSetValueHistoryWindows).
+  const [printings, setMarket, valueHistory] = await Promise.all([
+    listPrintingsForSet(set.code),
+    getSetMarket(set.code),
+    getSetValueHistoryWindows(set.code),
+  ])
+  const { d7: sv7, d30: sv30, d90: sv90 } = valueHistory
   const printingIds = printings.map((p) => p.id)
-  const [headlineMap, finishesMap, setMarket, sv7, sv30, sv90] = await Promise.all([
+  const [headlineMap, finishesMap] = await Promise.all([
     getHeadlinePricesByPrinting(printingIds),
     getFinishesByPrinting(printingIds),
-    getSetMarket(set.code),
-    getSetValueHistory(set.code, 7),
-    getSetValueHistory(set.code, 30),
-    getSetValueHistory(set.code, 90),
   ])
 
   const items: SetGridPrinting[] = printings.map((p) => ({

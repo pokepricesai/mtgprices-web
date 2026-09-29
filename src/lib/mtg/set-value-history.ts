@@ -38,6 +38,85 @@ export type SetValueHistory = {
   basketSize: number
 }
 
+// One-shot fetch of the 7 / 30 / 90 day windows in a single anchor +
+// range query, then slice locally. The three windows share both the
+// anchor (max observed_on for the set on this basis) and the row set
+// (7d ⊂ 30d ⊂ 90d). The previous implementation called
+// `getSetValueHistory` three times in parallel, running 3 duplicate
+// anchor queries and re-fetching the same 90-day rows three times.
+export async function getSetValueHistoryWindows(
+  setCode: string,
+  basis: MarketBasis = DEFAULT_BASIS,
+): Promise<{ d7: SetValueHistory | null; d30: SetValueHistory | null; d90: SetValueHistory | null }> {
+  const supabase = getSupabaseServiceClient()
+
+  const { data: anchorRow } = await supabase
+    .from('mtg_set_value_daily')
+    .select('observed_on')
+    .eq('set_code', setCode)
+    .eq('provider', basis.provider).eq('currency', basis.currency)
+    .eq('market', basis.market).eq('price_type', basis.priceType)
+    .order('observed_on', { ascending: false })
+    .limit(1)
+  const anchor = (anchorRow?.[0] as { observed_on: string } | undefined)?.observed_on
+  if (!anchor) return { d7: null, d30: null, d90: null }
+
+  const since90 = new Date(anchor + 'T00:00:00Z')
+  since90.setUTCDate(since90.getUTCDate() - 90)
+  const since90Iso = since90.toISOString().slice(0, 10)
+
+  const { data: rows, error } = await supabase
+    .from('mtg_set_value_daily')
+    .select('observed_on, eligible_count, priced_count, basket_value')
+    .eq('set_code', setCode)
+    .eq('provider', basis.provider).eq('currency', basis.currency)
+    .eq('market', basis.market).eq('price_type', basis.priceType)
+    .gte('observed_on', since90Iso).lte('observed_on', anchor)
+    .order('observed_on', { ascending: true })
+  if (error) {
+    console.error('getSetValueHistoryWindows read failed:', error.message)
+    return { d7: null, d30: null, d90: null }
+  }
+  const raw = (rows ?? []) as Array<{
+    observed_on: string; eligible_count: number; priced_count: number; basket_value: number | string
+  }>
+  if (raw.length === 0) return { d7: null, d30: null, d90: null }
+
+  const basketSize = Math.max(...raw.map((r) => Number(r.eligible_count) || 0))
+  const allPoints: SetValuePoint[] = raw.map((r) => ({
+    date: r.observed_on,
+    value: Number(r.basket_value) || 0,
+    covered: Number(r.priced_count) || 0,
+    total: Number(r.eligible_count) || 0,
+  }))
+  const minCovered = Math.max(1, Math.ceil(basketSize * HISTORY_COVERAGE_THRESHOLD))
+  const methodology =
+    `Basket = one canonical finish per eligible English paper printing in the set ` +
+    `(nonfoil > foil > etched hierarchy, structural not price-driven). ` +
+    `Missing daily observation = the printing is unpriced for that date; no substitution. ` +
+    `Source: mtg_set_value_daily on ${basis.provider} ${basis.currency} ${basis.priceType}.`
+
+  const build = (windowDays: 7 | 30 | 90): SetValueHistory | null => {
+    const since = new Date(anchor + 'T00:00:00Z')
+    since.setUTCDate(since.getUTCDate() - windowDays)
+    const sinceIso = since.toISOString().slice(0, 10)
+    const scoped = allPoints.filter((p) => p.date >= sinceIso)
+    if (scoped.length === 0) return null
+    const firstUsable = scoped.findIndex((p) => p.covered >= minCovered)
+    const trimmed = firstUsable >= 0 ? scoped.slice(firstUsable) : []
+    return {
+      basis,
+      windowDays,
+      points: trimmed,
+      currency: basis.currency,
+      methodology,
+      basketSize,
+    }
+  }
+
+  return { d7: build(7), d30: build(30), d90: build(90) }
+}
+
 export async function getSetValueHistory(
   setCode: string,
   windowDays: 7 | 30 | 90 = 30,
