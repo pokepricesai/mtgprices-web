@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import type { HTMLAttributes } from 'react'
 import './globals.css'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -72,6 +73,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
+        {/* Impact.com TCG affiliate site-verification tag. Impact
+            reads the `value` attribute, not the `content` attribute
+            Next's Metadata API would produce, so we render it directly
+            in the root <head>. Once here means every public route
+            inherits it without duplication and without touching the
+            robots gate above. Cast because React's HTMLMetaElement
+            types only declare `content`. */}
+        <meta {...({ name: 'impact-site-verification', value: '34998028-9c9d-4d4e-9cb1-b90a5c17f30e' } as HTMLAttributes<HTMLMetaElement>)} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
