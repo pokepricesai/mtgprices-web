@@ -56,6 +56,10 @@
     {
       "path": "/api/cron/tcggraph-refresh?game=magic-the-gathering&continue=1&maxPages=350",
       "schedule": "0 4 */2 * *"
+    },
+    {
+      "path": "/api/cron/health-check",
+      "schedule": "17 * * * *"
     }
   ],
   "functions": {

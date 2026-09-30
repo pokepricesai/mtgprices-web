@@ -338,6 +338,15 @@ export async function refreshCatalogue(opts) {
 
   logger.info('tcg.refresh.done', { game: gameId, status, stopReason: stats.stopReason, pages: stats.pagesCompleted, credits: stats.creditsUsed })
 
+  //  Cross-app cache invalidation. Fire-and-forget: a failure here MUST
+  //  NOT change the ingest result. Currently wired for YGO — the YGO
+  //  frontend uses a 6h Data Cache for market pages and would otherwise
+  //  wait up to that long to reveal freshly-ingested prices. Only
+  //  trigger on a successful sweep that actually wrote market rows.
+  if (!dryRun && status === 'success' && stats.marketRows > 0) {
+    await invalidateDownstreamCaches(gameId, logger)
+  }
+
   return {
     status,
     reason: null,
@@ -384,6 +393,48 @@ async function acquireLock(sb, workerId, gameId, resource, minutes) {
 
 async function releaseLock(sb, gameId, resource) {
   await sb.from('tcg_ingest_locks').delete().eq('game_id', gameId).eq('resource', resource)
+}
+
+async function invalidateDownstreamCaches(gameId, logger) {
+  // gameId → { origin_env_var, tags[] }. Origin lives in an env var so
+  // Preview / Production can point at the right host without a code
+  // change. If the env var is unset we silently skip (Preview typically
+  // has no downstream cache to invalidate).
+  const targets = {
+    ygo: { env: 'YGO_REVALIDATE_ORIGIN', tags: ['ygo:market', 'ygo:entity', 'ygo:card'] },
+  }
+  const cfg = targets[gameId]
+  if (!cfg) return
+  const origin = (process.env[cfg.env] ?? '').trim()
+  if (!origin) return
+  //  The bearer we send is the downstream app's cron secret, held on
+  //  THIS side as YGO_REVALIDATE_TOKEN so we can rotate independently
+  //  from mtgprices-web's own CRON_SECRET.
+  const secret = (process.env.YGO_REVALIDATE_TOKEN ?? '').trim()
+  if (!secret) {
+    logger.warn('tcg.refresh.revalidate_skipped', { game: gameId, reason: 'YGO_REVALIDATE_TOKEN not set' })
+    return
+  }
+  try {
+    const r = await fetch(`${origin.replace(/\/$/, '')}/api/revalidate`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${secret}`,
+        'user-agent': 'tcg-refresh-revalidate/1',
+      },
+      body: JSON.stringify({ tags: cfg.tags }),
+      // Short timeout — this is a hint, not a critical path.
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!r.ok) {
+      logger.warn('tcg.refresh.revalidate_failed', { game: gameId, origin, status: r.status })
+    } else {
+      logger.info('tcg.refresh.revalidate_done', { game: gameId, origin, tags: cfg.tags })
+    }
+  } catch (err) {
+    logger.warn('tcg.refresh.revalidate_error', { game: gameId, err: err instanceof Error ? err.message : String(err) })
+  }
 }
 
 async function recordSkippedRun(sb, { runId, gameId, source, reason, preflightCredits }) {
