@@ -17,9 +17,19 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const SOURCE_STALE_HOURS = 48;
 export const SOURCE_WARNING_HOURS = 30;
-export const INGEST_STALE_HOURS = 24;
-export const INGEST_WARNING_HOURS = 12;
+// Ingest cadence varies per game (YGO daily, MTG every other day). The
+// most-generous known cadence is every-2-days, so a full 72h gap is
+// the earliest we can be sure the pipeline has actually skipped.
+export const INGEST_STALE_HOURS = 72;
+export const INGEST_WARNING_HOURS = 48;
 export const MIN_ROWS_FOR_CHANGE_CHECK = 1000;
+
+// Map (game_id) → the tcg_ingest_runs.game_id used by the ingest. In
+// this project the two happen to match; kept explicit so a future
+// rename cannot silently break the health check.
+const GAME_TO_RUN_KEY: Record<string, string> = {
+  mtg: 'mtg', ygo: 'ygo', op: 'op', lorcana: 'lorcana', poke: 'poke',
+};
 
 // Watchlist of (game_id, source) pairs. Adding an entry that has never
 // ingested will report UNKNOWN forever and produce noise; only add
@@ -50,7 +60,13 @@ export interface SourceReport {
   source: string;
   newest_source_updated_at: string | null;
   newest_ingested_at: string | null;
+  //  Newest updated_at across ANY source for this game. Reflects
+  //  whether our ingest pipeline is producing writes at all.
+  game_newest_updated_at: string | null;
   source_age_hours: number | null;
+  //  Derived from game_newest_updated_at, NOT from ingested_at
+  //  (which is insert-only and stops moving as soon as no new
+  //  printings ship).
   ingest_age_hours: number | null;
   today_daily_rows: number | null;
   yesterday_daily_rows: number | null;
@@ -99,8 +115,9 @@ export async function inspectSource(
 ): Promise<SourceReport> {
   const today = todayIsoDate();
   const yday = ymdOffsetIso(-1);
+  const runGameId = GAME_TO_RUN_KEY[game_id] ?? game_id;
 
-  const [newestUpdated, newestIngested, todayCount, ydayCount] = await Promise.all([
+  const [newestUpdated, newestIngested, gameNewestUpdated, todayCount, ydayCount] = await Promise.all([
     sb.from('tcg_market_prices_current')
       .select('updated_at')
       .eq('game_id', game_id)
@@ -113,6 +130,17 @@ export async function inspectSource(
       .eq('game_id', game_id)
       .eq('source', source)
       .order('ingested_at', { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle(),
+    //  "Is our pipeline running at all for this game?" = newest
+    //  updated_at ACROSS ALL sources for this game_id. If Cardmarket
+    //  is fresh, ingest is clearly running even if TCGPlayer is
+    //  upstream-frozen. runGameId matches game_id today but is kept
+    //  explicit as documentation.
+    sb.from('tcg_market_prices_current')
+      .select('updated_at')
+      .eq('game_id', runGameId)
+      .order('updated_at', { ascending: false, nullsFirst: false })
       .limit(1)
       .maybeSingle(),
     sb.from('tcg_market_price_daily')
@@ -131,6 +159,10 @@ export async function inspectSource(
     (newestUpdated.data as { updated_at?: string | null } | null)?.updated_at ?? null;
   const newestIngestedIso =
     (newestIngested.data as { ingested_at?: string | null } | null)?.ingested_at ?? null;
+  //  Pipeline-liveness signal: newest updated_at across ALL sources
+  //  for the game. If any source is fresh, the ingest is running.
+  const gameNewestIso =
+    (gameNewestUpdated.data as { updated_at?: string | null } | null)?.updated_at ?? null;
   const todayRows = todayCount.count ?? null;
   const ydayRows = ydayCount.count ?? null;
 
@@ -177,7 +209,7 @@ export async function inspectSource(
   }
 
   const sourceAge = isoAgoHours(newestSourceIso);
-  const ingestAge = isoAgoHours(newestIngestedIso);
+  const ingestAge = isoAgoHours(gameNewestIso);
   const reasons: string[] = [];
 
   const sourceIsStale = sourceAge != null && sourceAge > SOURCE_STALE_HOURS;
@@ -196,10 +228,10 @@ export async function inspectSource(
     // Surface it first even if source is also stale.
     category = 'ingest_stale';
     reasons.push(
-      `no new writes for ${Math.round(ingestAge!)}h (threshold ${INGEST_STALE_HOURS}h) — our pipeline has stopped writing`,
+      `no updated_at across ANY source for this game in ${Math.round(ingestAge!)}h (threshold ${INGEST_STALE_HOURS}h) — ingest pipeline is not writing`,
     );
     if (sourceIsStale) {
-      reasons.push(`(upstream also stale: source not moved in ${Math.round(sourceAge!)}h)`);
+      reasons.push(`(this source also stale: not moved in ${Math.round(sourceAge!)}h)`);
     }
   } else if (sourceIsStale) {
     category = 'source_stale';
@@ -242,6 +274,7 @@ export async function inspectSource(
     newest_source_updated_at: newestSourceIso,
     newest_ingested_at: newestIngestedIso,
     source_age_hours: sourceAge != null ? Math.round(sourceAge * 10) / 10 : null,
+    game_newest_updated_at: gameNewestIso,
     ingest_age_hours: ingestAge != null ? Math.round(ingestAge * 10) / 10 : null,
     today_daily_rows: todayRows,
     yesterday_daily_rows: ydayRows,
