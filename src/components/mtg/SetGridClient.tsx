@@ -257,45 +257,30 @@ export default function SetGridClient({ setCode, printings }: Props) {
       </div>
 
       {/* Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
+      <div className="mtg-set-grid">
         {sorted.map((p) => {
           const slug = p.collector_number ? buildCardSlug(p.collector_number, p.name) : ''
           const href = slug ? `/set/${setCode}/card/${slug}` : '#'
           const dot = p.rarity ? RARITY_COLOUR[p.rarity] ?? 'var(--text-muted)' : 'var(--text-muted)'
           return (
-            <Link
-              key={p.id}
-              href={href}
-              className="card-hover"
-              style={{
-                display: 'block', background: 'var(--surface)',
-                border: '1px solid var(--border)', borderRadius: 12,
-                padding: 12, textDecoration: 'none', color: 'var(--text)',
-              }}
-            >
-              <div style={{
-                aspectRatio: '5 / 7', borderRadius: 6, background: 'var(--bg-light)',
-                marginBottom: 10, overflow: 'hidden',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
+            <Link key={p.id} href={href} className="mtg-set-tile card-hover">
+              <div className="mtg-set-tile-img">
                 {p.image_uri_small ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.image_uri_small} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                  <img src={p.image_uri_small} alt={p.name} loading="lazy" />
                 ) : (
-                  <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>No image</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>No image</span>
                 )}
               </div>
-              <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.25, minHeight: 34 }}>{p.name}</div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, gap: 6 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: 11 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: dot, display: 'inline-block' }} aria-hidden />
+              <div className="mtg-set-tile-name">{p.name}</div>
+              <div className="mtg-set-tile-meta">
+                <span className="mtg-set-tile-cn">
+                  <span className="mtg-set-tile-cn-dot" style={{ background: dot }} aria-hidden />
                   <span>#{p.collector_number ?? '-'}</span>
-                </div>
-                <span style={{
-                  color: p.price !== null ? 'var(--text)' : 'var(--text-muted)',
-                  fontWeight: p.price !== null ? 700 : 500, fontSize: 13,
-                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-                }}>{fmtUSD(p.price)}</span>
+                </span>
+                <span className={p.price !== null ? 'mtg-set-tile-price' : 'mtg-set-tile-price mtg-set-tile-price-missing'}>
+                  {fmtUSD(p.price)}
+                </span>
               </div>
             </Link>
           )

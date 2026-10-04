@@ -80,23 +80,23 @@ export default async function SetPage({ params }: { params: Promise<Params> }) {
   }
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px 64px' }}>
+    <div className="mtg-page-wrap">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
           {set.icon_svg_uri ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={set.icon_svg_uri} alt="" aria-hidden style={{ width: 26, height: 26, opacity: 0.85 }} />
+            <img src={set.icon_svg_uri} alt="" aria-hidden style={{ width: 24, height: 24, opacity: 0.85 }} />
           ) : null}
           <span className="label-mono">{set.code}</span>
           {set.set_type && <span className="label-mono" style={{ color: 'var(--accent)' }}>{set.set_type.replace(/_/g, ' ')}</span>}
         </div>
-        <h1 style={{ margin: 0, fontSize: 30 }}>{set.name}</h1>
-        <div style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 6, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <h1 className="mtg-set-title">{set.name}</h1>
+        <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 6, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {set.released_at && <span>Released {set.released_at}</span>}
           {set.card_count != null && <span>{set.card_count.toLocaleString()} cards</span>}
           {set.block && <span>{set.block}</span>}

@@ -194,7 +194,7 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
   ].filter(Boolean) as string[]
 
   return (
-    <div style={{ maxWidth: 1180, margin: '0 auto', padding: '20px 24px 80px' }}>
+    <div className="mtg-card-wrap">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       {/* Breadcrumb */}
@@ -217,7 +217,7 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
         <CardColorAccent colours={oracle.colors ?? []} label={false} />
 
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: 12, marginTop: 10 }}>
-          <h1 style={{ fontSize: 30, margin: 0, lineHeight: 1.05, letterSpacing: '-0.015em' }}>{printing.name}</h1>
+          <h1 className="mtg-card-title">{printing.name}</h1>
           {oracle.mana_cost && !faces.some((f) => f.mana_cost) && <ManaCost cost={oracle.mana_cost} size={20} />}
         </div>
 
@@ -277,12 +277,14 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
       {/* Hero: image (with halo) + market / gameplay two-column */}
       <div className="mtg-card-hero" style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) 1fr', gap: 32, alignItems: 'start' }}>
         <div>
-          <div className="mtg-card-halo" style={{ '--mtg-halo': cardTheme.ambient } as React.CSSProperties}>
-            <div style={{ display: 'grid', gap: 12 }}>
-              <CardImage src={printing.image_uri} alt={printing.name} />
-              {backImage && (
-                <CardImage src={backImage} alt={`${printing.name}, back face`} caption="Back face (default printing artwork)" />
-              )}
+          <div className="mtg-card-image-wrap">
+            <div className="mtg-card-halo" style={{ '--mtg-halo': cardTheme.ambient } as React.CSSProperties}>
+              <div style={{ display: 'grid', gap: 12 }}>
+                <CardImage src={printing.image_uri} alt={printing.name} />
+                {backImage && (
+                  <CardImage src={backImage} alt={`${printing.name}, back face`} caption="Back face (default printing artwork)" />
+                )}
+              </div>
             </div>
           </div>
 
