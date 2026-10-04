@@ -3,7 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getSetByCode } from '@/lib/mtg/sets'
-import { listPrintingsForSet } from '@/lib/mtg/cards'
+import { listPrintingsForSetStrict } from '@/lib/mtg/cards'
 import { getHeadlinePricesByPrinting, getFinishesByPrinting } from '@/lib/mtg/prices'
 import { getSetMarket } from '@/lib/mtg/set-market'
 import { getSetValueHistoryWindows } from '@/lib/mtg/set-value-history'
@@ -55,8 +55,17 @@ export default async function SetPage({ params }: { params: Promise<Params> }) {
   // printings fetch instead of serialising after it. The three history
   // windows are also consolidated into a single anchor + max-window
   // read that slices locally (see getSetValueHistoryWindows).
+  // STRICT variant on the printings query: a transient Supabase error
+  // here must NOT render the "No printings for this set are indexed
+  // yet" empty state, because the Full Route Cache would then pin
+  // that empty response for the entire 24h revalidate window.
+  // listPrintingsForSetStrict retries + throws on persistent failure;
+  // Next.js skips caching a thrown render so the next request gets a
+  // fresh attempt. The adjacent getSetMarket / getSetValueHistoryWindows
+  // calls stay fail-open — their output is secondary panels that
+  // degrade gracefully when empty.
   const [printings, setMarket, valueHistory] = await Promise.all([
-    listPrintingsForSet(set.code),
+    listPrintingsForSetStrict(set.code),
     getSetMarket(set.code),
     getSetValueHistoryWindows(set.code),
   ])

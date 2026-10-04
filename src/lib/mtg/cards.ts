@@ -77,46 +77,10 @@ export type MtgSetCard = MtgPrinting & {
   oracle_colors: string[] | null
 }
 
-/** All English printings in a given set, ordered by collector number.
- *  Paginates in 1000-row windows because PostgREST enforces a
- *  1000-row max regardless of the `.limit(3000)` hint. Secret Lair
- *  (SLD) has 2,700+ printings; without pagination we silently
- *  truncated the grid + set-completion denominator. */
-export async function listPrintingsForSet(setCode: string, opts: { includeDigital?: boolean } = {}): Promise<MtgSetCard[]> {
-  const supabase = getSupabaseServiceClient()
-  const normalised = setCode.trim().toLowerCase()
-  if (!normalised) return []
-
-  const PAGE = 1000
-  const all: any[] = []
-  for (let offset = 0; ; offset += PAGE) {
-    let q = supabase
-      .from('mtg_printings')
-      .select(`
-        id, oracle_card_id, set_id, scryfall_id, set_code, collector_number, lang, name,
-        layout, rarity, artist, image_uri, image_uri_small, art_crop_uri, released_at,
-        borderless, full_art, promo, digital, scryfall_uri, reprint, textless, variation,
-        oracle:mtg_oracle_cards ( name, type_line, mana_cost, colors )
-      `)
-      .eq('set_code', normalised)
-      .eq('lang', 'en')
-      .order('collector_number', { ascending: true })
-      .range(offset, offset + PAGE - 1)
-    if (!opts.includeDigital) q = q.eq('digital', false)
-
-    const { data, error } = await q
-    if (error) {
-      console.error('listPrintingsForSet error:', error)
-      return []
-    }
-    const chunk = data ?? []
-    all.push(...chunk)
-    // Break when we got a partial page (i.e. no more rows).
-    if (chunk.length < PAGE) break
-    // Belt-and-braces cap so a malformed set can't spin forever.
-    if (offset + PAGE >= 10_000) break
-  }
-  return (all ?? []).map((r: any) => ({
+// Shared row mapper so the fail-closed and strict variants cannot
+// drift. Any new field we project in the SELECT belongs here too.
+function mapMtgSetCardRow(r: any): MtgSetCard {
+  return {
     id: r.id,
     oracle_card_id: r.oracle_card_id,
     set_id: r.set_id,
@@ -144,7 +108,127 @@ export async function listPrintingsForSet(setCode: string, opts: { includeDigita
     oracle_type_line: r.oracle?.type_line ?? null,
     oracle_mana_cost: r.oracle?.mana_cost ?? null,
     oracle_colors: r.oracle?.colors ?? null,
-  }))
+  }
+}
+
+const MTG_SET_PRINTINGS_SELECT = `
+  id, oracle_card_id, set_id, scryfall_id, set_code, collector_number, lang, name,
+  layout, rarity, artist, image_uri, image_uri_small, art_crop_uri, released_at,
+  borderless, full_art, promo, digital, scryfall_uri, reprint, textless, variation,
+  oracle:mtg_oracle_cards ( name, type_line, mana_cost, colors )
+`
+
+/** All English printings in a given set, ordered by collector number.
+ *  Paginates in 1000-row windows because PostgREST enforces a
+ *  1000-row max regardless of the `.limit(3000)` hint. Secret Lair
+ *  (SLD) has 2,700+ printings; without pagination we silently
+ *  truncated the grid + set-completion denominator.
+ *
+ *  FAIL-CLOSED: returns `[]` on any error. Suitable for callers where
+ *  a transient DB blip should degrade to an empty state rather than
+ *  propagate. **Do NOT use from a route that participates in
+ *  Full Route Cache / ISR** — a cached empty-state response can
+ *  be pinned for the entire revalidate window. Use
+ *  `listPrintingsForSetStrict` on cacheable routes. */
+export async function listPrintingsForSet(setCode: string, opts: { includeDigital?: boolean } = {}): Promise<MtgSetCard[]> {
+  const supabase = getSupabaseServiceClient()
+  const normalised = setCode.trim().toLowerCase()
+  if (!normalised) return []
+
+  const PAGE = 1000
+  const all: any[] = []
+  for (let offset = 0; ; offset += PAGE) {
+    let q = supabase
+      .from('mtg_printings')
+      .select(MTG_SET_PRINTINGS_SELECT)
+      .eq('set_code', normalised)
+      .eq('lang', 'en')
+      .order('collector_number', { ascending: true })
+      .range(offset, offset + PAGE - 1)
+    if (!opts.includeDigital) q = q.eq('digital', false)
+
+    const { data, error } = await q
+    if (error) {
+      console.error('listPrintingsForSet error:', error)
+      return []
+    }
+    const chunk = data ?? []
+    all.push(...chunk)
+    // Break when we got a partial page (i.e. no more rows).
+    if (chunk.length < PAGE) break
+    // Belt-and-braces cap so a malformed set can't spin forever.
+    if (offset + PAGE >= 10_000) break
+  }
+  return all.map(mapMtgSetCardRow)
+}
+
+/** Strict variant of `listPrintingsForSet` for callers whose render
+ *  result will be cached (ISR / Full Route Cache). Retries on error
+ *  with short bounded backoff and THROWS if all attempts fail — this
+ *  prevents a transient DB blip from being memorialised as an empty
+ *  set page for the entire revalidate window.
+ *
+ *  Semantics:
+ *   - genuine "no rows" success → returns `[]` (legitimate empty set)
+ *   - transient error on one page → retried up to `MAX_ATTEMPTS` times
+ *   - persistent failure → throws
+ *   - identical row shape and ordering as `listPrintingsForSet` on
+ *     success */
+export async function listPrintingsForSetStrict(
+  setCode: string,
+  opts: { includeDigital?: boolean } = {},
+): Promise<MtgSetCard[]> {
+  const supabase = getSupabaseServiceClient()
+  const normalised = setCode.trim().toLowerCase()
+  if (!normalised) return []
+
+  const PAGE = 1000
+  const MAX_ATTEMPTS = 3
+  const BACKOFF_MS = [100, 200, 400] as const
+
+  const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+
+  const all: any[] = []
+  for (let offset = 0; ; offset += PAGE) {
+    let chunk: any[] | null = null
+    let lastError: unknown = null
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        let q = supabase
+          .from('mtg_printings')
+          .select(MTG_SET_PRINTINGS_SELECT)
+          .eq('set_code', normalised)
+          .eq('lang', 'en')
+          .order('collector_number', { ascending: true })
+          .range(offset, offset + PAGE - 1)
+        if (!opts.includeDigital) q = q.eq('digital', false)
+
+        const { data, error } = await q
+        if (error) {
+          lastError = error
+          console.warn(`[listPrintingsForSetStrict] set=${normalised} offset=${offset} attempt=${attempt}/${MAX_ATTEMPTS} error: ${error.message}`)
+        } else {
+          chunk = data ?? []
+          break
+        }
+      } catch (e) {
+        lastError = e
+        const msg = e instanceof Error ? e.message : String(e)
+        console.warn(`[listPrintingsForSetStrict] set=${normalised} offset=${offset} attempt=${attempt}/${MAX_ATTEMPTS} threw: ${msg}`)
+      }
+      if (attempt < MAX_ATTEMPTS) await sleep(BACKOFF_MS[attempt - 1])
+    }
+    if (chunk === null) {
+      const msg = lastError instanceof Error ? lastError.message : String(lastError)
+      // Throw a plain Error with the set code so Next.js prerender /
+      // ISR logs make the failing slug obvious. Does not expose keys.
+      throw new Error(`listPrintingsForSetStrict: set=${normalised} failed after ${MAX_ATTEMPTS} attempts: ${msg}`)
+    }
+    all.push(...chunk)
+    if (chunk.length < PAGE) break
+    if (offset + PAGE >= 10_000) break
+  }
+  return all.map(mapMtgSetCardRow)
 }
 
 // ─── Card page lookup ────────────────────────────────────────────────────
