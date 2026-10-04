@@ -975,9 +975,30 @@ button.chip {
   .mtg-set-tile-meta { font-size: 11.5px; }
 }
 
-/* Card detail page — image mustn't dominate the mobile viewport.
-   Caps at 300px (centered) on mobile, releases on larger screens
-   where the hero becomes two-column. */
+/* Card detail hero — mobile is a true single-column block layout, NOT
+   a 1fr grid. Grid "1fr" on mobile still runs min-content sizing, and
+   the PrintingComparison table (minWidth 780) propagated up through
+   the track, forcing the hero to render at 782px wide on a 375px
+   viewport. display:block eliminates grid math entirely so children
+   stack and overflow is contained locally. */
+.mtg-card-hero {
+  display: block;
+}
+.mtg-card-hero > * { min-width: 0; max-width: 100%; }
+.mtg-card-hero > *:not(:last-child) { margin-bottom: 24px; }
+@media (min-width: 820px) {
+  .mtg-card-hero {
+    display: grid;
+    grid-template-columns: minmax(260px, 340px) 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  .mtg-card-hero > *:not(:last-child) { margin-bottom: 0; }
+}
+
+/* Card detail image — caps at 300px (centered) on mobile where the
+   hero is single-column; releases on tablet+ where the hero is a
+   two-column grid and the image takes the first column naturally. */
 .mtg-card-image-wrap {
   max-width: 300px;
   margin: 0 auto;

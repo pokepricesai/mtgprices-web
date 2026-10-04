@@ -274,8 +274,12 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
         )}
       </header>
 
-      {/* Hero: image (with halo) + market / gameplay two-column */}
-      <div className="mtg-card-hero" style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) 1fr', gap: 32, alignItems: 'start' }}>
+      {/* Hero: image (with halo) + market / gameplay two-column.
+          Layout is controlled entirely by .mtg-card-hero (mobile:
+          block, tablet+: grid) — no inline style here so grid math
+          does not run on mobile and nothing inside can force the
+          document width past the viewport. */}
+      <div className="mtg-card-hero">
         <div>
           <div className="mtg-card-image-wrap">
             <div className="mtg-card-halo" style={{ '--mtg-halo': cardTheme.ambient } as React.CSSProperties}>
@@ -478,15 +482,6 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
         />
       </div>
 
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-            @media (max-width: 820px) {
-              .mtg-card-hero { grid-template-columns: 1fr !important; }
-            }
-          `,
-        }}
-      />
     </div>
   )
 }
