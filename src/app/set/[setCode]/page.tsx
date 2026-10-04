@@ -12,7 +12,23 @@ import SetMarketOverview from '@/components/mtg/SetMarketOverview'
 import SetValueHistoryChart from '@/components/mtg/SetValueHistoryChart'
 import SealedEbayCTA from '@/components/mtg/SealedEbayCTA'
 
-export const revalidate = 300
+export const revalidate = 86400
+export const dynamicParams = true
+
+// Next.js 16 — on dynamic-segment routes, `revalidate` alone no longer
+// opts into Full Route Cache. Returning an empty array from
+// generateStaticParams registers this route for ISR (first request per
+// set code renders on-demand and caches for `revalidate` seconds)
+// without the build-time cost of prerendering every set. Build-time
+// prerender was attempted on all ~1,029 sets but exhausted the 60 s
+// per-page prerender timeout on the largest sets (eos, tsr) under
+// 23-worker parallelism, because the handler fans out N round-trips
+// per printing. Falling back to pure on-demand ISR is the same
+// strategy used on PokePrices /set/[slug]/card/[cardSlug] and keeps
+// build time constant regardless of the set universe.
+export async function generateStaticParams(): Promise<Array<{ setCode: string }>> {
+  return []
+}
 
 type Params = { setCode: string }
 
