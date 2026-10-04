@@ -377,6 +377,13 @@ function Hero({
            cannot inflate the implicit auto track past the 320px
            viewport. */
         .hero-grid { grid-template-columns: minmax(0, 1fr); }
+        /* And ensure both direct children (left column + right column)
+           cannot themselves overflow the single mobile track — the
+           right column is itself a nested grid of promo cards whose
+           flex-item min-content widths (e.g. "Cards for a strategy")
+           otherwise bubble up through the 1fr track. min-width:0 lets
+           the cells shrink; max-width:100% enforces the ceiling. */
+        .hero-grid > * { min-width: 0; max-width: 100%; }
         @media (min-width: 960px) {
           .hero-grid { grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.95fr); gap: 48px; }
         }
