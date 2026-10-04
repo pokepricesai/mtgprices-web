@@ -60,13 +60,17 @@ export default function SetMarketOverview({ market, setName }: Props) {
         <p style={{ margin: '6px 0 0', lineHeight: 1.55 }}>{market.methodology}</p>
       </details>
 
-      <div style={{
-        marginTop: 20, display: 'grid', gap: 14,
-        // 2 columns at >=720 px inner width, 1 column below. 340 lets
-        // the numeric block stay unwrapped even with a 5-digit price
-        // (e.g. $1,678.75) beside a long card name.
-        gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-      }}>
+      <div
+        className="mtg-set-market-panels"
+        style={{
+          marginTop: 20, display: 'grid', gap: 14,
+          // Mobile: 1 column, shrinkable so a 320px viewport can host
+          // the panel. Desktop: 2 columns at ≥720px, 340 lets the
+          // numeric block stay unwrapped even with a 5-digit price
+          // (e.g. $1,678.75) beside a long card name.
+          gridTemplateColumns: 'minmax(0, 1fr)',
+        }}
+      >
         {market.mostValuable.length > 0 && (
           <Panel title="Most valuable">
             {market.mostValuable.map((t) => (

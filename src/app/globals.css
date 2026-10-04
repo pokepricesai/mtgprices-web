@@ -1028,3 +1028,23 @@ button.chip {
 }
 @media (min-width: 640px) { .mtg-set-title { font-size: 26px; } }
 @media (min-width: 1024px) { .mtg-set-title { font-size: 30px; } }
+
+/* SetMarketOverview panels — single shrinkable column on mobile,
+   two columns from 720px wide (where the 340px minimum fits), using
+   container-query-ish behaviour via a plain breakpoint. */
+@media (min-width: 720px) {
+  .mtg-set-market-panels {
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)) !important;
+  }
+}
+
+/* Card page halo bleed — the ::before uses inset:-20px to glow 20px
+   beyond the halo box. On a 320px viewport that pseudo-element
+   extends past the right edge of the document. Clip it to the halo
+   image-wrap on mobile so the bleed is contained; on tablet+ (where
+   the image column has plenty of room) release the clip so the glow
+   is visible as designed. */
+.mtg-card-image-wrap { overflow: clip; }
+@media (min-width: 820px) {
+  .mtg-card-image-wrap { overflow: visible; }
+}

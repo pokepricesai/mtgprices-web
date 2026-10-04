@@ -372,6 +372,11 @@ function Hero({
       </div>
 
       <style>{`
+        /* Mobile base: 1 column with a shrinkable track so the h1
+           "Know every card. Build better decks." (max-content ≈ 332px)
+           cannot inflate the implicit auto track past the 320px
+           viewport. */
+        .hero-grid { grid-template-columns: minmax(0, 1fr); }
         @media (min-width: 960px) {
           .hero-grid { grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.95fr); gap: 48px; }
         }
