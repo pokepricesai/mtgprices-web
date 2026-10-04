@@ -429,7 +429,7 @@ function DeckIntelligenceCard() {
         Grounded in the live MTGPrices catalogue. Format aware Deck Builder, capability based
         card search and a rules aware Test Your Deck flow. No invented cards.
       </p>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 8, marginTop: 14 }}>
         {actions.map((a) => (
           <Link
             key={a.label}
@@ -476,7 +476,7 @@ function MarketPulseCard({
         </div>
         <span className="chip chip-arcane" style={{ fontSize: 10.5 }}>USD paper, TCGplayer</span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 10, marginBottom: 14 }}>
         <MiniStat label="Printings" value={formatBig(counts.printings)} />
         <MiniStat label="Priced finishes" value={formatBig(counts.pricedFinishes)} />
       </div>
