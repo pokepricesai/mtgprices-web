@@ -222,7 +222,7 @@ function InsightsSection({ items }: { items: InsightMeta[] }) {
         />
         <div style={{
           display: 'grid', gap: 16, marginTop: 24,
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
         }}>
           {items.map((a) => (
             <Link
@@ -616,7 +616,7 @@ function MarketPulseSection({ movers }: { movers: Awaited<ReturnType<typeof getM
           rightLink={{ href: '/market', label: 'All movers →' }}
         />
 
-        <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', marginTop: 24 }}>
+        <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', marginTop: 24 }}>
           {topRiser && <MoverTile kind="riser" mover={topRiser} />}
           {topFaller && <MoverTile kind="faller" mover={topFaller} />}
           {active.map((m) => (
@@ -760,7 +760,7 @@ function StartExploringSection() {
         />
         <div style={{
           display: 'grid', gap: 18, marginTop: 28,
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
         }}>
           {EXPLORE.map((c) => (
             <ExploreCardTile key={c.title} card={c} />
@@ -1017,7 +1017,7 @@ function FormatsSection({ formats }: { formats: typeof FORMATS }) {
         />
         <div style={{
           display: 'grid', gap: 12, marginTop: 24,
-          gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 210px), 1fr))',
         }}>
           {formats.map((f) => (
             <Link
@@ -1075,7 +1075,7 @@ function RecentSetsSection({ sets }: { sets: MtgSet[] }) {
         />
         <div style={{
           display: 'grid', gap: 14, marginTop: 24,
-          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 220px), 1fr))',
         }}>
           {sets.map((set) => (
             <Link
