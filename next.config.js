@@ -75,5 +75,17 @@ const nextConfig = {
       { source: '/sets/:path*',    destination: '/browse', permanent: true },
     ]
   },
+  // IndexNow ownership verification. The IndexNow protocol requires
+  // the key file to be served at https://<host>/<KEY>.txt. Serving via
+  // this rewrite (rather than from middleware) means the mapping is
+  // applied at the CDN edge with ZERO function invocation per request.
+  // When INDEXNOW_KEY is unset we return no rewrite so the path 404s —
+  // identical to the pre-move behaviour where middleware would skip
+  // the rewrite under the same condition.
+  async rewrites() {
+    const key = (process.env.INDEXNOW_KEY ?? '').trim()
+    if (!key) return []
+    return [{ source: `/${key}.txt`, destination: '/api/indexnow-key' }]
+  },
 }
 module.exports = nextConfig

@@ -1,22 +1,28 @@
 // src/middleware.ts
-// Refresh the Supabase session cookie on every request so both server
-// components and API routes see a fresh auth token. Does NOT block
-// unauthenticated traffic, route protection lives in the individual
-// server components that need it.
+// Refresh the Supabase session cookie before a Server Component tries
+// to read it. Server Components can only READ cookies after render;
+// they cannot WRITE a refreshed-token cookie (Next.js constraint, see
+// src/lib/supabase/server.ts:29-31). Middleware is the only pre-render
+// place that can both read the request cookie and write the response
+// cookie, so Supabase SSR relies on it to keep sessions fresh.
+//
+// Scope note (Phase M1): the matcher is intentionally LIMITED to
+// routes that read the Supabase session in their server tree. Public
+// catalogue + static pages do not need middleware — Supabase's
+// browser client auto-refreshes on authenticated client-side activity
+// and Route Handlers (/api/*) can write their own refreshed cookies
+// via NextResponse without needing a middleware pass. See the audit
+// in commits around 2025-10-05 for the full per-route classification.
+//
+// If a new Server Component page starts reading `cookies()` or
+// `getSupabaseServerClient()`, add its path pattern to the allowlist
+// below. Grep for `getCurrentUser|getSupabaseServerClient` across
+// `src/app` finds every current session-reader.
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
-  // IndexNow ownership verification. IndexNow protocol requires the
-  // key file to be served at https://<host>/<KEY>.txt. Rewrite to a
-  // small handler so the key stays in an env var. Matched at the
-  // pathname level so nothing else pays a cost.
-  const indexNowKey = (process.env.INDEXNOW_KEY ?? '').trim()
-  if (indexNowKey && request.nextUrl.pathname === `/${indexNowKey}.txt`) {
-    return NextResponse.rewrite(new URL('/api/indexnow-key', request.url))
-  }
-
   const response = NextResponse.next({ request })
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -42,8 +48,37 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // Explicit auth-sensitive allowlist. Only routes whose server tree
+  // reads the Supabase session cookie need middleware refresh:
+  //
+  //   /auth/callback         writes session on OAuth exchange
+  //   /login                 reads session to redirect signed-in users
+  //   /account/*             reads user, redirects anon to /login
+  //   /settings/*            reads user, redirects anon to /login
+  //   /collection/*          reads user (incl. /collection/import)
+  //   /decks/*               reads user (incl. /decks/[id]/test)
+  //   /ai                    reads user to switch signed-in UX
+  //   /test-deck             reads user to list caller's decks
+  //
+  // Everything else — public catalogue (/, /set/*, /formats/*,
+  // /market, /browse, /graded, /insights/*, /card-finder,
+  // /cards/search), static pages (/privacy, /terms, /contact),
+  // sitemaps, metadata routes, API handlers, admin feature-flagged
+  // routes — is deliberately NOT matched. API handlers that need
+  // the session persist their own refreshed cookies via NextResponse
+  // and do not depend on this middleware.
+  //
+  // The IndexNow key file rewrite that used to live in this file was
+  // moved to next.config.js `rewrites()` so it runs at the CDN edge
+  // with no function invocation.
   matcher: [
-    // Everything except static assets, images and the metadata routes.
-    '/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|opengraph-image|robots.txt|sitemap|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/auth/:path*',
+    '/login',
+    '/account/:path*',
+    '/settings/:path*',
+    '/collection/:path*',
+    '/decks/:path*',
+    '/ai',
+    '/test-deck',
   ],
 }
