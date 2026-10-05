@@ -13,6 +13,7 @@
 
 import 'server-only'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
+import { runStrictQueryWithRetry } from '@/lib/mtg/strictRetry'
 
 export type TcgMarketRow = {
   tcg_printing_id: string
@@ -143,7 +144,13 @@ function newestTimestamp(rows: Array<{ updated_at: string | null }>): string | n
   return best
 }
 
-/** For a single mtg_printings.id. Returns null when there is no
+/** FAIL-CLOSED. Returns `null` on any Supabase error → the card page
+ *  would then render without a Graded Prices panel. Suitable for
+ *  tolerant callers; **do NOT use from a Full Route Cache / ISR
+ *  caller** — a transient blip would cache a card page missing its
+ *  graded panel for 24h. Use `getTcgBundleForMtgPrintingStrict`.
+ *
+ *  For a single mtg_printings.id. Returns null when there is no
  *  matching tcg_printings row (mapping still pending OR truly
  *  unmapped). */
 export async function getTcgBundleForMtgPrinting(mtgPrintingId: string): Promise<TcgPrintingBundle | null> {
@@ -170,6 +177,80 @@ export async function getTcgBundleForMtgPrinting(mtgPrintingId: string): Promise
     gradedPrices: slabbedAndAny,
     cardScopedGraded: cardScoped,
     lastSourceUpdate: newestTimestamp([...marketRows, ...gradedRows]),
+    latestObservationDate: (latest?.[0] as { observed_on?: string } | undefined)?.observed_on ?? null,
+  }
+}
+
+/** Strict variant of `getTcgBundleForMtgPrinting`. Each of the four
+ *  Supabase stages (tcg_printings lookup, current market, current
+ *  graded, latest-observation) retries up to 3 times with
+ *  100/200/400ms backoff and throws on persistent failure. Legitimate
+ *  "no mapped tcg_printings row" still returns `null`. */
+export async function getTcgBundleForMtgPrintingStrict(mtgPrintingId: string): Promise<TcgPrintingBundle | null> {
+  const sb = getSupabaseServiceClient()
+  const stage = (name: string) => `getTcgBundleForMtgPrintingStrict mtgPrinting=${mtgPrintingId} stage=${name}`
+
+  const prints = await runStrictQueryWithRetry<Array<{ id: string; tcggraph_card_id: string; tcggraph_printing_key: string; finish: string; mapping_confidence: string | number | null }>>(
+    stage('tcg-printings'),
+    async () => {
+      const { data, error } = await sb
+        .from('tcg_printings')
+        .select('id, tcggraph_card_id, tcggraph_printing_key, finish, mapping_confidence')
+        .eq('mtg_printings_id', mtgPrintingId)
+      if (error) return { ok: false, error }
+      return { ok: true, value: (data ?? []) as any }
+    },
+  )
+  if (prints.length === 0) return null  // legitimate — unmapped
+  const ids = prints.map((p) => p.id)
+
+  const [market, graded, latest] = await Promise.all([
+    runStrictQueryWithRetry<TcgMarketRow[]>(
+      stage('market-current'),
+      async () => {
+        const { data, error } = await sb
+          .from('tcg_market_prices_current')
+          .select('*')
+          .in('tcg_printing_id', ids)
+        if (error) return { ok: false, error }
+        return { ok: true, value: (data ?? []) as TcgMarketRow[] }
+      },
+    ),
+    runStrictQueryWithRetry<TcgGradedRow[]>(
+      stage('graded-current'),
+      async () => {
+        const { data, error } = await sb
+          .from('tcg_graded_prices_current')
+          .select('*')
+          .in('tcg_printing_id', ids)
+        if (error) return { ok: false, error }
+        return { ok: true, value: (data ?? []) as TcgGradedRow[] }
+      },
+    ),
+    runStrictQueryWithRetry<Array<{ observed_on?: string }>>(
+      stage('market-daily-latest'),
+      async () => {
+        const { data, error } = await sb
+          .from('tcg_market_price_daily')
+          .select('observed_on')
+          .in('tcg_printing_id', ids)
+          .order('observed_on', { ascending: false })
+          .limit(1)
+        if (error) return { ok: false, error }
+        return { ok: true, value: (data ?? []) as any }
+      },
+    ),
+  ])
+
+  const { raw, graded: slabbedAndAny, cardScoped } = partitionRawAndGraded(graded)
+  return {
+    mtgPrintingId,
+    tcgPrintings: prints as TcgPrintingBundle['tcgPrintings'],
+    market,
+    rawPrice: raw,
+    gradedPrices: slabbedAndAny,
+    cardScopedGraded: cardScoped,
+    lastSourceUpdate: newestTimestamp([...market, ...graded]),
     latestObservationDate: (latest?.[0] as { observed_on?: string } | undefined)?.observed_on ?? null,
   }
 }

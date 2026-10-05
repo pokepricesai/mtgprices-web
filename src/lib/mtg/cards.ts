@@ -5,6 +5,7 @@
 
 import 'server-only'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
+import { runStrictQueryWithRetry } from './strictRetry'
 
 export type MtgOracleCard = {
   id: string
@@ -242,6 +243,12 @@ export type MtgCardDetail = {
   otherPrintings: MtgPrinting[]     // other printings of the same oracle
 }
 
+/** FAIL-CLOSED. Returns `null` on query errors, coercing an
+ *  infrastructure failure into a 404 path at the caller. Suitable for
+ *  tolerant callers; **do NOT use from a route that participates in
+ *  Full Route Cache / ISR** — a transient Supabase blip would cache
+ *  a 404 for the whole revalidate window. Use `getCardBySlugStrict`
+ *  on cacheable routes. */
 export async function getCardBySlug(setCode: string, cardSlug: string): Promise<MtgCardDetail | null> {
   const supabase = getSupabaseServiceClient()
   const set = setCode.trim().toLowerCase()
@@ -341,6 +348,148 @@ export async function getCardBySlug(setCode: string, cardSlug: string): Promise<
     legalities: (legalities ?? []) as MtgLegality[],
     rulings: (rulings ?? []) as MtgRuling[],
     otherPrintings: ((others ?? []) as MtgPrinting[]),
+  }
+}
+
+const MTG_PRINTING_SELECT = `
+  id, oracle_card_id, set_id, scryfall_id, set_code, collector_number, lang, name,
+  layout, rarity, artist, image_uri, image_uri_small, art_crop_uri, released_at,
+  borderless, full_art, promo, digital, scryfall_uri, reprint, textless, variation
+`
+
+/** Strict variant of `getCardBySlug` for cacheable callers.
+ *
+ *  Semantics:
+ *   - genuinely nonexistent card (query succeeds, zero rows, OR no row
+ *     slugifies back to the URL) → returns `null`. The caller may call
+ *     notFound(). This is the ONLY legitimate null path.
+ *   - transient Supabase/network error in any required stage → retried
+ *     up to 3 times with 100/200/400ms backoff.
+ *   - persistent failure in any required stage → throws. The caller
+ *     MUST NOT interpret the throw as "card does not exist"; Next.js
+ *     skips caching a thrown render so the next request retries
+ *     fresh.
+ *
+ *  All six internal sub-queries (primary printing, oracle, finishes,
+ *  legalities, rulings, other-printings) are strict. Partial section
+ *  silence (e.g. losing the Rulings query to a blip) would otherwise
+ *  cache a card page with a missing section for the whole revalidate
+ *  window. */
+export async function getCardBySlugStrict(setCode: string, cardSlug: string): Promise<MtgCardDetail | null> {
+  const supabase = getSupabaseServiceClient()
+  const set = setCode.trim().toLowerCase()
+  // decodeURIComponent throws on malformed input — same semantics as
+  // the non-strict path. Malformed slug = 404, not an infra error.
+  let decoded: string
+  try { decoded = decodeURIComponent(cardSlug) } catch { return null }
+  const splits = candidateCardSlugSplits(decoded)
+  if (!set || splits.length === 0) return null
+
+  const label = (stage: string) => `getCardBySlugStrict set=${set} slug=${decoded} stage=${stage}`
+  const candidates = splits.map((s) => s.collectorNumber)
+
+  // Stage 1 — primary printing by candidate collector number.
+  const printings = await runStrictQueryWithRetry<any[]>(
+    label('printings'),
+    async () => {
+      const { data, error } = await supabase
+        .from('mtg_printings')
+        .select(MTG_PRINTING_SELECT)
+        .eq('set_code', set)
+        .in('collector_number', candidates)
+        .order('lang', { ascending: true })
+        .limit(50)
+      if (error) return { ok: false, error }
+      return { ok: true, value: (data ?? []) as any[] }
+    },
+  )
+
+  // Strict slug match — a legitimate miss (zero rows, or no row's name
+  // slugifies back to the URL) → 404. This is NOT an infra failure.
+  const printing =
+    printings.find((p: any) => p.lang === 'en' && `${p.collector_number}-${slugifyCardName(p.name)}` === decoded) ??
+    printings.find((p: any) => `${p.collector_number}-${slugifyCardName(p.name)}` === decoded) ??
+    null
+  if (!printing) return null
+
+  // Stages 2-6 fire in parallel — all strict.
+  const [oracleRow, finishes, legalities, rulings, others] = await Promise.all([
+    runStrictQueryWithRetry<any | null>(
+      label('oracle'),
+      async () => {
+        const { data, error } = await supabase
+          .from('mtg_oracle_cards')
+          .select('id, oracle_id, name, mana_cost, mana_value, type_line, oracle_text, power, toughness, loyalty, defense, colors, color_identity, keywords, layout, card_faces, produced_mana, reserved, game_changer, capabilities')
+          .eq('id', printing.oracle_card_id)
+          .maybeSingle()
+        if (error) return { ok: false, error }
+        return { ok: true, value: data }
+      },
+    ),
+    runStrictQueryWithRetry<any[]>(
+      label('finishes'),
+      async () => {
+        const { data, error } = await supabase
+          .from('mtg_printing_finishes')
+          .select('id, finish')
+          .eq('printing_id', printing.id)
+          .order('finish')
+        if (error) return { ok: false, error }
+        return { ok: true, value: (data ?? []) as any[] }
+      },
+    ),
+    runStrictQueryWithRetry<any[]>(
+      label('legalities'),
+      async () => {
+        const { data, error } = await supabase
+          .from('mtg_oracle_legalities')
+          .select('format, legality')
+          .eq('oracle_card_id', printing.oracle_card_id)
+        if (error) return { ok: false, error }
+        return { ok: true, value: (data ?? []) as any[] }
+      },
+    ),
+    runStrictQueryWithRetry<any[]>(
+      label('rulings'),
+      async () => {
+        const { data, error } = await supabase
+          .from('mtg_rulings')
+          .select('source, published_at, comment')
+          .eq('oracle_card_id', printing.oracle_card_id)
+          .order('published_at', { ascending: false })
+          .limit(50)
+        if (error) return { ok: false, error }
+        return { ok: true, value: (data ?? []) as any[] }
+      },
+    ),
+    runStrictQueryWithRetry<any[]>(
+      label('other-printings'),
+      async () => {
+        const { data, error } = await supabase
+          .from('mtg_printings')
+          .select(MTG_PRINTING_SELECT)
+          .eq('oracle_card_id', printing.oracle_card_id)
+          .eq('lang', 'en')
+          .neq('id', printing.id)
+          .order('released_at', { ascending: false })
+          .limit(40)
+        if (error) return { ok: false, error }
+        return { ok: true, value: (data ?? []) as any[] }
+      },
+    ),
+  ])
+
+  // Missing oracle row for a found printing is a data-integrity edge,
+  // not an infra failure — treat as 404 like the non-strict variant.
+  if (!oracleRow) return null
+
+  return {
+    printing: printing as MtgPrinting,
+    oracle: oracleRow as MtgOracleCard,
+    finishes: finishes as MtgFinish[],
+    legalities: legalities as MtgLegality[],
+    rulings: rulings as MtgRuling[],
+    otherPrintings: others as MtgPrinting[],
   }
 }
 

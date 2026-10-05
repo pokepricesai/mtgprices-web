@@ -3,16 +3,16 @@ import Link from 'next/link'
 import { cache } from 'react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getCardBySlug as _getCardBySlug, type MtgFinish } from '@/lib/mtg/cards'
+import { getCardBySlugStrict as _getCardBySlugStrict, type MtgFinish } from '@/lib/mtg/cards'
 import {
-  getCurrentPricesForFinishes,
-  getPriceHistory,
-  getHeadlinePricesByPrinting,
+  getCurrentPricesForFinishesStrict,
+  getPriceHistoryStrict,
+  getHeadlinePricesByPrintingStrict,
   type MtgCurrentPrice,
 } from '@/lib/mtg/prices'
 import { classify as classifyCard, type CardCapability } from '@/lib/mtg/capabilities'
 import { extractFaces, normaliseLayout } from '@/lib/mtg/faces'
-import { getCardMarketSummary } from '@/lib/mtg/card-market'
+import { getCardMarketSummaryStrict } from '@/lib/mtg/card-market'
 import { getSetByCode } from '@/lib/mtg/sets'
 import ManaCost from '@/components/mtg/ManaCost'
 import OracleText from '@/components/mtg/OracleText'
@@ -29,12 +29,32 @@ import SimilarCards from '@/components/mtg/SimilarCards'
 import CardPageClient from './CardPageClient'
 import GradedPricesPanel from '@/components/mtg/GradedPricesPanel'
 import CardColorAccent from '@/components/mtg/CardColorAccent'
-import { getTcgBundleForMtgPrinting as _getTcgBundleForMtgPrinting, getSlabbedMtgPrintingSet } from '@/lib/tcggraph/read-model'
+import { getTcgBundleForMtgPrintingStrict as _getTcgBundleForMtgPrintingStrict, getSlabbedMtgPrintingSet } from '@/lib/tcggraph/read-model'
 import { buildGradedView } from '@/lib/mtg/graded-view'
 import { buildCardTheme } from '@/lib/mtg/color-theme'
 import EbayLinkButton from '@/components/mtg/EbayLinkButton'
 
-export const revalidate = 300
+// Phase 2: on-demand ISR.
+// - revalidate = 86400: once a slug is warm, repeat requests are
+//   Full Route Cache / CDN hits for 24h.
+// - dynamicParams = true (default): any card URL — including the
+//   long tail of the ~106K indexable printings — is generated on
+//   first visit and then cached.
+// - generateStaticParams: [] — do NOT prerender any card at build
+//   time. 106K × ~19 Supabase round-trips under 23-worker build
+//   parallelism would melt the DB (we've already seen this pattern
+//   kill /formats prerender-all). Build-time Supabase load from the
+//   card page is zero.
+// - Strict data helpers (see src/lib/mtg/*Strict.ts) ensure a
+//   transient Supabase blip throws rather than caches a false
+//   404 / "no live paper price on file" / missing graded panel /
+//   silently-partial pricing for 24h.
+export const revalidate = 86400
+export const dynamicParams = true
+
+export async function generateStaticParams(): Promise<Array<{ setCode: string; cardSlug: string }>> {
+  return []
+}
 
 type Params = { setCode: string; cardSlug: string }
 
@@ -45,8 +65,8 @@ type Params = { setCode: string; cardSlug: string }
 // cross-request leakage. Wrapping at the page level (rather than the
 // shared lib) keeps the server-only `react` import out of the Vitest
 // Node environment where it is not available.
-const getCardBySlug = cache(_getCardBySlug)
-const getTcgBundleForMtgPrinting = cache(_getTcgBundleForMtgPrinting)
+const getCardBySlug = cache(_getCardBySlugStrict)
+const getTcgBundleForMtgPrinting = cache(_getTcgBundleForMtgPrintingStrict)
 
 const SITE_URL = 'https://mtgprices.io'
 
@@ -136,11 +156,11 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
   // keeping this server render cookie-free and CDN-cacheable.
   const finishIds = finishes.map((f) => f.id)
   const [currentByFinish, otherPricesByPrinting, marketSummary, setRow, tcgBundle, gradedPrintingIdSet] = await Promise.all([
-    getCurrentPricesForFinishes(finishIds),
+    getCurrentPricesForFinishesStrict(finishIds),
     otherPrintings.length > 0
-      ? getHeadlinePricesByPrinting(otherPrintings.map((p) => p.id))
+      ? getHeadlinePricesByPrintingStrict(otherPrintings.map((p) => p.id))
       : Promise.resolve(new Map<string, number>()),
-    getCardMarketSummary(oracle.id, printing.id),
+    getCardMarketSummaryStrict(oracle.id, printing.id),
     getSetByCode(printing.set_code),
     getTcgBundleForMtgPrinting(printing.id),
     getSlabbedMtgPrintingSet([printing.id, ...otherPrintings.map((p) => p.id)]).catch(() => new Set<string>()),
@@ -152,7 +172,7 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
 
   const defaultFinish: MtgFinish | undefined = finishes.find((f) => f.finish === 'nonfoil') ?? finishes[0]
   const historySeries = defaultFinish
-    ? await getPriceHistory({ printingFinishId: defaultFinish.id, daysBack: 90 })
+    ? await getPriceHistoryStrict({ printingFinishId: defaultFinish.id, daysBack: 90 })
     : []
 
   const chartSeries = historySeries

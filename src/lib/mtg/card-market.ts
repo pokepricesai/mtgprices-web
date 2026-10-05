@@ -12,6 +12,7 @@
 
 import 'server-only'
 import { getSupabaseServiceClient } from '@/lib/supabaseService'
+import { runStrictQueryWithRetry } from './strictRetry'
 // Types and small constants live in card-market.types.ts so client
 // components can import them without pulling in the server-only barrel.
 import type { MarketBasis, PrintingPriceRow, WindowStat, CardMarketSummary } from './card-market.types'
@@ -39,9 +40,11 @@ type PrintingRow = {
   rarity: string | null
 }
 
-/** Convenience wrapper the card page can call. Takes the oracle id and
- *  optionally the specific printing_id the user is looking at. Returns
- *  null if we have literally no priced data for this card. */
+/** FAIL-CLOSED. Coerces any Supabase error to `null` /
+ *  `emptySummary(basis)` / silently dropped observation chunks.
+ *  **Do NOT use from a Full Route Cache / ISR caller** — a transient
+ *  blip would cache a confident "no live paper price on file" message.
+ *  Use `getCardMarketSummaryStrict`. */
 export async function getCardMarketSummary(
   oracleCardId: string,
   currentPrintingId: string | null,
@@ -437,4 +440,276 @@ function ordinal(n: number): string {
   if (j === 2) return `${n}nd`
   if (j === 3) return `${n}rd`
   return `${n}th`
+}
+
+// ─── Strict variant for cacheable callers ──────────────────────────
+// Mirrors getCardMarketSummary step-for-step but each required
+// Supabase stage is wrapped in runStrictQueryWithRetry. On persistent
+// failure the function throws; a thrown render skips the Full Route
+// Cache so the next request retries fresh. Legitimate zero-priced
+// data still returns `null` / `emptySummary(basis)` the same way the
+// fail-closed variant does — those are factual answers, not errors.
+//
+// Set-name lookup (mtg_sets) deliberately stays fail-open: a missing
+// set name just falls back to the uppercase set code, which is
+// cosmetic rather than factually load-bearing.
+
+export async function getCardMarketSummaryStrict(
+  oracleCardId: string,
+  currentPrintingId: string | null,
+  basis: MarketBasis = DEFAULT_BASIS,
+): Promise<CardMarketSummary | null> {
+  const supabase = getSupabaseServiceClient()
+  const stage = (name: string) => `getCardMarketSummaryStrict oracle=${oracleCardId} stage=${name}`
+
+  // 1) English paper printings for the oracle.
+  const printsRaw = await runStrictQueryWithRetry<PrintingRow[]>(
+    stage('printings'),
+    async () => {
+      const { data, error } = await supabase
+        .from('mtg_printings')
+        .select('id, oracle_card_id, set_code, collector_number, name, released_at, image_uri_small, digital, lang, rarity')
+        .eq('oracle_card_id', oracleCardId)
+        .eq('digital', false)
+        .eq('lang', 'en')
+      if (error) return { ok: false, error }
+      return { ok: true, value: ((data ?? []) as PrintingRow[]).filter((p) => !p.digital) }
+    },
+  )
+  if (printsRaw.length === 0) return null  // legitimate — no English paper printings
+  const prints = printsRaw
+
+  // 2) Finishes for those printings.
+  const printingIds = prints.map((p) => p.id)
+  const finishes = await runStrictQueryWithRetry<Array<{ id: string; printing_id: string; finish: string }>>(
+    stage('finishes'),
+    async () => {
+      const { data, error } = await supabase
+        .from('mtg_printing_finishes')
+        .select('id, printing_id, finish')
+        .in('printing_id', printingIds)
+      if (error) return { ok: false, error }
+      return { ok: true, value: (data ?? []) as any }
+    },
+  )
+  if (finishes.length === 0) return null  // legitimate — no finishes
+
+  // 3) Current prices for every finish, basis-locked.
+  const finishIds = finishes.map((f) => f.id)
+  const currents = await runStrictQueryWithRetry<Array<{ printing_finish_id: string; price: number; observed_on: string }>>(
+    stage('current-prices'),
+    async () => {
+      const { data, error } = await supabase
+        .from('mtg_current_prices')
+        .select('printing_finish_id, price, observed_on')
+        .in('printing_finish_id', finishIds)
+        .eq('provider', basis.provider)
+        .eq('currency', basis.currency)
+        .eq('market', basis.market)
+        .eq('price_type', basis.priceType)
+      if (error) return { ok: false, error }
+      return { ok: true, value: (data ?? []) as any }
+    },
+  )
+  if (currents.length === 0) return emptySummary(basis)  // legitimate — nothing priced on this basis
+
+  // 4) Set names (fail-open — cosmetic).
+  const setCodes = Array.from(new Set(prints.map((p) => p.set_code)))
+  const { data: setsRaw } = await supabase
+    .from('mtg_sets')
+    .select('code, name')
+    .in('code', setCodes)
+  const setNameByCode = new Map<string, string>(
+    ((setsRaw ?? []) as { code: string; name: string }[]).map((s) => [s.code, s.name]),
+  )
+
+  const printingById = new Map(prints.map((p) => [p.id, p]))
+  const finishById = new Map(finishes.map((f) => [f.id, f]))
+
+  // 5) Chunked 30d observations — strict per chunk.
+  const pricedFinishIds = Array.from(new Set(currents.map((c) => c.printing_finish_id)))
+  const since30 = new Date(); since30.setUTCDate(since30.getUTCDate() - 30)
+  const since30Iso = since30.toISOString().slice(0, 10)
+  const IN_CHUNK = 120
+  const obsChunks: string[][] = []
+  for (let i = 0; i < pricedFinishIds.length; i += IN_CHUNK) obsChunks.push(pricedFinishIds.slice(i, i + IN_CHUNK))
+  const obsResults = await Promise.all(obsChunks.map((chunk, idx) =>
+    runStrictQueryWithRetry<Array<{ printing_finish_id: string; observed_on: string; price: number }>>(
+      stage(`observations-30d-chunk-${idx + 1}/${obsChunks.length}`),
+      async () => {
+        const { data, error } = await supabase
+          .from('mtg_price_observations')
+          .select('printing_finish_id, observed_on, price')
+          .eq('provider', basis.provider).eq('currency', basis.currency)
+          .eq('market', basis.market).eq('price_type', basis.priceType)
+          .or('is_anomalous.is.null,is_anomalous.eq.false')
+          .gte('observed_on', since30Iso)
+          .in('printing_finish_id', chunk)
+        if (error) return { ok: false, error }
+        return { ok: true, value: (data ?? []) as any }
+      },
+    ),
+  ))
+
+  type Agg = { earliest: { d: string; p: number }; latest: { d: string; p: number }; d7: { d: string; p: number } | null }
+  const aggByFinish = new Map<string, Agg>()
+  const since7 = new Date(); since7.setUTCDate(since7.getUTCDate() - 7)
+  const since7Iso = since7.toISOString().slice(0, 10)
+  for (const rows of obsResults) for (const row of rows) {
+    const id = row.printing_finish_id
+    const d = row.observed_on
+    const p = Number(row.price); if (!Number.isFinite(p) || p <= 0) continue
+    const cur = aggByFinish.get(id)
+    if (!cur) {
+      aggByFinish.set(id, { earliest: { d, p }, latest: { d, p }, d7: d >= since7Iso ? { d, p } : null })
+      continue
+    }
+    if (d < cur.earliest.d) cur.earliest = { d, p }
+    if (d > cur.latest.d)   cur.latest   = { d, p }
+    if (d >= since7Iso) {
+      if (!cur.d7 || d < cur.d7.d) cur.d7 = { d, p }
+    }
+  }
+  function deltaFor(finishId: string, currentPrice: number): { pct_7d: number | null; pct_30d: number | null } {
+    const a = aggByFinish.get(finishId)
+    if (!a) return { pct_7d: null, pct_30d: null }
+    let pct_30d: number | null = null
+    if (a.earliest.d !== a.latest.d && a.earliest.p > 0) {
+      pct_30d = (currentPrice - a.earliest.p) / a.earliest.p
+    }
+    let pct_7d: number | null = null
+    if (a.d7 && a.d7.p > 0 && a.d7.d !== a.latest.d) {
+      pct_7d = (currentPrice - a.d7.p) / a.d7.p
+    }
+    return { pct_7d, pct_30d }
+  }
+
+  const cheapestPerPrinting = new Map<string, PrintingPriceRow>()
+  const allPricedFinishRows: (PrintingPriceRow & { finish_id: string })[] = []
+  for (const cp of currents) {
+    const f = finishById.get(cp.printing_finish_id)
+    if (!f) continue
+    const p = printingById.get(f.printing_id)
+    if (!p) continue
+    const price = Number(cp.price)
+    const { pct_7d, pct_30d } = deltaFor(f.id, price)
+    const row: PrintingPriceRow = {
+      printing_id: p.id,
+      finish_id: f.id,
+      finish: f.finish,
+      set_code: p.set_code,
+      set_name: setNameByCode.get(p.set_code) ?? p.set_code.toUpperCase(),
+      collector_number: p.collector_number,
+      released_at: p.released_at,
+      image_uri_small: p.image_uri_small,
+      rarity: p.rarity,
+      price,
+      pct_7d, pct_30d,
+    }
+    allPricedFinishRows.push(row)
+    const existing = cheapestPerPrinting.get(p.id)
+    if (!existing || row.price < existing.price) cheapestPerPrinting.set(p.id, row)
+  }
+
+  const pricedPrintings = Array.from(cheapestPerPrinting.values()).sort((a, b) => a.price - b.price)
+  const cheapest = pricedPrintings[0] ?? null
+  const mostExpensive = pricedPrintings.length > 0
+    ? pricedPrintings.reduce((max, r) => r.price > max.price ? r : max, pricedPrintings[0])
+    : null
+
+  const pickPrimary = (): (PrintingPriceRow & { finish_id: string }) | null => {
+    if (currentPrintingId) {
+      const nonfoil = allPricedFinishRows.find((r) => r.printing_id === currentPrintingId && r.finish === 'nonfoil')
+      if (nonfoil) return nonfoil
+      const anyFinish = allPricedFinishRows.find((r) => r.printing_id === currentPrintingId)
+      if (anyFinish) return anyFinish
+    }
+    const nf = allPricedFinishRows.filter((r) => r.finish === 'nonfoil')
+    if (nf.length) return nf.reduce((min, r) => r.price < min.price ? r : min, nf[0])
+    return allPricedFinishRows.reduce((min, r) => r.price < min.price ? r : min, allPricedFinishRows[0])
+  }
+  const primary = pickPrimary()
+
+  // 6) 90d history for the primary finish — strict.
+  let d7Stat: WindowStat = emptyStat(7)
+  let d30Stat: WindowStat = emptyStat(30)
+  let d90Stat: WindowStat = emptyStat(90)
+  let currentObservedOn: string | null = null
+
+  if (primary) {
+    const since90 = new Date(); since90.setUTCDate(since90.getUTCDate() - 90)
+    const sinceIso = since90.toISOString().slice(0, 10)
+    const hist = await runStrictQueryWithRetry<Array<{ observed_on: string; price: number }>>(
+      stage('history-90d'),
+      async () => {
+        const { data, error } = await supabase
+          .from('mtg_price_observations')
+          .select('observed_on, price')
+          .eq('printing_finish_id', primary.finish_id)
+          .eq('provider', basis.provider)
+          .eq('currency', basis.currency)
+          .eq('market', basis.market)
+          .eq('price_type', basis.priceType)
+          .or('is_anomalous.is.null,is_anomalous.eq.false')
+          .gte('observed_on', sinceIso)
+          .order('observed_on', { ascending: true })
+        if (error) return { ok: false, error }
+        return { ok: true, value: (data ?? []) as any }
+      },
+    )
+    const points = hist
+      .map((p) => ({ observed_on: p.observed_on, price: Number(p.price) }))
+      .filter((p) => Number.isFinite(p.price) && p.price > 0)
+    if (points.length > 0) {
+      currentObservedOn = points[points.length - 1].observed_on
+      d7Stat  = statForWindow(points, 7)
+      d30Stat = statForWindow(points, 30)
+      d90Stat = statForWindow(points, 90)
+    }
+  }
+
+  let currentRank: number | null = null
+  if (primary) {
+    const idx = pricedPrintings.findIndex((r) => r.printing_id === primary.printing_id)
+    if (idx >= 0) currentRank = idx + 1
+  }
+
+  let foilPremium: CardMarketSummary['foilPremium'] = null
+  if (primary) {
+    const nonfoil = allPricedFinishRows.find((r) => r.printing_id === primary.printing_id && r.finish === 'nonfoil')
+    const foil    = allPricedFinishRows.find((r) => r.printing_id === primary.printing_id && r.finish === 'foil')
+    if (nonfoil && foil && nonfoil.price > 0) {
+      foilPremium = {
+        nonfoil: nonfoil.price,
+        foil: foil.price,
+        diff: foil.price - nonfoil.price,
+        pct: (foil.price - nonfoil.price) / nonfoil.price,
+      }
+    }
+  }
+
+  const insights = buildInsights({
+    d7: d7Stat, d30: d30Stat, d90: d90Stat,
+    pricedPrintingsCount: pricedPrintings.length,
+    cheapest, mostExpensive,
+    currentRank, primary, foilPremium,
+    basis,
+  })
+
+  return {
+    basis,
+    currencySymbol: CURRENCY_SYMBOL[basis.currency],
+    currentPrice: primary?.price ?? null,
+    currentObservedOn,
+    currentPrintingId: primary?.printing_id ?? null,
+    currentFinishId: primary?.finish_id ?? null,
+    currentFinish: primary?.finish ?? null,
+    d7: d7Stat, d30: d30Stat, d90: d90Stat,
+    pricedPrintings,
+    cheapest,
+    mostExpensive,
+    currentRank,
+    foilPremium,
+    insights,
+  }
 }
