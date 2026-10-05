@@ -1,8 +1,9 @@
 // app/set/[setCode]/card/[cardSlug]/page.tsx, deep MTG card page.
 import Link from 'next/link'
+import { cache } from 'react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getCardBySlug, type MtgFinish } from '@/lib/mtg/cards'
+import { getCardBySlug as _getCardBySlug, type MtgFinish } from '@/lib/mtg/cards'
 import {
   getCurrentPricesForFinishes,
   getPriceHistory,
@@ -12,7 +13,6 @@ import {
 import { classify as classifyCard, type CardCapability } from '@/lib/mtg/capabilities'
 import { extractFaces, normaliseLayout } from '@/lib/mtg/faces'
 import { getCardMarketSummary } from '@/lib/mtg/card-market'
-import { getOwnedPrintings } from '@/lib/mtg/collection'
 import { getSetByCode } from '@/lib/mtg/sets'
 import ManaCost from '@/components/mtg/ManaCost'
 import OracleText from '@/components/mtg/OracleText'
@@ -29,7 +29,7 @@ import SimilarCards from '@/components/mtg/SimilarCards'
 import CardPageClient from './CardPageClient'
 import GradedPricesPanel from '@/components/mtg/GradedPricesPanel'
 import CardColorAccent from '@/components/mtg/CardColorAccent'
-import { getTcgBundleForMtgPrinting, getSlabbedMtgPrintingSet } from '@/lib/tcggraph/read-model'
+import { getTcgBundleForMtgPrinting as _getTcgBundleForMtgPrinting, getSlabbedMtgPrintingSet } from '@/lib/tcggraph/read-model'
 import { buildGradedView } from '@/lib/mtg/graded-view'
 import { buildCardTheme } from '@/lib/mtg/color-theme'
 import EbayLinkButton from '@/components/mtg/EbayLinkButton'
@@ -37,6 +37,16 @@ import EbayLinkButton from '@/components/mtg/EbayLinkButton'
 export const revalidate = 300
 
 type Params = { setCode: string; cardSlug: string }
+
+// Wrap the two most expensive catalogue reads with React.cache so a
+// single request's generateMetadata() + page handler share one
+// invocation each (previously each duplicated ~6 and ~5 Supabase
+// round-trips respectively). React.cache is per-request, so no
+// cross-request leakage. Wrapping at the page level (rather than the
+// shared lib) keeps the server-only `react` import out of the Vitest
+// Node environment where it is not available.
+const getCardBySlug = cache(_getCardBySlug)
+const getTcgBundleForMtgPrinting = cache(_getTcgBundleForMtgPrinting)
 
 const SITE_URL = 'https://mtgprices.io'
 
@@ -114,19 +124,24 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
         card_faces: oracle.card_faces,
       })
 
-  // Prices + chart data + market summary + set name + owner holdings +
-  // graded bundle for THIS printing + graded indicator set across
-  // other printings (so PrintingComparison can badge rows that carry
-  // slab data without an N+1 query per row).
+  // Prices + chart data + market summary + set name + graded bundle
+  // for THIS printing + graded indicator set across other printings
+  // (so PrintingComparison can badge rows that carry slab data without
+  // an N+1 query per row).
+  //
+  // Owner holdings used to be fetched here (via getOwnedPrintings)
+  // but that call reads cookies() and opts the whole route into
+  // dynamic rendering. Ownership now hydrates client-side inside
+  // CardActionsStrip + PrintingComparison via /api/collection/owned,
+  // keeping this server render cookie-free and CDN-cacheable.
   const finishIds = finishes.map((f) => f.id)
-  const [currentByFinish, otherPricesByPrinting, marketSummary, setRow, ownedRows, tcgBundle, gradedPrintingIdSet] = await Promise.all([
+  const [currentByFinish, otherPricesByPrinting, marketSummary, setRow, tcgBundle, gradedPrintingIdSet] = await Promise.all([
     getCurrentPricesForFinishes(finishIds),
     otherPrintings.length > 0
       ? getHeadlinePricesByPrinting(otherPrintings.map((p) => p.id))
       : Promise.resolve(new Map<string, number>()),
     getCardMarketSummary(oracle.id, printing.id),
     getSetByCode(printing.set_code),
-    getOwnedPrintings(oracle.id),        // returns [] when unauthenticated
     getTcgBundleForMtgPrinting(printing.id),
     getSlabbedMtgPrintingSet([printing.id, ...otherPrintings.map((p) => p.id)]).catch(() => new Set<string>()),
   ])
@@ -134,18 +149,6 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
   const gradedIndicatorIds = Array.from(gradedPrintingIdSet)
   const thisPrintingHasSlab = gradedPrintingIdSet.has(printing.id)
   const setName = setRow?.name ?? printing.set_code.toUpperCase()
-
-  // Roll up owned quantities per printing_id so the comparison table
-  // and the top-of-page badge can render an "owned" count. Sums over
-  // all conditions and finishes.
-  const ownedByPrintingId: Record<string, number> = {}
-  let ownedTotal = 0
-  for (const row of ownedRows) {
-    if (!row.printing_id) continue
-    ownedByPrintingId[row.printing_id] = (ownedByPrintingId[row.printing_id] ?? 0) + (row.quantity ?? 0)
-    ownedTotal += row.quantity ?? 0
-  }
-  const ownedThisPrinting = ownedByPrintingId[printing.id] ?? 0
 
   const defaultFinish: MtgFinish | undefined = finishes.find((f) => f.finish === 'nonfoil') ?? finishes[0]
   const historySeries = defaultFinish
@@ -388,10 +391,9 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
             <CardActionsStrip
               cardName={printing.name}
               oracleId={oracle.id}
+              printingId={printing.id}
               finishes={finishes.map((f) => ({ id: f.id, finish: f.finish as 'nonfoil' | 'foil' | 'etched' }))}
               preferredFinishId={finishes.find((f) => f.finish === 'nonfoil')?.id ?? finishes[0]?.id ?? null}
-              ownedTotal={ownedTotal}
-              ownedThisPrinting={ownedThisPrinting}
             />
           </div>
 
@@ -406,7 +408,6 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
                 basis={marketSummary.basis}
                 pricedPrintings={marketSummary.pricedPrintings}
                 currentPrintingId={printing.id}
-                ownedByPrintingId={ownedTotal > 0 ? ownedByPrintingId : undefined}
                 gradedPrintingIds={gradedIndicatorIds}
               />
             </div>

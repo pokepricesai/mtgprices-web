@@ -18,6 +18,7 @@ import { CURRENCY_SYMBOL } from '@/lib/mtg/card-market.types'
 import AddToCollection from '@/components/mtg/AddToCollection'
 import AddToDeck from '@/components/mtg/AddToDeck'
 import EbayLinkButton from '@/components/mtg/EbayLinkButton'
+import { sumOwnedByPrintingId, useOwnedForOracle } from '@/lib/mtg/useOwnedForOracle'
 
 type SortKey =
   | 'cheapest'
@@ -55,9 +56,6 @@ type Props = {
   basis: MarketBasis
   pricedPrintings: PrintingPriceRow[]
   currentPrintingId?: string | null
-  // { printing_id: count } supplied when the current viewer is signed
-  // in and their collection has been fetched server-side.
-  ownedByPrintingId?: Record<string, number>
   // Slice 7. mtg_printings.id values that carry at least one slabbed
   // graded quote. Renders a small ◆ indicator on those rows so buyers
   // can find graded-capable variants at a glance.
@@ -65,8 +63,15 @@ type Props = {
 }
 
 export default function PrintingComparison({
-  cardName, oracleId, basis, pricedPrintings, currentPrintingId, ownedByPrintingId, gradedPrintingIds,
+  cardName, oracleId, basis, pricedPrintings, currentPrintingId, gradedPrintingIds,
 }: Props) {
+  // Owned counts are fetched client-side via the shared hook so the
+  // card-page server render stays cookie-free + ISR-friendly. Signed-
+  // out viewers resolve to an empty-items state immediately; signed-in
+  // viewers see the "Owned" column hydrate in after a sub-second fetch.
+  const owned = useOwnedForOracle(oracleId)
+  const ownedByPrintingIdInner = useMemo(() => sumOwnedByPrintingId(owned.items), [owned.items])
+  const ownedByPrintingId = Object.keys(ownedByPrintingIdInner).length > 0 ? ownedByPrintingIdInner : undefined
   const gradedSet = useMemo(() => new Set(gradedPrintingIds ?? []), [gradedPrintingIds])
   const [sort, setSort] = useState<SortKey>('cheapest')
   const [finishFilter, setFinishFilter] = useState<'any' | 'nonfoil' | 'foil' | 'etched'>('any')

@@ -8,20 +8,30 @@
 
 import AddToCollection from './AddToCollection'
 import AddToDeck from './AddToDeck'
+import { sumOwnedByPrintingId, sumOwnedTotal, useOwnedForOracle } from '@/lib/mtg/useOwnedForOracle'
 
 type Props = {
   cardName: string
   oracleId: string
   finishes: { id: string; finish: 'nonfoil' | 'foil' | 'etched' }[]
   preferredFinishId: string | null
-  ownedTotal?: number
-  ownedThisPrinting?: number
+  /** Printing id this strip is being rendered for. Required for the
+   *  "X of this printing" sub-badge. */
+  printingId: string
 }
 
 export default function CardActionsStrip({
-  cardName, oracleId, finishes, preferredFinishId,
-  ownedTotal = 0, ownedThisPrinting = 0,
+  cardName, oracleId, finishes, preferredFinishId, printingId,
 }: Props) {
+  // Owned counts are per-viewer and fetched client-side so the server
+  // card page can remain cookie-free + CDN-cacheable. Signed-out
+  // viewers resolve to [] within one microtask (loading state is
+  // momentary and visually benign); signed-in viewers see badges
+  // hydrate in once /api/collection/owned responds.
+  const owned = useOwnedForOracle(oracleId)
+  const ownedByPrinting = sumOwnedByPrintingId(owned.items)
+  const ownedTotal = sumOwnedTotal(owned.items)
+  const ownedThisPrinting = ownedByPrinting[printingId] ?? 0
   const anyOwned = ownedTotal > 0 || ownedThisPrinting > 0
   return (
     <div
