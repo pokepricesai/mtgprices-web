@@ -96,6 +96,14 @@ export type GetMoversOpts = {
   topN?: number
 }
 
+/** FAIL-CLOSED: returns `null` on candidate/finishes/printings errors,
+ *  silently drops observation chunks that error. Safe for callers that
+ *  treat a degraded result as a visible "no movers" state (homepage
+ *  market-pulse section, AI assistant tool call). **Do NOT use from a
+ *  route that participates in Full Route Cache / ISR** — a transient
+ *  Supabase blip would cache the EmptyPanel lie or a confidently
+ *  incomplete mover list for the entire revalidate window. Use
+ *  `getMarketMoversStrict` on cacheable routes. */
 export async function getMarketMovers(
   optsOrTopN: GetMoversOpts | number = {},
 ): Promise<MarketMovers | null> {
@@ -285,3 +293,257 @@ function daysBetween(aIso: string, bIso: string): number {
 }
 
 function round2(n: number): number { return Math.round(n * 100) / 100 }
+
+// ─── Strict variant for cacheable callers ──────────────────────────
+// Mirrors getMarketMovers but retries every required Supabase stage
+// (candidates, every observation chunk, printing_finishes, printings)
+// and throws on persistent failure. Next.js skips caching a thrown
+// render, so a transient Supabase blip during ISR regeneration no
+// longer gets memorialised as an "EmptyPanel: no movers cleared the
+// filters" lie for the whole revalidate window. Set-name lookup
+// (mtg_sets) stays fail-open — a missing set name just falls back to
+// the uppercase set code, which is cosmetic rather than a factual
+// claim about movers.
+
+const MOVERS_MAX_ATTEMPTS = 3
+const MOVERS_BACKOFF_MS = [100, 200, 400] as const
+
+const moversSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+
+type MoversQueryAttempt<T> = { ok: true; value: T } | { ok: false; error: unknown }
+
+function moversErrorMessage(e: unknown): string {
+  if (e instanceof Error) return e.message
+  if (typeof e === 'object' && e !== null && 'message' in e) return String((e as { message: unknown }).message)
+  return String(e)
+}
+
+async function runMoversQueryWithRetry<T>(
+  label: string,
+  runQuery: () => Promise<MoversQueryAttempt<T>>,
+): Promise<T> {
+  let lastError: unknown = null
+  for (let attempt = 1; attempt <= MOVERS_MAX_ATTEMPTS; attempt++) {
+    try {
+      const r = await runQuery()
+      if (r.ok) return r.value
+      lastError = (r as { ok: false; error: unknown }).error
+      console.warn(`[${label}] attempt=${attempt}/${MOVERS_MAX_ATTEMPTS} error: ${moversErrorMessage(lastError)}`)
+    } catch (e) {
+      lastError = e
+      console.warn(`[${label}] attempt=${attempt}/${MOVERS_MAX_ATTEMPTS} threw: ${moversErrorMessage(e)}`)
+    }
+    if (attempt < MOVERS_MAX_ATTEMPTS) await moversSleep(MOVERS_BACKOFF_MS[attempt - 1])
+  }
+  throw new Error(`${label}: failed after ${MOVERS_MAX_ATTEMPTS} attempts: ${moversErrorMessage(lastError)}`)
+}
+
+/** Strict variant of `getMarketMovers`. Semantics:
+ *   - genuine zero result (no candidates match the min-price filter,
+ *     or no scored movers survive the thresholds) → returns `null`
+ *     so the page renders its EmptyPanel ("no movers cleared the
+ *     filters") as a legitimate factual statement.
+ *   - transient failure on any required stage (candidates, any one of
+ *     the ~10 observation chunks, printing_finishes lookup, printings
+ *     lookup) → retried up to 3 times with bounded backoff; persistent
+ *     failure throws so the caching layer cannot memorialise the
+ *     failure as "no movers". Set-name lookup is deliberately
+ *     fail-open (cosmetic fallback to uppercase set code). */
+export async function getMarketMoversStrict(
+  optsOrTopN: GetMoversOpts | number = {},
+): Promise<MarketMovers | null> {
+  const opts: GetMoversOpts = typeof optsOrTopN === 'number'
+    ? { topN: optsOrTopN }
+    : optsOrTopN
+  const windowDays: MoverWindow = opts.windowDays ?? 30
+  const topN = opts.topN ?? 4
+
+  const supabase = getSupabaseServiceClient()
+  const stageLabel = (name: string) => `getMarketMoversStrict window=${windowDays} stage=${name}`
+
+  // Stage 1 — candidate pool.
+  const candidates = await runMoversQueryWithRetry<Array<{ printing_finish_id: string; price: number; observed_on: string }>>(
+    stageLabel('candidates'),
+    async () => {
+      const { data, error } = await supabase
+        .from('mtg_current_prices')
+        .select('printing_finish_id, price, observed_on')
+        .eq('provider', PROVIDER)
+        .eq('currency', CURRENCY)
+        .eq('market', MARKET)
+        .eq('price_type', PRICE_TYPE)
+        .gte('price', MIN_PRICE_USD)
+        .order('price', { ascending: false })
+        .limit(CANDIDATE_LIMIT)
+      if (error) return { ok: false, error }
+      return { ok: true, value: (data ?? []) as any[] }
+    },
+  )
+  if (candidates.length === 0) return null  // legitimate "no priced candidates" — zero not an error
+  const finishIds = candidates.map((c) => c.printing_finish_id)
+
+  // Stage 2 — observations for each chunk. Any chunk persistently
+  // failing is a hard error — silently dropping a chunk would hide
+  // ~10% of inputs from the ranking.
+  const since = new Date()
+  since.setUTCDate(since.getUTCDate() - windowDays)
+  const sinceIso = since.toISOString().slice(0, 10)
+
+  const chunks: string[][] = []
+  for (let i = 0; i < finishIds.length; i += IN_CHUNK) chunks.push(finishIds.slice(i, i + IN_CHUNK))
+
+  type Agg = { earliest: { d: string; p: number }; latest: { d: string; p: number } }
+  const byFinish = new Map<string, Agg>()
+
+  const obsResults = await Promise.all(chunks.map((chunk, idx) =>
+    runMoversQueryWithRetry<Array<{ printing_finish_id: string; observed_on: string; price: number }>>(
+      stageLabel(`observations-chunk-${idx + 1}/${chunks.length}`),
+      async () => {
+        const { data, error } = await supabase
+          .from('mtg_price_observations')
+          .select('printing_finish_id, observed_on, price')
+          .eq('provider', PROVIDER)
+          .eq('currency', CURRENCY)
+          .eq('market', MARKET)
+          .eq('price_type', PRICE_TYPE)
+          .or('is_anomalous.is.null,is_anomalous.eq.false')
+          .gte('observed_on', sinceIso)
+          .in('printing_finish_id', chunk)
+        if (error) return { ok: false, error }
+        return { ok: true, value: (data ?? []) as any[] }
+      },
+    ),
+  ))
+
+  for (const rows of obsResults) {
+    for (const row of rows) {
+      const id = row.printing_finish_id
+      const d = row.observed_on
+      const p = Number(row.price)
+      if (!Number.isFinite(p) || p <= 0) continue
+      const cur = byFinish.get(id)
+      if (!cur) { byFinish.set(id, { earliest: { d, p }, latest: { d, p } }); continue }
+      if (d < cur.earliest.d) cur.earliest = { d, p }
+      if (d > cur.latest.d)   cur.latest   = { d, p }
+    }
+  }
+
+  // Stage 3 — score + rank (pure CPU, no DB).
+  const minSpan = minSpanDays(windowDays)
+  type Scored = { finish_id: string; start: number; latest: number; abs: number; pct: number; days: number }
+  const scored: Scored[] = []
+  for (const [id, a] of Array.from(byFinish.entries())) {
+    if (a.earliest.d === a.latest.d) continue
+    if (a.latest.p < MIN_PRICE_USD) continue
+    const days = daysBetween(a.earliest.d, a.latest.d)
+    if (days < minSpan) continue
+    const abs = a.latest.p - a.earliest.p
+    if (Math.abs(abs) < MIN_ABS_DELTA_USD) continue
+    const pct = abs / a.earliest.p
+    scored.push({ finish_id: id, start: a.earliest.p, latest: a.latest.p, abs, pct, days })
+  }
+  if (scored.length === 0) return null  // legitimate "no movers survived filters"
+
+  const risers       = scored.filter((s) => s.pct > 0).sort((a, b) => b.pct - a.pct).slice(0, topN)
+  const fallers      = scored.filter((s) => s.pct < 0).sort((a, b) => a.pct - b.pct).slice(0, topN)
+  const active       = scored.slice().sort((a, b) => Math.abs(b.abs) - Math.abs(a.abs)).slice(0, topN)
+  const mostValuable = scored.slice().sort((a, b) => b.latest - a.latest).slice(0, topN)
+
+  const needFinish = Array.from(new Set(
+    [...risers, ...fallers, ...active, ...mostValuable].map((s) => s.finish_id),
+  ))
+
+  // Stage 4 — printing_finishes lookup. Strict.
+  const finishRows = await runMoversQueryWithRetry<Array<{ id: string; printing_id: string; finish: string }>>(
+    stageLabel('printing-finishes'),
+    async () => {
+      const { data, error } = await supabase
+        .from('mtg_printing_finishes')
+        .select('id, printing_id, finish')
+        .in('id', needFinish)
+      if (error) return { ok: false, error }
+      return { ok: true, value: (data ?? []) as any[] }
+    },
+  )
+
+  const printingIds = Array.from(new Set(finishRows.map((f) => f.printing_id)))
+
+  // Stage 5 — printings lookup. Strict.
+  const prints = await runMoversQueryWithRetry<Array<{ id: string; oracle_card_id: string; set_code: string; collector_number: string | null; image_uri_small: string | null; name: string; digital: boolean | null; lang: string | null }>>(
+    stageLabel('printings'),
+    async () => {
+      const { data, error } = await supabase
+        .from('mtg_printings')
+        .select('id, oracle_card_id, set_code, collector_number, image_uri_small, name, digital, lang')
+        .in('id', printingIds)
+      if (error) return { ok: false, error }
+      return { ok: true, value: (data ?? []) as any[] }
+    },
+  )
+
+  const printById = new Map<string, any>()
+  for (const p of prints) printById.set(p.id, p)
+
+  // Stage 6 — set-name lookup. INTENTIONALLY fail-open: a missing set
+  // name just falls back to the uppercase set code. Cosmetic, not
+  // factually load-bearing.
+  const setCodes = Array.from(new Set(prints.map((p) => p.set_code)))
+  const { data: sets } = await supabase.from('mtg_sets').select('code, name').in('code', setCodes)
+  const setNameByCode = new Map<string, string>()
+  for (const s of (sets ?? []) as any[]) setNameByCode.set(s.code, s.name)
+
+  const finishById = new Map<string, any>()
+  for (const f of finishRows) finishById.set(f.id, f)
+
+  function hydrate(s: Scored): MoverCard | null {
+    const f = finishById.get(s.finish_id)
+    if (!f) return null
+    const pr = printById.get(f.printing_id)
+    if (!pr) return null
+    if (pr.digital) return null
+    if (pr.lang && pr.lang !== 'en') return null
+    const name = pr.name as string
+    return {
+      finish_id: s.finish_id,
+      printing_id: pr.id,
+      oracle_card_id: pr.oracle_card_id,
+      name,
+      set_code: pr.set_code,
+      set_name: setNameByCode.get(pr.set_code) ?? pr.set_code.toUpperCase(),
+      collector_number: pr.collector_number,
+      image_uri_small: pr.image_uri_small,
+      finish: f.finish,
+      card_href: buildCardHref(pr.set_code, pr.collector_number, name),
+      start_price: round2(s.start),
+      latest_price: round2(s.latest),
+      abs_delta: round2(s.abs),
+      pct_delta: s.pct,
+      currency: 'USD',
+      provider: PROVIDER,
+      period_days: s.days,
+    }
+  }
+
+  const hydratedRisers       = risers.map(hydrate).filter(Boolean) as MoverCard[]
+  const hydratedFallers      = fallers.map(hydrate).filter(Boolean) as MoverCard[]
+  const hydratedActive       = active.map(hydrate).filter(Boolean) as MoverCard[]
+  const hydratedMostValuable = mostValuable.map(hydrate).filter(Boolean) as MoverCard[]
+
+  if (hydratedRisers.length === 0 && hydratedFallers.length === 0 && hydratedActive.length === 0) {
+    return null
+  }
+
+  return {
+    risers: hydratedRisers,
+    fallers: hydratedFallers,
+    active: hydratedActive,
+    mostValuable: hydratedMostValuable,
+    windowDays,
+    currency: 'USD',
+    provider: PROVIDER,
+    market: 'paper',
+    priceType: 'retail',
+    candidatesScanned: candidates.length,
+    candidatesWithMovement: scored.length,
+  }
+}
