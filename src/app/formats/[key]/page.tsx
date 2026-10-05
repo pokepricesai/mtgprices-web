@@ -7,11 +7,31 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { FORMAT_BY_KEY, getFormatCounts, getFormatSpotlight, type FormatKey } from '@/lib/mtg/formats'
+import {
+  FORMAT_BY_KEY,
+  getFormatCountsStrict,
+  getFormatSpotlightStrict,
+  type FormatKey,
+} from '@/lib/mtg/formats'
 import { buildCardSlug } from '@/lib/mtg/cards'
 import ManaCost from '@/components/mtg/ManaCost'
 
-export const revalidate = 3600
+export const revalidate = 86400
+export const dynamicParams = true
+
+// Next.js 16 — on dynamic-segment routes, `revalidate` alone no longer
+// opts into Full Route Cache. Returning an empty array registers the
+// route for ISR without the build-time cost of prerendering all
+// formats. Prerender-all was tried first and hit Postgres
+// statement_timeout under 23-worker build parallelism (every format
+// fires 3 head-count queries + 2 three-stage spotlight queries at the
+// same instant). First request per format warms its CDN cache; the
+// strict data helpers in src/lib/mtg/formats.ts ensure a persistent
+// Supabase failure throws rather than caching a "0 Banned" / "No
+// cards are currently banned in {Format}" lie.
+export function generateStaticParams(): Array<{ key: string }> {
+  return []
+}
 
 type Params = { key: string }
 
@@ -33,10 +53,16 @@ export default async function FormatPage({ params }: { params: Promise<Params> }
   const f = FORMAT_BY_KEY[key.toLowerCase()]
   if (!f) notFound()
 
+  // STRICT variants on every data stage: a transient Supabase error
+  // must not cache a "0 Banned" tile or a "No cards are currently
+  // banned in {Format}" lie for the 24h revalidate window. Each strict
+  // call retries internally and throws on persistent failure; Next.js
+  // then skips caching the thrown render so the next request retries
+  // fresh. See src/lib/mtg/formats.ts for the strict contract.
   const [counts, banned, restricted] = await Promise.all([
-    getFormatCounts(f.key as FormatKey),
-    getFormatSpotlight(f.key as FormatKey, 'banned', 60),
-    getFormatSpotlight(f.key as FormatKey, 'restricted', 60),
+    getFormatCountsStrict(f.key as FormatKey),
+    getFormatSpotlightStrict(f.key as FormatKey, 'banned', 60),
+    getFormatSpotlightStrict(f.key as FormatKey, 'restricted', 60),
   ])
 
   const canonical = `https://mtgprices.io/formats/${f.key}`
