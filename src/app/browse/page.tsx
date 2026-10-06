@@ -10,7 +10,7 @@ import { getSetAggregates } from '@/lib/mtg/set-market-batch'
 import BrowseClient from './BrowseClient'
 import HubFaq, { A } from '@/components/mtg/HubFaq'
 
-export const revalidate = 900   // 15 min
+export const revalidate = 86400   // 24h — aggregate inputs change on nightly ingest cadence (mtg_set_value_daily + mtg_current_prices), so 15-min revalidation was recomputing the same v4 RPC tree ~96x per day for no numeric change. See MTG Supabase P0 audit.
 
 export const metadata: Metadata = {
   title: 'Browse MTG sets, filter by type and year',
