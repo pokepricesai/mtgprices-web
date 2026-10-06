@@ -21,13 +21,21 @@ export const revalidate = 300
 async function getCatalogueCounts() {
   const s = getSupabaseServiceClient()
   const [printings, oracles, publicSets, priced] = await Promise.all([
-    s.from('mtg_printings').select('id', { count: 'exact', head: true }).eq('digital', false).eq('lang', 'en'),
+    // Estimated counts: these drive display-only vanity labels on the
+    // homepage ("All N English paper printings", Printings/Priced
+    // finishes MiniStats, Nx+ printings TrustChip). count=exact was
+    // forcing a filtered seq-scan on mtg_printings and a full seq-scan
+    // on mtg_current_prices every 5 min per revalidate — the exact
+    // numbers change only on nightly ingest and the UI already rounds
+    // to K/M via formatBig(). pg_class.reltuples accuracy (<~5%) is
+    // well within rendering tolerance. See MTG Supabase P0 audit (P0-b).
+    s.from('mtg_printings').select('id', { count: 'estimated', head: true }).eq('digital', false).eq('lang', 'en'),
     s.from('mtg_oracle_cards').select('id', { count: 'exact', head: true }),
     // Match /browse and sitemap-sets.xml: only the browsable / public-
     // type sets. Reporting the raw mtg_sets total here would tell the
     // visitor "N sets" while /browse and the sitemap disagree.
     countPublicSets(),
-    s.from('mtg_current_prices').select('printing_finish_id', { count: 'exact', head: true }),
+    s.from('mtg_current_prices').select('printing_finish_id', { count: 'estimated', head: true }),
   ])
   return {
     printings: printings.count ?? 0,
