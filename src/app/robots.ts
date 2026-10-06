@@ -9,7 +9,13 @@ export default function robots(): MetadataRoute.Robots {
   const rules: MetadataRoute.Robots['rules'] = {
     userAgent: '*',
     allow: '/',
-    disallow: ['/api'],
+    // /api — never meant for crawlers.
+    // /login — public catalogue pages link here from the signed-out
+    //   navbar; without this disallow, crawlers follow the link on
+    //   every indexed page and probe /login thousands of times a
+    //   day. The page is noindex at the <meta robots> level too, so
+    //   crawlers have no SEO reason to spend crawl budget here.
+    disallow: ['/api', '/login'],
   }
   const out: MetadataRoute.Robots = { rules }
   if (SITE_LAUNCHED) {

@@ -1,15 +1,59 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser'
 
-type Props = { nextPath: string; initialError?: string }
+/** Strict allowlist for `?next=` destinations.
+ *
+ *  Must be an INTERNAL absolute path — nothing else.
+ *  Rejects:
+ *    * values that do not start with "/"
+ *    * protocol-relative URLs starting with "//" (which the browser
+ *      navigates to as the next-authority host — classic open-redirect
+ *      vector that the previous server-side `startsWith('/')` check
+ *      missed)
+ *    * explicit absolute URLs containing a scheme (`http:`, `https:`,
+ *      `javascript:`, `data:`, etc.)
+ *    * backslash-starting values that some browsers normalise to `/`
+ *
+ *  Anything that fails validation falls back to `/account`. */
+function safeNext(raw: string | null): string {
+  if (!raw) return '/account'
+  if (raw.length > 1024) return '/account'  // defence-in-depth cap
+  if (!raw.startsWith('/')) return '/account'
+  if (raw.startsWith('//') || raw.startsWith('/\\') || raw.startsWith('\\')) return '/account'
+  if (raw.includes('://')) return '/account'
+  return raw
+}
 
-export default function LoginClient({ nextPath, initialError }: Props) {
+export default function LoginClient() {
+  const router = useRouter()
+  const sp = useSearchParams()
+  const nextPath = safeNext(sp.get('next'))
+  const initialError = sp.get('error') ?? undefined
+
   const [email, setEmail] = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(initialError ?? null)
+
+  // Already-signed-in redirect. Previously ran server-side (which
+  // forced /login into Dynamic). Now runs after hydration: brief flash
+  // of the sign-in UI for the small fraction of visitors who are
+  // already signed in, then router.replace to the validated next
+  // target. Anon users see no flash — they are the overwhelming
+  // majority and the UI they land on is correct.
+  useEffect(() => {
+    let cancelled = false
+    const supabase = getSupabaseBrowserClient()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled || !session) return
+      // router.replace to avoid stacking /login in history.
+      router.replace(nextPath)
+    }).catch(() => { /* on failure, let the user sign in normally */ })
+    return () => { cancelled = true }
+  }, [router, nextPath])
 
   async function signInWithGoogle() {
     setError(null)

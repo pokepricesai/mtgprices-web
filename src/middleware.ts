@@ -52,13 +52,18 @@ export const config = {
   // reads the Supabase session cookie need middleware refresh:
   //
   //   /auth/callback         writes session on OAuth exchange
-  //   /login                 reads session to redirect signed-in users
   //   /account/*             reads user, redirects anon to /login
   //   /settings/*            reads user, redirects anon to /login
   //   /collection/*          reads user (incl. /collection/import)
   //   /decks/*               reads user (incl. /decks/[id]/test)
   //   /ai                    reads user to switch signed-in UX
   //   /test-deck             reads user to list caller's decks
+  //
+  // Phase M2 note — `/login` is NO LONGER in this list. The page is
+  // now a static shell; the already-signed-in redirect runs
+  // client-side via supabase.auth.getSession() in LoginClient. The
+  // browser Supabase client auto-refreshes its own session on that
+  // check, so no server middleware is needed for /login.
   //
   // Everything else — public catalogue (/, /set/*, /formats/*,
   // /market, /browse, /graded, /insights/*, /card-finder,
@@ -73,7 +78,6 @@ export const config = {
   // with no function invocation.
   matcher: [
     '/auth/:path*',
-    '/login',
     '/account/:path*',
     '/settings/:path*',
     '/collection/:path*',
