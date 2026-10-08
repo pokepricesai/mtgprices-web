@@ -27,6 +27,15 @@ export const DEFAULT_BASIS: MarketBasis = {
   priceType: 'retail',
 }
 
+// Bounded chunk sizes for the printing-id and finish-id lookups in
+// getCardMarketSummaryStrict. Mirrors `IN_CHUNK = 100` in
+// src/lib/mtg/prices.ts (getCurrentPricesForFinishesStrict) — the
+// cap exists because basic lands and other staples have hundreds of
+// English paper printings, and PostgREST's URL header budget (~8KB)
+// overflows well before the SQL IN-list limit becomes relevant.
+const FINISHES_IN_CHUNK = 100
+const CURRENT_PRICES_IN_CHUNK = 100
+
 type PrintingRow = {
   id: string
   oracle_card_id: string
@@ -479,38 +488,60 @@ export async function getCardMarketSummaryStrict(
   if (printsRaw.length === 0) return null  // legitimate — no English paper printings
   const prints = printsRaw
 
-  // 2) Finishes for those printings.
+  // 2) Finishes for those printings. Chunked — basic lands and other
+  // staples have 300+ English paper printings, which would overflow
+  // PostgREST's URL header budget (~8KB) if passed as a single `.in()`
+  // and surface as a 400 Bad Request after three strict retries.
+  // Each chunk keeps its own strict retry so a transient per-chunk
+  // blip is still recovered without poisoning the Full Route Cache.
   const printingIds = prints.map((p) => p.id)
-  const finishes = await runStrictQueryWithRetry<Array<{ id: string; printing_id: string; finish: string }>>(
-    stage('finishes'),
-    async () => {
-      const { data, error } = await supabase
-        .from('mtg_printing_finishes')
-        .select('id, printing_id, finish')
-        .in('printing_id', printingIds)
-      if (error) return { ok: false, error }
-      return { ok: true, value: (data ?? []) as any }
-    },
-  )
+  const printingChunks: string[][] = []
+  for (let i = 0; i < printingIds.length; i += FINISHES_IN_CHUNK) {
+    printingChunks.push(printingIds.slice(i, i + FINISHES_IN_CHUNK))
+  }
+  const finishesChunks = await Promise.all(printingChunks.map((chunk, idx) =>
+    runStrictQueryWithRetry<Array<{ id: string; printing_id: string; finish: string }>>(
+      stage(`finishes-chunk-${idx + 1}/${printingChunks.length}`),
+      async () => {
+        const { data, error } = await supabase
+          .from('mtg_printing_finishes')
+          .select('id, printing_id, finish')
+          .in('printing_id', chunk)
+        if (error) return { ok: false, error }
+        return { ok: true, value: (data ?? []) as any }
+      },
+    ),
+  ))
+  const finishes = finishesChunks.flat()
   if (finishes.length === 0) return null  // legitimate — no finishes
 
-  // 3) Current prices for every finish, basis-locked.
+  // 3) Current prices for every finish, basis-locked. Chunked for
+  // the same URL-length reason as (2): finish count is ≥ printing
+  // count (nonfoil + foil per printing), so a 300-printing card
+  // easily exceeds the single-request header budget.
   const finishIds = finishes.map((f) => f.id)
-  const currents = await runStrictQueryWithRetry<Array<{ printing_finish_id: string; price: number; observed_on: string }>>(
-    stage('current-prices'),
-    async () => {
-      const { data, error } = await supabase
-        .from('mtg_current_prices')
-        .select('printing_finish_id, price, observed_on')
-        .in('printing_finish_id', finishIds)
-        .eq('provider', basis.provider)
-        .eq('currency', basis.currency)
-        .eq('market', basis.market)
-        .eq('price_type', basis.priceType)
-      if (error) return { ok: false, error }
-      return { ok: true, value: (data ?? []) as any }
-    },
-  )
+  const currentChunks: string[][] = []
+  for (let i = 0; i < finishIds.length; i += CURRENT_PRICES_IN_CHUNK) {
+    currentChunks.push(finishIds.slice(i, i + CURRENT_PRICES_IN_CHUNK))
+  }
+  const currentsChunks = await Promise.all(currentChunks.map((chunk, idx) =>
+    runStrictQueryWithRetry<Array<{ printing_finish_id: string; price: number; observed_on: string }>>(
+      stage(`current-prices-chunk-${idx + 1}/${currentChunks.length}`),
+      async () => {
+        const { data, error } = await supabase
+          .from('mtg_current_prices')
+          .select('printing_finish_id, price, observed_on')
+          .in('printing_finish_id', chunk)
+          .eq('provider', basis.provider)
+          .eq('currency', basis.currency)
+          .eq('market', basis.market)
+          .eq('price_type', basis.priceType)
+        if (error) return { ok: false, error }
+        return { ok: true, value: (data ?? []) as any }
+      },
+    ),
+  ))
+  const currents = currentsChunks.flat()
   if (currents.length === 0) return emptySummary(basis)  // legitimate — nothing priced on this basis
 
   // 4) Set names (fail-open — cosmetic).
