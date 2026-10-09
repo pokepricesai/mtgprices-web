@@ -19,6 +19,7 @@ import AddToCollection from '@/components/mtg/AddToCollection'
 import AddToDeck from '@/components/mtg/AddToDeck'
 import EbayLinkButton from '@/components/mtg/EbayLinkButton'
 import { sumOwnedByPrintingId, useOwnedForOracle } from '@/lib/mtg/useOwnedForOracle'
+import { useLiveMarket } from '@/components/mtg/LiveMarketProvider'
 
 type SortKey =
   | 'cheapest'
@@ -63,8 +64,17 @@ type Props = {
 }
 
 export default function PrintingComparison({
-  cardName, oracleId, basis, pricedPrintings, currentPrintingId, gradedPrintingIds,
+  cardName, oracleId, basis: initialBasis, pricedPrintings: initialPricedPrintings, currentPrintingId, gradedPrintingIds,
 }: Props) {
+  // Phase 1 live-refresh: prefer the fresher priced-printings list
+  // from LiveMarketProvider when it has arrived. The list shape is
+  // identical to the server-rendered one (cheapest-finish per
+  // printing, same sort, same basis), so no visual diff beyond the
+  // numbers themselves. Falls back to server snapshot on failure or
+  // before fetch completes.
+  const live = useLiveMarket()
+  const basis = live?.marketSummary?.basis ?? initialBasis
+  const pricedPrintings = live?.marketSummary?.pricedPrintings ?? initialPricedPrintings
   // Owned counts are fetched client-side via the shared hook so the
   // card-page server render stays cookie-free + ISR-friendly. Signed-
   // out viewers resolve to an empty-items state immediately; signed-in

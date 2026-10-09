@@ -1,9 +1,18 @@
 'use client'
 // Client-side wrapper for the finish switcher + price display + chart.
-// Data is pre-fetched server-side. This component owns UI state only.
+// Data is pre-fetched server-side.
+//
+// Phase 1 live-refresh: subscribes to LiveMarketProvider's context so
+// that after the background live-market fetch completes, the current
+// paper retail / buylist / MTGO prices update in place. Initial
+// render uses `currentPricesByFinish` from props (server-rendered
+// SEO snapshot). If the live fetch fails or has not yet completed,
+// the props snapshot stays visible — users never see "unavailable"
+// just because the refresh fetch failed.
 
 import { useMemo, useState } from 'react'
 import CardPriceChart, { type MtgChartSeries } from '@/components/mtg/CardPriceChart'
+import { useLiveMarket } from '@/components/mtg/LiveMarketProvider'
 
 export type CurrentPriceRow = {
   printing_finish_id: string
@@ -56,12 +65,23 @@ function fmtCurrency(v: number, currency: string): string {
 export default function CardPageClient({
   finishes,
   defaultFinishId,
-  currentPricesByFinish,
+  currentPricesByFinish: initialPricesByFinish,
   chartSeries,
 }: Props) {
   const [finishId, setFinishId] = useState<string | null>(defaultFinishId)
 
-  const currentRows = finishId ? currentPricesByFinish[finishId] ?? [] : []
+  // Prefer live finish prices from LiveMarketProvider when they have
+  // arrived. We check per-finishId: if the live fetch returned a
+  // non-empty entry for the currently-selected finish, use it;
+  // otherwise fall back to the server snapshot for that finish.
+  // This avoids a brief "no prices" flash if the live payload is
+  // keyed slightly differently (eg finish without any priced rows).
+  const live = useLiveMarket()
+  const currentPricesByFinish = live?.currentPricesByFinish ?? initialPricesByFinish
+
+  const currentRows = finishId
+    ? (currentPricesByFinish[finishId] ?? initialPricesByFinish[finishId] ?? [])
+    : []
 
   // Segregate paper retail vs mtgo, and split by currency.
   const paperRetail = currentRows.filter(

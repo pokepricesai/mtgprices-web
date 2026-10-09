@@ -1,14 +1,25 @@
+'use client'
+
 // src/components/mtg/CardMarketOverview.tsx
-// Server component. Renders the top-of-card market summary block:
+// Client component. Renders the top-of-card market summary block:
 // current price, 7 / 30 / 90 day deltas, 90 day high and low, priced
 // printings count, a link out to eBay for this printing, and a short
 // list of deterministic price insights.
 //
 // Every number is basis-locked (see card-market.ts). The component
 // never mixes currencies or providers.
+//
+// Clientised in Phase 1 so the panel can transparently re-render with
+// a fresher snapshot from LiveMarketProvider's background refresh.
+// Initial render uses the `summary` prop (server-rendered SEO
+// snapshot). On mount, LiveMarketProvider fetches the CDN-cached
+// `/api/mtg/card/[oracleId]/live` endpoint; when its context updates,
+// this component prefers the live `marketSummary` over the prop.
+// Fetch failure leaves the prop snapshot visible.
 
 import type { CardMarketSummary, WindowStat } from '@/lib/mtg/card-market.types'
 import EbayLinkButton from './EbayLinkButton'
+import { useLiveMarket } from './LiveMarketProvider'
 
 type Props = {
   summary: CardMarketSummary
@@ -18,7 +29,15 @@ type Props = {
   collectorNumber?: string | null
 }
 
-export default function CardMarketOverview({ summary, cardName, setName, setCode, collectorNumber }: Props) {
+export default function CardMarketOverview({ summary: initialSummary, cardName, setName, setCode, collectorNumber }: Props) {
+  // Prefer the live summary from context when it has arrived; fall
+  // back to the server-rendered snapshot passed via props. Never
+  // downgrade a populated prop snapshot to a null live result (that
+  // would show "no priced observations" for a card where the server
+  // already found data) — only replace when live has a non-null
+  // summary.
+  const live = useLiveMarket()
+  const summary = live?.marketSummary ?? initialSummary
   const sym = summary.currencySymbol
 
   if (summary.currentPrice === null) {

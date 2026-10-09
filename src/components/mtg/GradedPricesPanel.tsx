@@ -1,9 +1,19 @@
+'use client'
+
 // src/components/mtg/GradedPricesPanel.tsx
 //
-// Public graded-price surface for an EXACT MTG printing. Server
-// component. Consumes the TCGGraph read-model bundle for a single
-// mtg_printings.id and renders ONLY when at least one slabbed quote
-// exists. Never renders "$0", never invents a price.
+// Public graded-price surface for an EXACT MTG printing. Client
+// component (clientised in Phase 1 so LiveMarketProvider can refresh
+// the graded bundle alongside the market summary). Consumes the
+// TCGGraph read-model bundle for a single mtg_printings.id and
+// renders ONLY when at least one slabbed quote exists. Never renders
+// "$0", never invents a price.
+//
+// Initial render uses the `bundle` prop (server-rendered SEO
+// snapshot). On mount, LiveMarketProvider fetches the CDN-cached
+// `/api/mtg/card/[oracleId]/live` endpoint; when its context updates,
+// this component prefers the live `tcgBundle`. A fetch failure
+// leaves the prop snapshot visible.
 //
 // Slice 6. The dark island treatment is intentional - the graded
 // module is materially different from the market/rules modules
@@ -13,6 +23,7 @@ import Link from 'next/link'
 import type { TcgPrintingBundle } from '@/lib/tcggraph/read-model'
 import { buildGradedView, type GradedCell } from '@/lib/mtg/graded-view'
 import EbayLinkButton from '@/components/mtg/EbayLinkButton'
+import { useLiveMarket } from './LiveMarketProvider'
 
 type Props = {
   bundle: TcgPrintingBundle | null
@@ -90,7 +101,16 @@ function Cell({ c, hero }: { c: GradedCell; hero?: boolean }) {
   )
 }
 
-export default function GradedPricesPanel({ bundle, setCode, collectorNumber, finish, cardName }: Props) {
+export default function GradedPricesPanel({ bundle: initialBundle, setCode, collectorNumber, finish, cardName }: Props) {
+  // Prefer the live bundle from LiveMarketProvider when it arrives;
+  // fall back to the server-rendered snapshot. Live `tcgBundle === null`
+  // during the initial pre-fetch window should NOT force the panel
+  // to disappear if the server found slabbed data — only replace
+  // when live has a non-null bundle. On a card that genuinely has no
+  // slabbed data, both initial and live are null; buildGradedView
+  // then returns hasSlabbedData=false and we render null.
+  const live = useLiveMarket()
+  const bundle = live?.tcgBundle ?? initialBundle
   const view = buildGradedView(bundle)
   //  No graded data? Render nothing at all. The user's Slice-6 rule.
   if (!view.hasSlabbedData) return null

@@ -33,6 +33,7 @@ import { getTcgBundleForMtgPrintingStrict as _getTcgBundleForMtgPrintingStrict, 
 import { buildGradedView } from '@/lib/mtg/graded-view'
 import { buildCardTheme } from '@/lib/mtg/color-theme'
 import EbayLinkButton from '@/components/mtg/EbayLinkButton'
+import { LiveMarketProvider } from '@/components/mtg/LiveMarketProvider'
 
 // Phase 2: on-demand ISR.
 // - revalidate = 86400: once a slug is warm, repeat requests are
@@ -301,7 +302,22 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
           Layout is controlled entirely by .mtg-card-hero (mobile:
           block, tablet+: grid) — no inline style here so grid math
           does not run on mobile and nothing inside can force the
-          document width past the viewport. */}
+          document width past the viewport.
+
+          Phase 1 live-refresh: wrapped in LiveMarketProvider so the
+          price-sensitive panels inside (CardPageClient,
+          CardMarketOverview, GradedPricesPanel, PrintingComparison)
+          can refresh via the CDN-cached /api/mtg/card/[oracleId]/live
+          endpoint after hydration. CardSeoContent sits OUTSIDE this
+          provider so its server-rendered numeric price sentence
+          remains the deterministic SEO snapshot (acceptable to be up
+          to the ISR TTL old; refreshing it client-side would defeat
+          the SEO purpose of a crawlable price fact). */}
+      <LiveMarketProvider
+        oracleId={oracle.id}
+        printingId={printing.id}
+        finishIds={finishIds}
+      >
       <div className="mtg-card-hero">
         <div>
           <div className="mtg-card-image-wrap">
@@ -488,6 +504,7 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
           </div>
         </div>
       </div>
+      </LiveMarketProvider>
 
       {/* SEO content + FAQ (full width, sits below the two column hero). */}
       <div style={{ marginTop: 40 }}>
