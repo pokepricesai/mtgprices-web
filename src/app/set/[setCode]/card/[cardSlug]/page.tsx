@@ -35,9 +35,17 @@ import { buildCardTheme } from '@/lib/mtg/color-theme'
 import EbayLinkButton from '@/components/mtg/EbayLinkButton'
 import { LiveMarketProvider } from '@/components/mtg/LiveMarketProvider'
 
-// Phase 2: on-demand ISR.
-// - revalidate = 86400: once a slug is warm, repeat requests are
-//   Full Route Cache / CDN hits for 24h.
+// Phase 1 of the MTG card-page freshness architecture.
+// - revalidate = 604800 (7 days): once a slug is warm, repeat
+//   requests are Full Route Cache / CDN hits for a week. Previously
+//   24h; extended now that user-visible prices refresh independently
+//   through LiveMarketProvider → /api/mtg/card/[oracleId]/live
+//   (CDN-cached: s-maxage=21600, SWR=604800). The server-rendered
+//   numeric price inside CardSeoContent remains a deterministic SEO
+//   snapshot and is now acceptable to be up to 7 days old; the
+//   human-visible panels in the hero (CardMarketOverview,
+//   GradedPricesPanel, PrintingComparison, CardPageClient prices)
+//   are refreshed client-side within 6h of ingest.
 // - dynamicParams = true (default): any card URL — including the
 //   long tail of the ~106K indexable printings — is generated on
 //   first visit and then cached.
@@ -49,8 +57,8 @@ import { LiveMarketProvider } from '@/components/mtg/LiveMarketProvider'
 // - Strict data helpers (see src/lib/mtg/*Strict.ts) ensure a
 //   transient Supabase blip throws rather than caches a false
 //   404 / "no live paper price on file" / missing graded panel /
-//   silently-partial pricing for 24h.
-export const revalidate = 86400
+//   silently-partial pricing for 7d.
+export const revalidate = 604800
 export const dynamicParams = true
 
 export async function generateStaticParams(): Promise<Array<{ setCode: string; cardSlug: string }>> {
