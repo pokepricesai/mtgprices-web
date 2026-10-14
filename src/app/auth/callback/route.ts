@@ -36,6 +36,19 @@ export async function GET(request: NextRequest) {
   if (error) {
     return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error.message)}`, url.origin))
   }
+
+  // CN-03: record MTG site membership so the Collector Network hub
+  // can send a site-specific welcome and 7-day onboarding to anyone
+  // (including users who originated on PokePrices or YGOPrices) the
+  // first time they authenticate on MTGPrices. SECURITY DEFINER RPC;
+  // caller user_id is derived from auth.uid() server-side. Failures
+  // are non-blocking — authentication must still succeed.
+  try {
+    await supabase.rpc('record_site_authentication', { p_site_code: 'mtg' })
+  } catch {
+    // non-fatal; auth already succeeded
+  }
+
   // Only allow same-origin `next` targets.
   const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/account'
   return NextResponse.redirect(new URL(safeNext, url.origin))

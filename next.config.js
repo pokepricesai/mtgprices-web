@@ -73,6 +73,16 @@ const nextConfig = {
       // method + is cacheable so search engines consolidate quickly.
       { source: '/sets',           destination: '/browse', permanent: true },
       { source: '/sets/:path*',    destination: '/browse', permanent: true },
+      // CN-03: canonicalise www.mtgprices.io → mtgprices.io. Supabase
+      // Auth was configured for the apex domain only; traffic landing
+      // on www would hit redirect-allowlist issues on OAuth / magic-
+      // link callbacks. 308 preserves method so OAuth POSTs are safe.
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.mtgprices.io' }],
+        destination: 'https://mtgprices.io/:path*',
+        permanent: true,
+      },
     ]
   },
   // IndexNow ownership verification. The IndexNow protocol requires
