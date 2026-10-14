@@ -1,7 +1,7 @@
 ---
 slug: what-is-the-mtg-reserved-list
-title: What Is the MTG Reserved List? A Collector''s Guide
-description: The Reserved List is Wizards of the Coast''s commitment never to reprint certain Magic: The Gathering cards. Here is what that means for collectors.
+title: "What Is the MTG Reserved List? A Collector's Guide"
+description: "The Reserved List is Wizards of the Coast's commitment never to reprint certain Magic: The Gathering cards. Here is what that means for collectors."
 author: MTGPrices
 category: Collecting
 publishedAt: 2026-10-14
