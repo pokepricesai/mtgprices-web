@@ -47,7 +47,12 @@ export default async function HomePage() {
   const today = new Date().toISOString().slice(0, 10)
   const [counts, recentSets, movers, gradedStats, gradedTop] = await Promise.all([
     getCatalogueCounts(),
-    listSets({ limit: 6, releasedBy: today }),
+    // CN-05B task 2: homepage set grid 6 → 24. The MTG homepage
+    // had just 1 outbound /set/* link path in GSC despite /set/*
+    // driving 2,577 of 3,161 12d impressions. Promoting the set
+    // catalogue to the main entry page should spread link equity
+    // and widen Googlebot's crawl of the long tail.
+    listSets({ limit: 24, releasedBy: today }),
     getMarketMovers({ windowDays: 30, topN: 4 }),
     getGradedNetworkStats(),
     getTopValueGradedPrintings(3),

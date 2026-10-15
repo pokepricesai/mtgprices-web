@@ -158,7 +158,13 @@ export default async function InsightPage({ params }: { params: Promise<Params> 
             display: 'grid', gap: 12,
             gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
           }}>
-            {related.map((r) => (
+            {/* CN-05B task 4: catalogue entry points under the related-
+          insights grid. Pre-sprint the article body had sibling
+          articles but no outbound links to the MTG catalogue
+          (/browse /formats /market /graded), making the editorial
+          surface a dead end for crawlers reaching here from
+          search. */}
+      {related.map((r) => (
               <Link
                 key={r.slug}
                 href={`/insights/${r.slug}`}
@@ -182,6 +188,34 @@ export default async function InsightPage({ params }: { params: Promise<Params> 
           </div>
         </section>
       )}
+
+      {/* CN-05B task 4: evergreen catalogue entry points. Always
+          rendered (not gated on related.length) so even articles
+          with no sibling insights carry forward link equity. */}
+      <section aria-label="Explore MTGPrices" style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
+        <div className="label-mono" style={{ marginBottom: 10, color: 'var(--gold-600)' }}>Explore more</div>
+        <div style={{
+          display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+        }}>
+          {[
+            { href: '/browse',  label: 'All sets',          sub: 'Every browsable MTG set' },
+            { href: '/formats', label: 'Formats',           sub: 'Standard, Pioneer, Modern, Commander and more' },
+            { href: '/graded',  label: 'Graded market',     sub: 'Graded PSA/BGS/CGC pricing' },
+            { href: '/market',  label: 'Market pulse',      sub: 'Daily movers and trends' },
+          ].map((l) => (
+            <Link key={l.href} href={l.href} style={{
+              display: 'flex', flexDirection: 'column', gap: 2,
+              padding: '10px 12px', borderRadius: 10,
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              textDecoration: 'none', color: 'var(--text)',
+            }}>
+              <span style={{ fontWeight: 600, fontSize: 14 }}>{l.label} →</span>
+              <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{l.sub}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
     </div>
   )
 }
