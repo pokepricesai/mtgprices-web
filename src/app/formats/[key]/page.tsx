@@ -8,6 +8,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import {
+  FORMATS,
   FORMAT_BY_KEY,
   getFormatCountsStrict,
   getFormatSpotlightStrict,
@@ -142,6 +143,48 @@ export default async function FormatPage({ params }: { params: Promise<Params> }
           </div>
         </div>
       </section>
+
+      {/* CN-05B task 10: related formats in the same group. Pre-sprint
+          these pages had 255 impressions / 0 clicks at pos 33-44 and
+          offered no path to sibling formats like Standard ↔ Pioneer. */}
+      {(() => {
+        const related = FORMATS.filter((o) => o.group === f.group && o.key !== f.key)
+        if (related.length === 0) return null
+        return (
+          <section aria-labelledby="related-formats-heading" style={{
+            marginTop: 32, paddingTop: 24,
+            borderTop: '1px solid var(--border)',
+          }}>
+            <h2 id="related-formats-heading" style={{
+              margin: '0 0 10px', fontSize: 18, letterSpacing: '-0.01em',
+            }}>Other {f.group.toLowerCase()} formats</h2>
+            <p style={{ margin: '0 0 14px', fontSize: 13.5, color: 'var(--text-muted)', lineHeight: 1.55, maxWidth: 640 }}>
+              {f.label} sits alongside these in the {f.group.toLowerCase()}{' '}
+              group. Each links to the same legality + banned-card view, filtered to that format.
+            </p>
+            <div style={{
+              display: 'grid', gap: 10,
+              gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
+            }}>
+              {related.map((r) => (
+                <Link key={r.key} href={`/formats/${r.key}`} style={{
+                  display: 'flex', flexDirection: 'column', gap: 2,
+                  padding: '10px 12px', borderRadius: 10,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-light, #F9FAFB)',
+                  textDecoration: 'none', color: 'inherit',
+                }}>
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>{r.label} →</span>
+                  <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{r.blurb}</span>
+                </Link>
+              ))}
+            </div>
+            <p style={{ marginTop: 14, fontSize: 13 }}>
+              <Link href="/formats" style={{ color: 'var(--gold-600)' }}>Browse every MTG format →</Link>
+            </p>
+          </section>
+        )
+      })()}
     </div>
   )
 }
@@ -210,6 +253,7 @@ function SpotlightBlock({
           })}
         </div>
       )}
+
     </section>
   )
 }
