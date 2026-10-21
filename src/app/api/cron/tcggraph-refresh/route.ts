@@ -140,6 +140,40 @@ export async function GET(req: NextRequest | Request) {
     return NextResponse.json({ ok: false, reason: 'exception', game: gameSlug, error: message, fromPage, maxPages: maxPages === Infinity ? null : maxPages }, { status: 500 })
   }
 
+  // CN-COST-03 / CN-MARKET-FIX: rebuild the OnePiecePrices /market
+  // movers cache after a successful one-piece ingest that actually
+  // wrote market rows. The Bearer CRON_SECRET auth at the top of
+  // this route guarantees this hook cannot be reached anonymously.
+  // Failure is logged but does not change the ingest's HTTP status:
+  // the ingest itself succeeded, and op_market_movers() keeps
+  // serving the previous snapshot until the next refresh.
+  let marketRefresh: { attempted: boolean; ok?: boolean; durationMs?: number; error?: string } = { attempted: false }
+  if (
+    gameSlug === 'one-piece' &&
+    result.status === 'success' &&
+    (result as { marketRowsUpserted?: number }).marketRowsUpserted !== undefined &&
+    (result as { marketRowsUpserted: number }).marketRowsUpserted > 0
+  ) {
+    marketRefresh.attempted = true
+    const started = Date.now()
+    try {
+      const { error: refreshErr } = await sb.rpc('op_market_movers_refresh')
+      marketRefresh.durationMs = Date.now() - started
+      if (refreshErr) {
+        marketRefresh.ok = false
+        marketRefresh.error = refreshErr.message
+        console.warn('[tcggraph-refresh] op_market_movers_refresh failed:', refreshErr.message)
+      } else {
+        marketRefresh.ok = true
+      }
+    } catch (err) {
+      marketRefresh.durationMs = Date.now() - started
+      marketRefresh.ok = false
+      marketRefresh.error = err instanceof Error ? err.message : String(err)
+      console.warn('[tcggraph-refresh] op_market_movers_refresh threw:', marketRefresh.error)
+    }
+  }
+
   const httpStatus =
     result.status === 'success'         ? 200
     : result.status === 'partial'        ? 200
@@ -153,6 +187,7 @@ export async function GET(req: NextRequest | Request) {
     fromPage,
     maxPagesRequested: maxPages === Infinity ? null : maxPages,
     resumeInfo,
+    marketRefresh,
     ...result,
   }, { status: httpStatus })
 }
