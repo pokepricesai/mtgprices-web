@@ -33,6 +33,7 @@ import { getTcgBundleForMtgPrintingStrict as _getTcgBundleForMtgPrintingStrict, 
 import { buildGradedView } from '@/lib/mtg/graded-view'
 import { buildCardTheme } from '@/lib/mtg/color-theme'
 import EbayLinkButton from '@/components/mtg/EbayLinkButton'
+import TcgplayerLinkButton from '@/components/mtg/TcgplayerLinkButton'
 import { LiveMarketProvider } from '@/components/mtg/LiveMarketProvider'
 
 // Phase 1 of the MTG card-page freshness architecture.
@@ -408,14 +409,27 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
               <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 10 }}>
                 No live paper price on file for this exact printing yet. Browse copies on eBay.
               </div>
-              <EbayLinkButton
-                cardName={printing.name}
-                setName={setName}
-                setCode={printing.set_code}
-                collectorNumber={printing.collector_number}
-                finish={defaultFinish?.finish as 'nonfoil' | 'foil' | 'etched' | undefined}
-                source="mtg-card-no-market"
-              />
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                <EbayLinkButton
+                  cardName={printing.name}
+                  setName={setName}
+                  setCode={printing.set_code}
+                  collectorNumber={printing.collector_number}
+                  finish={defaultFinish?.finish as 'nonfoil' | 'foil' | 'etched' | undefined}
+                  source="mtg-card-no-market"
+                  hideDisclosure
+                />
+                {/* CN-05 Sprint 5 — TCGplayer search fallback for cards
+                    with no priced-paper summary. Same honest "Find"
+                    label; same Impact share-link mechanism. */}
+                <TcgplayerLinkButton
+                  cardName={printing.name}
+                  setName={setName}
+                  setCode={printing.set_code}
+                  collectorNumber={printing.collector_number}
+                  placement="mtg-card-no-market"
+                />
+              </div>
             </div>
           )}
 

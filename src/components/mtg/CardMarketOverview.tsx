@@ -19,6 +19,7 @@
 
 import type { CardMarketSummary, WindowStat } from '@/lib/mtg/card-market.types'
 import EbayLinkButton from './EbayLinkButton'
+import TcgplayerLinkButton from './TcgplayerLinkButton'
 import { useLiveMarket } from './LiveMarketProvider'
 
 type Props = {
@@ -129,7 +130,23 @@ export default function CardMarketOverview({ summary: initialSummary, cardName, 
           collectorNumber={collectorNumber ?? null}
           finish={(primaryFinish === 'foil' || primaryFinish === 'etched') ? primaryFinish : 'nonfoil'}
           source="mtg-card-overview"
+          hideDisclosure
         />
+        {/* CN-05 Sprint 5 — TCGplayer buying CTA alongside eBay.
+            Search-URL fallback until mtg_external_identifiers is
+            backfilled with provider='tcgplayer' rows; label is
+            honest ("Find" = search). Shared disclosure under both. */}
+        <TcgplayerLinkButton
+          variant="gold"
+          cardName={cardName}
+          setName={setName ?? null}
+          setCode={setCode ?? null}
+          collectorNumber={collectorNumber ?? null}
+          placement="mtg-card-overview"
+        />
+        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+          Affiliate. MTGPrices may earn from qualifying eBay and TCGplayer purchases.
+        </span>
       </div>
     </section>
   )
