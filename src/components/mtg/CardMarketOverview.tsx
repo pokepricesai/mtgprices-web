@@ -28,9 +28,14 @@ type Props = {
   setName?: string | null
   setCode?: string | null
   collectorNumber?: string | null
+  /** CN-05 Sprint 6 — exact TCGplayer product ID resolved from the
+   *  tcg_printings bridge. When set the TcgplayerLinkButton emits
+   *  a deep link to the exact product page; null falls back to the
+   *  per-game search URL with an honest "Find" label. */
+  tcgplayerProductId?: number | null
 }
 
-export default function CardMarketOverview({ summary: initialSummary, cardName, setName, setCode, collectorNumber }: Props) {
+export default function CardMarketOverview({ summary: initialSummary, cardName, setName, setCode, collectorNumber, tcgplayerProductId }: Props) {
   // Prefer the live summary from context when it has arrived; fall
   // back to the server-rendered snapshot passed via props. Never
   // downgrade a populated prop snapshot to a null live result (that
@@ -132,16 +137,18 @@ export default function CardMarketOverview({ summary: initialSummary, cardName, 
           source="mtg-card-overview"
           hideDisclosure
         />
-        {/* CN-05 Sprint 5 — TCGplayer buying CTA alongside eBay.
-            Search-URL fallback until mtg_external_identifiers is
-            backfilled with provider='tcgplayer' rows; label is
-            honest ("Find" = search). Shared disclosure under both. */}
+        {/* CN-05 Sprint 5+6 — TCGplayer CTA. Sprint 6 upgrade: when
+            `tcgplayerProductId` is populated (via the tcg_printings
+            bridge query), the resolver emits an exact-product deep
+            link; otherwise honest "Find on TCGplayer" search fallback.
+            Shared disclosure under both merchants. */}
         <TcgplayerLinkButton
           variant="gold"
           cardName={cardName}
           setName={setName ?? null}
           setCode={setCode ?? null}
           collectorNumber={collectorNumber ?? null}
+          productId={tcgplayerProductId ?? null}
           placement="mtg-card-overview"
         />
         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>

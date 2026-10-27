@@ -241,6 +241,11 @@ export type MtgCardDetail = {
   legalities: MtgLegality[]
   rulings: MtgRuling[]
   otherPrintings: MtgPrinting[]     // other printings of the same oracle
+  /** CN-05 Sprint 6 — exact TCGplayer product ID resolved via the
+   *  tcg_printings bridge table (mtg_printings_id FK with partial
+   *  index tcg_printings_mtg_idx). Only populated when
+   *  mapping_confidence='exact'. Null = fall back to search URL. */
+  tcgplayerProductId: number | null
 }
 
 /** FAIL-CLOSED. Returns `null` on query errors, coercing an
@@ -341,6 +346,22 @@ export async function getCardBySlug(setCode: string, cardSlug: string): Promise<
     .order('released_at', { ascending: false })
     .limit(40)
 
+  // 7. CN-05 Sprint 6 — TCGplayer product ID via tcg_printings bridge.
+  // Non-strict path: tolerate query errors silently (null = search
+  // fallback). Only exact-confidence rows are honoured.
+  const { data: tcgBridge } = await supabase
+    .from('tcg_printings')
+    .select('tcgplayer_id')
+    .eq('mtg_printings_id', printing.id)
+    .eq('mapping_confidence', 'exact')
+    .not('tcgplayer_id', 'is', null)
+    .limit(1)
+    .maybeSingle()
+  const tcgplayerProductId =
+    tcgBridge && typeof tcgBridge.tcgplayer_id === 'number' && Number.isFinite(tcgBridge.tcgplayer_id)
+      ? tcgBridge.tcgplayer_id
+      : null
+
   return {
     printing: printing as MtgPrinting,
     oracle: oracle as MtgOracleCard,
@@ -348,6 +369,7 @@ export async function getCardBySlug(setCode: string, cardSlug: string): Promise<
     legalities: (legalities ?? []) as MtgLegality[],
     rulings: (rulings ?? []) as MtgRuling[],
     otherPrintings: ((others ?? []) as MtgPrinting[]),
+    tcgplayerProductId,
   }
 }
 
@@ -412,8 +434,10 @@ export async function getCardBySlugStrict(setCode: string, cardSlug: string): Pr
     null
   if (!printing) return null
 
-  // Stages 2-6 fire in parallel — all strict.
-  const [oracleRow, finishes, legalities, rulings, others] = await Promise.all([
+  // Stages 2-7 fire in parallel — strict for data on the critical SEO
+  // path (oracle, finishes, legalities, rulings, other-printings) and
+  // best-effort for the TCGplayer bridge lookup (Sprint 6).
+  const [oracleRow, finishes, legalities, rulings, others, tcgBridge] = await Promise.all([
     runStrictQueryWithRetry<any | null>(
       label('oracle'),
       async () => {
@@ -477,11 +501,38 @@ export async function getCardBySlugStrict(setCode: string, cardSlug: string): Pr
         return { ok: true, value: (data ?? []) as any[] }
       },
     ),
+    // CN-05 Sprint 6 — TCGplayer product ID lookup via tcg_printings
+    // bridge. Uses the partial index tcg_printings_mtg_idx on
+    // mtg_printings_id so this stays <1 ms server-side at steady state.
+    // Filter mapping_confidence='exact' to refuse speculative matches
+    // per the Sprint 6 brief. Catch to null: a transient failure here
+    // must not 404 a cacheable card page — the TCGplayer resolver
+    // simply falls back to the honest search-URL label.
+    runStrictQueryWithRetry<{ tcgplayer_id: number | null } | null>(
+      label('tcg-bridge'),
+      async () => {
+        const { data, error } = await supabase
+          .from('tcg_printings')
+          .select('tcgplayer_id')
+          .eq('mtg_printings_id', printing.id)
+          .eq('mapping_confidence', 'exact')
+          .not('tcgplayer_id', 'is', null)
+          .limit(1)
+          .maybeSingle()
+        if (error) return { ok: false, error }
+        return { ok: true, value: data }
+      },
+    ).catch(() => null as { tcgplayer_id: number | null } | null),
   ])
 
   // Missing oracle row for a found printing is a data-integrity edge,
   // not an infra failure — treat as 404 like the non-strict variant.
   if (!oracleRow) return null
+
+  const tcgplayerProductId =
+    tcgBridge && typeof tcgBridge.tcgplayer_id === 'number' && Number.isFinite(tcgBridge.tcgplayer_id)
+      ? tcgBridge.tcgplayer_id
+      : null
 
   return {
     printing: printing as MtgPrinting,
@@ -490,6 +541,7 @@ export async function getCardBySlugStrict(setCode: string, cardSlug: string): Pr
     legalities: legalities as MtgLegality[],
     rulings: rulings as MtgRuling[],
     otherPrintings: others as MtgPrinting[],
+    tcgplayerProductId,
   }
 }
 

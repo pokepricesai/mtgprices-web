@@ -392,6 +392,7 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
                 setName={setName}
                 setCode={printing.set_code}
                 collectorNumber={printing.collector_number}
+                tcgplayerProductId={detail.tcgplayerProductId}
               />
             </div>
           ) : (
@@ -427,6 +428,7 @@ export default async function MtgCardPage({ params }: { params: Promise<Params> 
                   setName={setName}
                   setCode={printing.set_code}
                   collectorNumber={printing.collector_number}
+                  productId={detail.tcgplayerProductId}
                   placement="mtg-card-no-market"
                 />
               </div>
