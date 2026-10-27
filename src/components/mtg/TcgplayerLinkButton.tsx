@@ -91,6 +91,7 @@ export default function TcgplayerLinkButton({
         title={link.label}
         onClick={onClick}
         data-affiliate="1"
+        data-merchant="tcgplayer"
         data-component="TcgplayerLinkButton"
         data-placement={placement}
         data-intent={link.isExact ? 'exact' : 'search'}
@@ -117,6 +118,7 @@ export default function TcgplayerLinkButton({
       rel="sponsored nofollow noopener"
       onClick={onClick}
       data-affiliate="1"
+      data-merchant="tcgplayer"
       data-component="TcgplayerLinkButton"
       data-placement={placement}
       data-intent={link.isExact ? 'exact' : 'search'}
