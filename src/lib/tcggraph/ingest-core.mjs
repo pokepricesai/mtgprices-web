@@ -187,7 +187,26 @@ export function tcgPrintingId(gameId, tcggraphCardId, printingKey, language)   {
 // MTG deterministic mapping. See docs/network/05-mtg-mapping-report.md.
 // ---------------------------------------------------------------------
 
-export async function batchMapMtgCards(sb, cards) {
+/**
+ * batchMapMtgCards(sb, cards, preloadedIndex = null)
+ *
+ * CN-06.01-P15 — accepts an optional preloaded index produced by
+ * preloadMtgPrintingsIndex(). When the index is supplied, each
+ * (set_code, lang) lookup is resolved in-memory. When it is null OR
+ * a specific (set_code, lang) key is absent from the index, the
+ * function falls back to the historical per-key Supabase query.
+ * This keeps the mapping correct even if the preload is stale, missing
+ * a brand-new set, or was skipped entirely.
+ *
+ * Preserves prior error-handling semantics on the fallback path: any
+ * Supabase error on a per-key query throws, propagating to the page
+ * loop's catch block (which records a `failure` status + runs the
+ * finally block to release the lock).
+ *
+ * The preloadedIndex shape is:
+ *   Map<`${setCode}|${lang}`, Map<collector_number, row[]>>
+ */
+export async function batchMapMtgCards(sb, cards, preloadedIndex = null) {
   const bySet = new Map()
   for (const c of cards) {
     if (c.game !== 'magic-the-gathering') continue
@@ -204,20 +223,35 @@ export async function batchMapMtgCards(sb, cards) {
   for (const { setCode, lang, cns, byCn } of Array.from(bySet.values())) {
     if (cns.size === 0) continue
     const cnArr = Array.from(cns)
-    const { data, error } = await sb
-      .from('mtg_printings')
-      .select('id, name, set_code, collector_number, lang')
-      .eq('set_code', setCode)
-      .eq('lang', lang)
-      .in('collector_number', cnArr)
-      .limit(cnArr.length * 3)
-    if (error) throw new Error(`mtg_printings lookup failed for ${setCode}: ${error.message}`)
-    const dbByCn = new Map()
-    for (const row of data ?? []) {
-      const k = row.collector_number
-      if (!dbByCn.has(k)) dbByCn.set(k, [])
-      dbByCn.get(k).push(row)
+
+    // Preload path — try the in-memory index first.
+    let dbByCn = null
+    if (preloadedIndex) {
+      const key = `${setCode}|${lang}`
+      const cached = preloadedIndex.get(key)
+      if (cached) dbByCn = cached
     }
+
+    // Fallback path — original per-(set_code, lang) Supabase query.
+    // Fires when the preload is null, or when a specific key is absent
+    // (e.g. a newly-released set the preload did not see).
+    if (!dbByCn) {
+      const { data, error } = await sb
+        .from('mtg_printings')
+        .select('id, name, set_code, collector_number, lang')
+        .eq('set_code', setCode)
+        .eq('lang', lang)
+        .in('collector_number', cnArr)
+        .limit(cnArr.length * 3)
+      if (error) throw new Error(`mtg_printings lookup failed for ${setCode}: ${error.message}`)
+      dbByCn = new Map()
+      for (const row of data ?? []) {
+        const k = row.collector_number
+        if (!dbByCn.has(k)) dbByCn.set(k, [])
+        dbByCn.get(k).push(row)
+      }
+    }
+
     for (const cn of cnArr) {
       const c = byCn.get(cn)
       const rows = dbByCn.get(cn) ?? []
@@ -231,6 +265,100 @@ export async function batchMapMtgCards(sb, cards) {
     }
   }
   return results
+}
+
+/**
+ * preloadMtgPrintingsIndex(sb, logger)
+ *
+ * CN-06.01-P15 — one-shot paginated preload of the `mtg_printings`
+ * lookup table into a memoized index keyed by (set_code, lang).
+ *
+ * Correction #4 — never trust a single Supabase SELECT to return all
+ * rows: Supabase caps unpaginated reads at ~1,000 rows. This function
+ * uses .range(from, to) in 1,000-row chunks and keeps going until
+ * either (a) a chunk returns fewer rows than requested (natural
+ * termination), or (b) the running row count meets or exceeds a
+ * safety ceiling of 500,000 (hard stop to avoid unbounded growth).
+ *
+ * After the loop, the collected row count is validated against a
+ * separate `.select('*', { count: 'exact', head: true })`. If the
+ * collected total deviates from the expected count by more than 5%,
+ * the preload is rejected (returns null); batchMapMtgCards then falls
+ * back to per-key Supabase queries for correctness. A deviation
+ * larger than 5% is treated as evidence of mid-preload concurrent
+ * writes, pagination drift, or a provider-side limit we have not
+ * accounted for — in all three cases the safe answer is "do not use
+ * this snapshot".
+ *
+ * Returns: Map<`${setCode}|${lang}`, Map<collector_number, row[]>> on
+ * success, or null on any failure. Null is NOT an error: callers must
+ * handle it by falling back to per-key queries. This function never
+ * throws.
+ */
+export async function preloadMtgPrintingsIndex(sb, logger) {
+  const CHUNK = 1000
+  const MAX_ROWS = 500_000  // hard ceiling vs unbounded growth
+  const log = logger ?? { info: () => {}, warn: () => {}, error: () => {} }
+  try {
+    // 1. Validate expected total.
+    const { count: expected, error: countErr } = await sb
+      .from('mtg_printings')
+      .select('id', { count: 'exact', head: true })
+    if (countErr) {
+      log.warn('tcg.preload.count_failed', { err: countErr.message })
+      return null
+    }
+    if (typeof expected !== 'number' || expected <= 0) {
+      log.warn('tcg.preload.count_invalid', { expected })
+      return null
+    }
+
+    // 2. Paginated fetch.
+    const index = new Map()
+    let offset = 0
+    let total = 0
+    while (offset < MAX_ROWS) {
+      const { data, error } = await sb
+        .from('mtg_printings')
+        .select('set_code, lang, collector_number, id, name')
+        .range(offset, offset + CHUNK - 1)
+      if (error) {
+        log.warn('tcg.preload.chunk_failed', { offset, err: error.message })
+        return null
+      }
+      if (!data || data.length === 0) break
+      for (const row of data) {
+        if (!row.set_code || !row.lang || !row.collector_number) continue
+        const key = `${String(row.set_code).toLowerCase()}|${row.lang}`
+        let cnMap = index.get(key)
+        if (!cnMap) { cnMap = new Map(); index.set(key, cnMap) }
+        const cn = row.collector_number
+        let arr = cnMap.get(cn)
+        if (!arr) { arr = []; cnMap.set(cn, arr) }
+        arr.push(row)
+        total++
+      }
+      if (data.length < CHUNK) break
+      offset += CHUNK
+    }
+
+    // 3. Validate: collected rows vs expected count, 5% tolerance.
+    //    Correction #4 — never trust the preload if the shape differs
+    //    materially from the live catalogue size.
+    const ratio = total / expected
+    if (!Number.isFinite(ratio) || ratio < 0.95 || ratio > 1.05) {
+      log.warn('tcg.preload.validation_failed', {
+        collected: total, expected, ratio: Number(ratio.toFixed(3)),
+      })
+      return null
+    }
+
+    log.info('tcg.preload.ok', { collected: total, expected, keys: index.size })
+    return index
+  } catch (err) {
+    log.warn('tcg.preload.exception', { err: err instanceof Error ? err.message : String(err) })
+    return null
+  }
 }
 
 // ---------------------------------------------------------------------

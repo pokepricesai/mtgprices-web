@@ -22,6 +22,7 @@ import {
   PRODUCTION_MONTHLY_RESERVE,
   tcgFetch,
   batchMapMtgCards,
+  preloadMtgPrintingsIndex,
   buildSetRow, buildCardRow, buildPrintingRows,
   buildMarketRows, buildGradedRows, buildExternalIdRows,
   upsertChunked,
@@ -29,6 +30,17 @@ import {
 
 const RESOURCE = 'cards.full'
 const LIMIT = 100
+
+// CN-06.01-P03 / P15 — Wall-time safety budget. Vercel's maxDuration
+// caps function execution at 900 seconds. Breaking the page loop at
+// 780 seconds leaves ≥120s of margin for the finalize row-update, the
+// lock release, any downstream-cache-invalidation call, and ambient
+// network variance. This guarantees a normal 'partial' exit with a
+// released lock and a correct last_page checkpoint rather than a
+// Vercel hard-kill that strands a 'running' row and an unreleased
+// lock. Set below 900 by at least 15% so that a slow finalize or an
+// unexpectedly slow single page cannot cross the cap.
+const WATCHDOG_BUDGET_MS = 780_000
 
 /**
  * Options:
@@ -188,6 +200,13 @@ export async function refreshCatalogue(opts) {
     lastDaily: null,
     lastMonthly: null,
     errors: 0,
+    // CN-06.01-P03 / P15 — bounded-resume instrumentation. These are
+    // not a hypothesis — they measure real wall-time per page so the
+    // next run's maxPages can be tuned from observed data.
+    runStartMs: Date.now(),
+    perPageMs: [],       // most-recent 100 page durations (bounded memory)
+    lastPageMs: null,
+    preloadedMtgIndexStatus: null,  // null, 'used', 'skipped', 'failed'
   }
   //  observedOn is captured ONCE per run so a refresh that straddles
   //  midnight writes all rows under a single date. Semantically this is
@@ -196,9 +215,40 @@ export async function refreshCatalogue(opts) {
   //  own updated_at column, but daily history is a per-run observation.
   const observedOn = new Date().toISOString().slice(0, 10)
 
+  // CN-06.01-P15 — MTG-only: preload mtg_printings into an in-memory
+  // index so batchMapMtgCards does not round-trip to Supabase per
+  // page. Paginated 1,000-row chunks; row-count validation before use;
+  // null on any failure → per-page fallback in batchMapMtgCards.
+  // Safe to call for MTG runs under service-role credentials. Non-MTG
+  // runs skip (fast path: null index means per-page lookup, which is
+  // a no-op for non-MTG cards per batchMapMtgCards' internal filter).
+  let preloadedMtgIndex = null
+  if (gameId === 'mtg' && !dryRun) {
+    try {
+      preloadedMtgIndex = await preloadMtgPrintingsIndex(sb, logger)
+      stats.preloadedMtgIndexStatus = preloadedMtgIndex ? 'used' : 'failed'
+    } catch (err) {
+      stats.preloadedMtgIndexStatus = 'failed'
+      logger.warn('tcg.refresh.preload_exception', { err: err instanceof Error ? err.message : String(err) })
+    }
+  } else if (gameId !== 'mtg') {
+    stats.preloadedMtgIndexStatus = 'skipped'
+  }
+
   try {
     for (let page = fromPage; ; page++) {
+      const pageStartMs = Date.now()
       if (page - fromPage >= maxPages) { stats.stopReason = 'max_pages_reached'; break }
+      // CN-06.01-P03 / P15 — watchdog BEFORE the fetch. Exiting here
+      // guarantees stats.lastPage is still the last successfully
+      // persisted page (not a partially-processed one). Finalize at
+      // the end writes notes.last_page = stats.lastPage, giving the
+      // next continue=1 shard an exact resume point.
+      const preFetchElapsedMs = Date.now() - stats.runStartMs
+      if (preFetchElapsedMs > WATCHDOG_BUDGET_MS) {
+        stats.stopReason = `wall_time_watchdog_${Math.round(preFetchElapsedMs/1000)}s_pre_page_${page}`
+        break
+      }
       const r = await tcgFetch('/cards', { game: gameSlug, page, limit: LIMIT })
       stats.creditsUsed += r.cost
       if (stats.firstDaily === null) stats.firstDaily = r.dailyRemaining
@@ -212,7 +262,11 @@ export async function refreshCatalogue(opts) {
       stats.rowsFetched += data.length
 
       const en = data.filter((c) => (c.language || 'en') === 'en')
-      const mtgMap = gameId === 'mtg' ? await batchMapMtgCards(sb, en) : new Map()
+      // Pass the preloaded index when available (MTG only, when
+      // preload succeeded + validated). batchMapMtgCards consults
+      // the index first and falls back to a per-(set_code, lang)
+      // Supabase query when a key is missing.
+      const mtgMap = gameId === 'mtg' ? await batchMapMtgCards(sb, en, preloadedMtgIndex) : new Map()
       for (const [, m] of mtgMap) stats.mappingCounts[m.confidence] = (stats.mappingCounts[m.confidence] || 0) + 1
 
       const setRows      = uniqueBy(en.map((c) => buildSetRow(gameId, c.set)).filter(Boolean), 'id')
@@ -252,13 +306,20 @@ export async function refreshCatalogue(opts) {
       stats.gradedRows += gradedRows.length
       stats.pagesCompleted += 1
       stats.lastPage = page
+      // CN-06.01-P03 / P15 — per-page timing instrumentation. The
+      // trailing window stays bounded (100 most recent) to avoid
+      // unbounded array growth on a multi-thousand-page CLI run.
+      stats.lastPageMs = Date.now() - pageStartMs
+      stats.perPageMs.push(stats.lastPageMs)
+      if (stats.perPageMs.length > 100) stats.perPageMs.shift()
       const totalPages = r.body?.meta?.totalPages ?? null
       if (page === 1 || page % 25 === 0 || totalPages && page === totalPages) {
-        logger.info('tcg.refresh.page', { game: gameId, page, totalPages, cost: r.cost, dailyRemaining: r.dailyRemaining, mkt: marketRows.length, graded: gradedRows.length })
-        // Heartbeat: write partial progress so a Vercel hard-kill
-        // leaves an observably-progressing row instead of an
-        // opaque `running, finished_at=null`. Best-effort — a
-        // failed heartbeat MUST NOT interrupt the ingest loop.
+        logger.info('tcg.refresh.page', { game: gameId, page, totalPages, cost: r.cost, dailyRemaining: r.dailyRemaining, mkt: marketRows.length, graded: gradedRows.length, pageMs: stats.lastPageMs })
+        // Heartbeat: write partial progress so a sweep (or a very
+        // rare hard-kill despite the watchdog) leaves an observably-
+        // progressing row with correct last_page and timing. The
+        // AUTHORITATIVE checkpoint still comes from finalize at the
+        // end of this function — this is forensic belt-and-braces.
         if (!dryRun) {
           try {
             await sb.from('tcg_ingest_runs').update({
@@ -275,6 +336,12 @@ export async function refreshCatalogue(opts) {
                 market_rows_upserted: stats.marketRows,
                 graded_rows_upserted: stats.gradedRows,
                 mapping_counts: stats.mappingCounts,
+                // Timing stats for operator observability.
+                last_page_ms: stats.lastPageMs,
+                avg_page_ms: avg(stats.perPageMs),
+                max_page_ms: stats.perPageMs.length ? Math.max(...stats.perPageMs) : null,
+                elapsed_ms: Date.now() - stats.runStartMs,
+                preloaded_mtg_index: stats.preloadedMtgIndexStatus,
               },
             }).eq('id', runId)
           } catch (hbErr) {
@@ -292,6 +359,17 @@ export async function refreshCatalogue(opts) {
         stats.stopReason = `monthly_reserve_reached_${r.creditsRemaining}_${monthlyReserve}`
         break
       }
+
+      // CN-06.01-P03 / P15 — post-upsert watchdog check. This is the
+      // second opportunity to bail inside the normal loop (the first
+      // is pre-fetch). Checking here rather than only at loop top
+      // means a page that itself takes longer than expected still
+      // exits cleanly through the finally block + finalize.
+      const postPageElapsedMs = Date.now() - stats.runStartMs
+      if (postPageElapsedMs > WATCHDOG_BUDGET_MS) {
+        stats.stopReason = `wall_time_watchdog_${Math.round(postPageElapsedMs/1000)}s_post_page_${page}`
+        break
+      }
     }
   } catch (err) {
     stats.errors++
@@ -304,9 +382,13 @@ export async function refreshCatalogue(opts) {
   // ------- 5. Finalise ingest_runs row -------
   const status =
     stats.stopReason === 'catalogue_exhausted' || stats.stopReason === 'no_more_data' ? 'success'
-    : String(stats.stopReason).startsWith('daily_reserve_reached') ? 'aborted_credit'
-    : String(stats.stopReason).startsWith('monthly_reserve_reached') ? 'aborted_credit'
+    : String(stats.stopReason ?? '').startsWith('daily_reserve_reached') ? 'aborted_credit'
+    : String(stats.stopReason ?? '').startsWith('monthly_reserve_reached') ? 'aborted_credit'
     : stats.stopReason === 'max_pages_reached' ? 'partial'
+    // CN-06.01-P03 / P15 — a watchdog break is a normal partial exit:
+    // lock gets released by finally, last_page is written by this
+    // finalize, and the next continue=1 shard resumes cleanly.
+    : String(stats.stopReason ?? '').startsWith('wall_time_watchdog') ? 'partial'
     : 'failure'
   const finishedAt = new Date().toISOString()
 
@@ -328,7 +410,17 @@ export async function refreshCatalogue(opts) {
           market_rows_upserted: stats.marketRows,
           graded_rows_upserted: stats.gradedRows,
           mapping_counts: stats.mappingCounts,
+          // Authoritative checkpoint. `last_page` here = the last
+          // page whose upserts completed successfully. Next
+          // `?continue=1` resumes from last_page + 1.
           last_page: stats.lastPage,
+          // Timing stats. Available on every finalize path
+          // (success / partial / watchdog / failure / exception).
+          last_page_ms: stats.lastPageMs,
+          avg_page_ms: avg(stats.perPageMs),
+          max_page_ms: stats.perPageMs.length ? Math.max(...stats.perPageMs) : null,
+          total_elapsed_ms: Date.now() - stats.runStartMs,
+          preloaded_mtg_index: stats.preloadedMtgIndexStatus,
         },
       }).eq('id', runId)
     } catch (err) {
@@ -472,6 +564,14 @@ function defaultLogger() {
     warn:  (msg, meta) => { console.warn('[tcg.refresh]', msg, meta ?? {}) },
     error: (msg, meta) => { console.error('[tcg.refresh]', msg, meta ?? {}) },
   }
+}
+
+// CN-06.01-P03 / P15 — small helper for timing instrumentation.
+function avg(arr) {
+  if (!Array.isArray(arr) || arr.length === 0) return null
+  let sum = 0
+  for (const v of arr) sum += v
+  return Math.round(sum / arr.length)
 }
 
 export { BOOTSTRAP_DAILY_RESERVE, PRODUCTION_DAILY_RESERVE, PRODUCTION_MONTHLY_RESERVE } from './ingest-core.mjs'
