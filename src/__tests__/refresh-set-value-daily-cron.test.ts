@@ -27,6 +27,7 @@ const { sbMock, rpcMock } = vi.hoisted(() => ({
       status: string; completed_at: string | null; notes: unknown; started_at: string
     }>,
     obsCountByDate: new Map<string, number>(),
+    svdMaxObservedOn: null as string | null,
     rpcResult: { data: 42, error: null as Error | null },
     rpcCalls: [] as Array<{ fn: string; args: Record<string, unknown> }>,
   },
@@ -90,6 +91,11 @@ function makeMockSupabase() {
       if (!observedOn) return { count: 0, error: null }
       return { count: sbMock.obsCountByDate.get(observedOn) ?? 0, error: null }
     }
+    if (q._table === 'mtg_set_value_daily') {
+      // getMaxObservedOn: single-row, ordered observed_on DESC, limit 1.
+      const row = sbMock.svdMaxObservedOn ? [{ observed_on: sbMock.svdMaxObservedOn }] : []
+      return { data: row, error: null }
+    }
     return { data: [], error: null }
   }
   return {
@@ -123,6 +129,7 @@ function req(headers: Record<string, string>) {
 beforeEach(() => {
   sbMock.runs = []
   sbMock.obsCountByDate = new Map()
+  sbMock.svdMaxObservedOn = null
   sbMock.rpcResult = { data: 42, error: null }
   sbMock.rpcCalls = []
   rpcMock.mockReset()
@@ -246,6 +253,50 @@ describe('refresh-set-value-daily cron — target-date semantics (CN-06.01-P13)'
       expect(res.status).toBe(500)
       const body = await res.json()
       expect(String(body.error)).toMatch(/synthetic rpc failure/)
+    })
+  })
+
+  it('no-regression guard: refuses to write when target_date < current_max in mtg_set_value_daily', async () => {
+    // Simulated adversarial case: a stale mtgjson top row whose
+    // only_date is OLDER than what mtg_set_value_daily already holds.
+    // Writing would downgrade the newest observation date. The guard
+    // MUST refuse with 202 regression_guard_tripped.
+    sbMock.runs = [makeRun({
+      id: 'stale', status: 'success', completed_at: '2026-11-02T22:00:00Z',
+      notes: JSON.stringify({ only_date: '2026-11-02' }),
+      started_at: '2026-11-02T21:00:00Z',
+    })]
+    sbMock.obsCountByDate.set('2026-11-02', 148_000)
+    sbMock.svdMaxObservedOn = '2026-11-03'  // table already caught up past target
+    await withEnv({ CRON_SECRET: 'sekret' }, async () => {
+      const res = await GET(req({ authorization: 'Bearer sekret' }))
+      expect(res.status).toBe(202)
+      const body = await res.json()
+      expect(body.reason).toBe('regression_guard_tripped')
+      expect(body.observed_on).toBe('2026-11-02')
+      expect(body.current_max).toBe('2026-11-03')
+      expect(sbMock.rpcCalls.length).toBe(0)
+    })
+  })
+
+  it('no-regression guard: same-day idempotent refresh (target_date == current_max) is permitted', async () => {
+    // The twice-daily schedule means the second fire can re-run the
+    // same only_date. ON CONFLICT DO UPDATE makes this safe. The
+    // guard must NOT block target_date == current_max.
+    sbMock.runs = [makeRun({
+      id: 'r1', status: 'success', completed_at: '2026-11-03T21:11:00Z',
+      notes: JSON.stringify({ only_date: '2026-11-03' }),
+      started_at: '2026-11-03T21:01:00Z',
+    })]
+    sbMock.obsCountByDate.set('2026-11-03', 148_750)
+    sbMock.svdMaxObservedOn = '2026-11-03'  // already written earlier today
+    await withEnv({ CRON_SECRET: 'sekret' }, async () => {
+      const res = await GET(req({ authorization: 'Bearer sekret' }))
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.ok).toBe(true)
+      expect(body.observed_on).toBe('2026-11-03')
+      expect(sbMock.rpcCalls.length).toBe(1)
     })
   })
 })

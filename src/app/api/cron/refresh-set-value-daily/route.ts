@@ -81,6 +81,24 @@ export async function GET(req: Request) {
     }, { status: 202 })
   }
 
+  // No-regression guard (CN-06.01-P13 round 2): refuse to overwrite a
+  // newer observation date with an older one. The scheduled handler
+  // only advances forward; historical gaps are filled by the
+  // standalone backfill script (scripts/backfill-set-value-daily.mjs
+  // or scripts/_cn06-p13-backfill.mjs), not by this route. Same-day
+  // refreshes (targetDate === max) remain permitted so the twice-
+  // daily schedule can pick up a late-arriving ingest.
+  const currentMax = await getMaxObservedOn(supabase)
+  if (currentMax && targetDate < currentMax) {
+    console.warn(`[refresh-set-value-daily] regression_guard_tripped target=${targetDate} current_max=${currentMax} — refusing to overwrite newer with older`)
+    return NextResponse.json({
+      ok: false,
+      reason: 'regression_guard_tripped',
+      observed_on: targetDate,
+      current_max: currentMax,
+    }, { status: 202 })
+  }
+
   const t0 = Date.now()
   const { data, error } = await supabase.rpc('mtg_set_value_daily_upsert', {
     p_observed_on: targetDate,
@@ -177,4 +195,31 @@ async function countObservationsForDate(
     return 0
   }
   return count ?? 0
+}
+
+/**
+ * Current max observed_on in mtg_set_value_daily for the basis. Used
+ * by the no-regression guard to refuse writing an older date on top
+ * of newer data. Returns null when the table is empty for the basis
+ * (fresh install / first run) — the guard treats that as "no newer
+ * data to protect, write freely".
+ */
+async function getMaxObservedOn(
+  supabase: ReturnType<typeof getSupabaseServiceClient>,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('mtg_set_value_daily')
+    .select('observed_on')
+    .eq('provider', BASIS.provider)
+    .eq('currency', BASIS.currency)
+    .eq('market', BASIS.market)
+    .eq('price_type', BASIS.priceType)
+    .order('observed_on', { ascending: false })
+    .limit(1)
+  if (error) {
+    console.warn('[refresh-set-value-daily] max-observed-on fetch failed:', error.message)
+    return null
+  }
+  const row = (data?.[0] as { observed_on?: string } | undefined)
+  return row?.observed_on ?? null
 }
