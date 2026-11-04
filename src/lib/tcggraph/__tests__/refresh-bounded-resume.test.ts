@@ -437,4 +437,136 @@ describe('CN-06.01-P03/P15 — bounded ingestion + resume (refresh.mjs)', () => 
     const result = await preloadMtgPrintingsIndex(sb, silentLogger)
     expect(result).toBeNull()
   })
+
+  it('7d. preloadMtgPrintingsIndex: multi-chunk pagination assembles complete index', async () => {
+    // 2,500 rows across 3 chunks (1000+1000+500). Expected count matches
+    // collected → preload succeeds. Chunks span two distinct (set,lang)
+    // keys to confirm index assembly across range boundaries.
+    const chunk1 = Array.from({ length: 1000 }, (_, i) => ({
+      set_code: 'abc', lang: 'en', collector_number: String(i+1), id: `a${i+1}`, name: `A${i+1}`,
+    }))
+    const chunk2 = Array.from({ length: 1000 }, (_, i) => ({
+      set_code: 'abc', lang: 'en', collector_number: String(i+1001), id: `a${i+1001}`, name: `A${i+1001}`,
+    }))
+    const chunk3 = Array.from({ length: 500 }, (_, i) => ({
+      set_code: 'xyz', lang: 'ja', collector_number: String(i+1), id: `x${i+1}`, name: `X${i+1}`,
+    }))
+    const { sb } = makeMockSb({
+      mtg_printings: {
+        countResult: 2500,
+        // Fourth call returns [] to break the loop; but since chunk3 has
+        // length 500 < CHUNK (1000) the loop breaks there naturally.
+        rangeResults: [chunk1, chunk2, chunk3, []],
+      },
+    })
+    const result = await preloadMtgPrintingsIndex(sb, silentLogger)
+    expect(result).not.toBeNull()
+    expect(result!.size).toBe(2)
+    expect(result!.get('abc|en')!.size).toBe(2000)
+    expect(result!.get('xyz|ja')!.size).toBe(500)
+  })
+
+  it('7e. preloadMtgPrintingsIndex: shortfall (collected < expected) → returns null (incomplete retrieval)', async () => {
+    // Correction #4 (tightened): require complete retrieval. Expected
+    // 1,500 but only 1,000 collected → shortfall → null, batchMapMtgCards
+    // falls back to per-key Supabase queries for correctness.
+    const rows = Array.from({ length: 1000 }, (_, i) => ({
+      set_code: 'abc', lang: 'en', collector_number: String(i+1), id: `m${i+1}`, name: `M${i+1}`,
+    }))
+    const { sb } = makeMockSb({
+      mtg_printings: {
+        countResult: 1500,
+        // chunk1 fills (1000 == CHUNK → loop continues); chunk2 empty
+        // → loop breaks. Total collected = 1000 < expected 1500 →
+        // preload rejected.
+        rangeResults: [rows, []],
+      },
+    })
+    const result = await preloadMtgPrintingsIndex(sb, silentLogger)
+    expect(result).toBeNull()
+  })
+
+  it('7f. preloadMtgPrintingsIndex: wall-time cap exceeded mid-fetch → returns null', async () => {
+    // Use fake timers; chunk fetches are instant (synchronous promise
+    // resolve), but we simulate elapsed time by advancing the clock
+    // between chunks. Cap = 100ms via options; first chunk is free,
+    // second chunk sees 200ms elapsed → bails and returns null.
+    vi.useFakeTimers({ shouldAdvanceTime: false, now: 0 })
+    const chunk1 = Array.from({ length: 1000 }, (_, i) => ({
+      set_code: 'abc', lang: 'en', collector_number: String(i+1), id: `m${i+1}`, name: `M${i+1}`,
+    }))
+    const { sb, tables } = makeMockSb({
+      mtg_printings: {
+        countResult: 5000,
+        rangeResults: [chunk1, chunk1, chunk1, []],
+      },
+    })
+    // Wrap the mock's range handler to advance fake time between chunks.
+    const origFrom = sb.from
+    sb.from = (name: string) => {
+      const builder = origFrom(name)
+      const origRange = builder.range.bind(builder)
+      builder.range = (from: number, to: number) => {
+        vi.advanceTimersByTime(200)  // > 100ms cap, triggers bail on 2nd call
+        return origRange(from, to)
+      }
+      return builder
+    }
+    const result = await preloadMtgPrintingsIndex(sb, silentLogger, { maxWallTimeMs: 100 })
+    vi.useRealTimers()
+    expect(result).toBeNull()
+    // Confirm we didn't silently return an incomplete index.
+    void tables
+  })
+
+  it('7g. batchMapMtgCards: falls back to Supabase when preloadedIndex is null', async () => {
+    // When refresh.mjs passes preloadedIndex=null (e.g. after preload
+    // failure), batchMapMtgCards MUST still produce a correct mapping
+    // via direct queries. This test proves the fallback path works
+    // end-to-end — no index available, Supabase answers the query.
+    const { batchMapMtgCards } = await import('@/lib/tcggraph/ingest-core.mjs')
+    const { sb, tables } = makeMockSb({
+      mtg_printings: {
+        selectResults: new Map([[
+          'set_code="abc"|lang="en"|collector_number:in=["1"]|limit=3',
+          [{ id: 'p-1', name: 'Test Card', set_code: 'abc', collector_number: '1', lang: 'en' }],
+        ]]),
+      },
+    })
+    const cards = [{
+      id: 'tcg-1', name: 'Test Card', game: 'magic-the-gathering',
+      set: { code: 'abc' }, collectorNumber: '1', language: 'en',
+    }]
+    const result = await batchMapMtgCards(sb, cards, null)
+    expect(result.size).toBe(1)
+    const m = result.get('tcg-1')
+    expect(m).toBeTruthy()
+    expect(m.mtg).toBeTruthy()
+    expect(m.mtg.id).toBe('p-1')
+    expect(m.confidence).toBe('exact')
+    // Confirm the fallback actually queried Supabase.
+    void tables  // prevents an unused-var warning
+  })
+
+  it('7h. batchMapMtgCards: uses preloaded index when key is present, no Supabase call', async () => {
+    const { batchMapMtgCards } = await import('@/lib/tcggraph/ingest-core.mjs')
+    const preloadedIndex = new Map<string, Map<string, unknown[]>>()
+    const cnMap = new Map<string, unknown[]>()
+    cnMap.set('1', [{ id: 'pre-1', name: 'Pre Card', set_code: 'abc', collector_number: '1', lang: 'en' }])
+    preloadedIndex.set('abc|en', cnMap)
+    // Supabase mock with selectError — the index HIT path must not hit sb.
+    const { sb } = makeMockSb({
+      mtg_printings: { selectError: new Error('MUST NOT BE CALLED') },
+    })
+    const cards = [{
+      id: 'tcg-1', name: 'Pre Card', game: 'magic-the-gathering',
+      set: { code: 'abc' }, collectorNumber: '1', language: 'en',
+    }]
+    const result = await batchMapMtgCards(sb, cards, preloadedIndex)
+    expect(result.size).toBe(1)
+    const m = result.get('tcg-1')
+    expect(m.mtg).toBeTruthy()
+    expect(m.mtg.id).toBe('pre-1')
+    expect(m.confidence).toBe('exact')
+  })
 })

@@ -268,37 +268,45 @@ export async function batchMapMtgCards(sb, cards, preloadedIndex = null) {
 }
 
 /**
- * preloadMtgPrintingsIndex(sb, logger)
+ * preloadMtgPrintingsIndex(sb, logger, options?)
  *
  * CN-06.01-P15 — one-shot paginated preload of the `mtg_printings`
  * lookup table into a memoized index keyed by (set_code, lang).
  *
- * Correction #4 — never trust a single Supabase SELECT to return all
- * rows: Supabase caps unpaginated reads at ~1,000 rows. This function
- * uses .range(from, to) in 1,000-row chunks and keeps going until
- * either (a) a chunk returns fewer rows than requested (natural
- * termination), or (b) the running row count meets or exceeds a
- * safety ceiling of 500,000 (hard stop to avoid unbounded growth).
+ * Correction #4 (tightened per CN-06.01-P03/P15 round 2) — never
+ * trust a single Supabase SELECT to return all rows. Supabase caps
+ * unpaginated reads at ~1,000 rows. This function uses .range(from,
+ * to) in 1,000-row chunks and keeps going until either (a) a chunk
+ * returns fewer rows than requested (natural termination), or (b)
+ * the running row count meets a safety ceiling of 500,000.
  *
- * After the loop, the collected row count is validated against a
- * separate `.select('*', { count: 'exact', head: true })`. If the
- * collected total deviates from the expected count by more than 5%,
- * the preload is rejected (returns null); batchMapMtgCards then falls
- * back to per-key Supabase queries for correctness. A deviation
- * larger than 5% is treated as evidence of mid-preload concurrent
- * writes, pagination drift, or a provider-side limit we have not
- * accounted for — in all three cases the safe answer is "do not use
- * this snapshot".
+ * COMPLETENESS GATE: the preload is only accepted when the collected
+ * row count is >= the expected count from a separate exact-count
+ * SELECT. Any shortfall (collected < expected) rejects the preload
+ * and returns null, which triggers the per-key Supabase fallback in
+ * batchMapMtgCards. A small overshoot (concurrent-write race during
+ * pagination) is tolerated so the preload is not spuriously rejected
+ * on a healthy MTG ingest that happens to append rows mid-fetch;
+ * anything beyond 1.5× expected is treated as pagination drift and
+ * also rejected.
+ *
+ * WALL-TIME CAP: the preload bails after `options.maxWallTimeMs`
+ * (default 60s). If the paginated fetch runs long enough that the
+ * outer refresh watchdog would be at risk, preload returns null and
+ * the page loop proceeds with per-key fallback (slower per page but
+ * still bounded).
  *
  * Returns: Map<`${setCode}|${lang}`, Map<collector_number, row[]>> on
  * success, or null on any failure. Null is NOT an error: callers must
  * handle it by falling back to per-key queries. This function never
  * throws.
  */
-export async function preloadMtgPrintingsIndex(sb, logger) {
+export async function preloadMtgPrintingsIndex(sb, logger, options = {}) {
   const CHUNK = 1000
-  const MAX_ROWS = 500_000  // hard ceiling vs unbounded growth
+  const MAX_ROWS = 500_000
+  const MAX_WALL_TIME_MS = Number.isFinite(options.maxWallTimeMs) ? options.maxWallTimeMs : 60_000
   const log = logger ?? { info: () => {}, warn: () => {}, error: () => {} }
+  const startedMs = Date.now()
   try {
     // 1. Validate expected total.
     const { count: expected, error: countErr } = await sb
@@ -318,6 +326,14 @@ export async function preloadMtgPrintingsIndex(sb, logger) {
     let offset = 0
     let total = 0
     while (offset < MAX_ROWS) {
+      // Wall-time cap: bail if the preload exceeds its own time budget.
+      // Returning null is safe — batchMapMtgCards falls back.
+      if (Date.now() - startedMs > MAX_WALL_TIME_MS) {
+        log.warn('tcg.preload.wall_time_exceeded', {
+          elapsed_ms: Date.now() - startedMs, cap_ms: MAX_WALL_TIME_MS, collected: total, expected,
+        })
+        return null
+      }
       const { data, error } = await sb
         .from('mtg_printings')
         .select('set_code, lang, collector_number, id, name')
@@ -342,18 +358,24 @@ export async function preloadMtgPrintingsIndex(sb, logger) {
       offset += CHUNK
     }
 
-    // 3. Validate: collected rows vs expected count, 5% tolerance.
-    //    Correction #4 — never trust the preload if the shape differs
-    //    materially from the live catalogue size.
-    const ratio = total / expected
-    if (!Number.isFinite(ratio) || ratio < 0.95 || ratio > 1.05) {
-      log.warn('tcg.preload.validation_failed', {
-        collected: total, expected, ratio: Number(ratio.toFixed(3)),
-      })
+    // 3. Completeness gate. We MUST have collected at least `expected`
+    //    rows; shortfall means the preload is incomplete and we must
+    //    fall back for correctness. A small overshoot is tolerated
+    //    (concurrent writes during pagination); anything >1.5× is
+    //    rejected as pagination drift.
+    if (total < expected) {
+      log.warn('tcg.preload.incomplete', { collected: total, expected, shortfall: expected - total })
+      return null
+    }
+    if (total > expected * 1.5) {
+      log.warn('tcg.preload.overshoot', { collected: total, expected, ratio: Number((total/expected).toFixed(3)) })
       return null
     }
 
-    log.info('tcg.preload.ok', { collected: total, expected, keys: index.size })
+    log.info('tcg.preload.ok', {
+      collected: total, expected, keys: index.size,
+      elapsed_ms: Date.now() - startedMs,
+    })
     return index
   } catch (err) {
     log.warn('tcg.preload.exception', { err: err instanceof Error ? err.message : String(err) })
