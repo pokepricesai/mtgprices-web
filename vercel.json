@@ -18,6 +18,18 @@
       "schedule": "45 6 * * *"
     },
     {
+      "path": "/api/cron/tcggraph-refresh?game=yugioh&maxPages=150",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/tcggraph-refresh?game=yugioh&maxPages=150&continue=1",
+      "schedule": "15 7 * * *"
+    },
+    {
+      "path": "/api/cron/tcggraph-refresh?game=yugioh&maxPages=150&continue=1",
+      "schedule": "30 7 * * *"
+    },
+    {
       "path": "/api/cron/health-check",
       "schedule": "17 * * * *"
     }
