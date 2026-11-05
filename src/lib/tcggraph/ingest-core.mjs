@@ -187,7 +187,26 @@ export function tcgPrintingId(gameId, tcggraphCardId, printingKey, language)   {
 // MTG deterministic mapping. See docs/network/05-mtg-mapping-report.md.
 // ---------------------------------------------------------------------
 
-export async function batchMapMtgCards(sb, cards) {
+/**
+ * batchMapMtgCards(sb, cards, preloadedIndex = null)
+ *
+ * CN-06.01-P15 — accepts an optional preloaded index produced by
+ * preloadMtgPrintingsIndex(). When the index is supplied, each
+ * (set_code, lang) lookup is resolved in-memory. When it is null OR
+ * a specific (set_code, lang) key is absent from the index, the
+ * function falls back to the historical per-key Supabase query.
+ * This keeps the mapping correct even if the preload is stale, missing
+ * a brand-new set, or was skipped entirely.
+ *
+ * Preserves prior error-handling semantics on the fallback path: any
+ * Supabase error on a per-key query throws, propagating to the page
+ * loop's catch block (which records a `failure` status + runs the
+ * finally block to release the lock).
+ *
+ * The preloadedIndex shape is:
+ *   Map<`${setCode}|${lang}`, Map<collector_number, row[]>>
+ */
+export async function batchMapMtgCards(sb, cards, preloadedIndex = null) {
   const bySet = new Map()
   for (const c of cards) {
     if (c.game !== 'magic-the-gathering') continue
@@ -204,20 +223,35 @@ export async function batchMapMtgCards(sb, cards) {
   for (const { setCode, lang, cns, byCn } of Array.from(bySet.values())) {
     if (cns.size === 0) continue
     const cnArr = Array.from(cns)
-    const { data, error } = await sb
-      .from('mtg_printings')
-      .select('id, name, set_code, collector_number, lang')
-      .eq('set_code', setCode)
-      .eq('lang', lang)
-      .in('collector_number', cnArr)
-      .limit(cnArr.length * 3)
-    if (error) throw new Error(`mtg_printings lookup failed for ${setCode}: ${error.message}`)
-    const dbByCn = new Map()
-    for (const row of data ?? []) {
-      const k = row.collector_number
-      if (!dbByCn.has(k)) dbByCn.set(k, [])
-      dbByCn.get(k).push(row)
+
+    // Preload path — try the in-memory index first.
+    let dbByCn = null
+    if (preloadedIndex) {
+      const key = `${setCode}|${lang}`
+      const cached = preloadedIndex.get(key)
+      if (cached) dbByCn = cached
     }
+
+    // Fallback path — original per-(set_code, lang) Supabase query.
+    // Fires when the preload is null, or when a specific key is absent
+    // (e.g. a newly-released set the preload did not see).
+    if (!dbByCn) {
+      const { data, error } = await sb
+        .from('mtg_printings')
+        .select('id, name, set_code, collector_number, lang')
+        .eq('set_code', setCode)
+        .eq('lang', lang)
+        .in('collector_number', cnArr)
+        .limit(cnArr.length * 3)
+      if (error) throw new Error(`mtg_printings lookup failed for ${setCode}: ${error.message}`)
+      dbByCn = new Map()
+      for (const row of data ?? []) {
+        const k = row.collector_number
+        if (!dbByCn.has(k)) dbByCn.set(k, [])
+        dbByCn.get(k).push(row)
+      }
+    }
+
     for (const cn of cnArr) {
       const c = byCn.get(cn)
       const rows = dbByCn.get(cn) ?? []
@@ -231,6 +265,122 @@ export async function batchMapMtgCards(sb, cards) {
     }
   }
   return results
+}
+
+/**
+ * preloadMtgPrintingsIndex(sb, logger, options?)
+ *
+ * CN-06.01-P15 — one-shot paginated preload of the `mtg_printings`
+ * lookup table into a memoized index keyed by (set_code, lang).
+ *
+ * Correction #4 (tightened per CN-06.01-P03/P15 round 2) — never
+ * trust a single Supabase SELECT to return all rows. Supabase caps
+ * unpaginated reads at ~1,000 rows. This function uses .range(from,
+ * to) in 1,000-row chunks and keeps going until either (a) a chunk
+ * returns fewer rows than requested (natural termination), or (b)
+ * the running row count meets a safety ceiling of 500,000.
+ *
+ * COMPLETENESS GATE: the preload is only accepted when the collected
+ * row count is >= the expected count from a separate exact-count
+ * SELECT. Any shortfall (collected < expected) rejects the preload
+ * and returns null, which triggers the per-key Supabase fallback in
+ * batchMapMtgCards. A small overshoot (concurrent-write race during
+ * pagination) is tolerated so the preload is not spuriously rejected
+ * on a healthy MTG ingest that happens to append rows mid-fetch;
+ * anything beyond 1.5× expected is treated as pagination drift and
+ * also rejected.
+ *
+ * WALL-TIME CAP: the preload bails after `options.maxWallTimeMs`
+ * (default 60s). If the paginated fetch runs long enough that the
+ * outer refresh watchdog would be at risk, preload returns null and
+ * the page loop proceeds with per-key fallback (slower per page but
+ * still bounded).
+ *
+ * Returns: Map<`${setCode}|${lang}`, Map<collector_number, row[]>> on
+ * success, or null on any failure. Null is NOT an error: callers must
+ * handle it by falling back to per-key queries. This function never
+ * throws.
+ */
+export async function preloadMtgPrintingsIndex(sb, logger, options = {}) {
+  const CHUNK = 1000
+  const MAX_ROWS = 500_000
+  const MAX_WALL_TIME_MS = Number.isFinite(options.maxWallTimeMs) ? options.maxWallTimeMs : 60_000
+  const log = logger ?? { info: () => {}, warn: () => {}, error: () => {} }
+  const startedMs = Date.now()
+  try {
+    // 1. Validate expected total.
+    const { count: expected, error: countErr } = await sb
+      .from('mtg_printings')
+      .select('id', { count: 'exact', head: true })
+    if (countErr) {
+      log.warn('tcg.preload.count_failed', { err: countErr.message })
+      return null
+    }
+    if (typeof expected !== 'number' || expected <= 0) {
+      log.warn('tcg.preload.count_invalid', { expected })
+      return null
+    }
+
+    // 2. Paginated fetch.
+    const index = new Map()
+    let offset = 0
+    let total = 0
+    while (offset < MAX_ROWS) {
+      // Wall-time cap: bail if the preload exceeds its own time budget.
+      // Returning null is safe — batchMapMtgCards falls back.
+      if (Date.now() - startedMs > MAX_WALL_TIME_MS) {
+        log.warn('tcg.preload.wall_time_exceeded', {
+          elapsed_ms: Date.now() - startedMs, cap_ms: MAX_WALL_TIME_MS, collected: total, expected,
+        })
+        return null
+      }
+      const { data, error } = await sb
+        .from('mtg_printings')
+        .select('set_code, lang, collector_number, id, name')
+        .range(offset, offset + CHUNK - 1)
+      if (error) {
+        log.warn('tcg.preload.chunk_failed', { offset, err: error.message })
+        return null
+      }
+      if (!data || data.length === 0) break
+      for (const row of data) {
+        if (!row.set_code || !row.lang || !row.collector_number) continue
+        const key = `${String(row.set_code).toLowerCase()}|${row.lang}`
+        let cnMap = index.get(key)
+        if (!cnMap) { cnMap = new Map(); index.set(key, cnMap) }
+        const cn = row.collector_number
+        let arr = cnMap.get(cn)
+        if (!arr) { arr = []; cnMap.set(cn, arr) }
+        arr.push(row)
+        total++
+      }
+      if (data.length < CHUNK) break
+      offset += CHUNK
+    }
+
+    // 3. Completeness gate. We MUST have collected at least `expected`
+    //    rows; shortfall means the preload is incomplete and we must
+    //    fall back for correctness. A small overshoot is tolerated
+    //    (concurrent writes during pagination); anything >1.5× is
+    //    rejected as pagination drift.
+    if (total < expected) {
+      log.warn('tcg.preload.incomplete', { collected: total, expected, shortfall: expected - total })
+      return null
+    }
+    if (total > expected * 1.5) {
+      log.warn('tcg.preload.overshoot', { collected: total, expected, ratio: Number((total/expected).toFixed(3)) })
+      return null
+    }
+
+    log.info('tcg.preload.ok', {
+      collected: total, expected, keys: index.size,
+      elapsed_ms: Date.now() - startedMs,
+    })
+    return index
+  } catch (err) {
+    log.warn('tcg.preload.exception', { err: err instanceof Error ? err.message : String(err) })
+    return null
+  }
 }
 
 // ---------------------------------------------------------------------

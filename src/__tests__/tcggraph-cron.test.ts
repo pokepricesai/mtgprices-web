@@ -148,15 +148,26 @@ describe('tcggraph-refresh cron endpoint - allowlist', () => {
     })
   })
 
-  it('rejects YGO with 400 game_not_scheduled', async () => {
+  // CN-06.01-P03/P15 update (2026-11-04): YGO was added to the
+  // SCHEDULED_ALLOWLIST by commit 0be141c4 "feat(cron): enable daily
+  // YGO TCGGraph refresh via shared pipeline". The route therefore
+  // ACCEPTS game=yugioh and forwards to refreshCatalogue. Prior
+  // assertion (reject with 400) is obsolete.
+  //
+  // YGO is CURRENTLY quarantined from the Vercel cron registry
+  // (vercel.json at e5f89b21) while CN-06.01-P03 bounded-shard work
+  // lands. That quarantine is scheduler-side, not route-side; the
+  // route handler must still route valid allowlisted slugs.
+  it('accepts YGO as an allowlisted game slug', async () => {
     await withEnv({ CRON_SECRET: 'sekret', TCGGRAPH_CRON_ENABLED: 'true' }, async () => {
       refreshMock.mockClear()
       const res = await GET(req({ authorization: 'Bearer sekret' }, 'https://mtgprices.io/api/cron/tcggraph-refresh?game=yugioh'))
-      expect(res.status).toBe(400)
+      expect(res.status).toBe(200)
       const body = await res.json()
-      expect(body.reason).toBe('game_not_scheduled')
-      expect(body.game).toBe('yugioh')
-      expect(refreshMock).not.toHaveBeenCalled()
+      expect(body.ok).toBe(true)
+      expect(body.gameSlug).toBe('yugioh')
+      expect(refreshMock).toHaveBeenCalledTimes(1)
+      expect(refreshMock).toHaveBeenCalledWith(expect.objectContaining({ gameSlug: 'yugioh', source: 'cron', preflightCredits: true }))
     })
   })
 
