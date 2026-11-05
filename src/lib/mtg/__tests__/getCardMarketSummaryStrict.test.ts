@@ -224,14 +224,17 @@ describe('getCardMarketSummaryStrict', () => {
       currentPricesMock.mockResolvedValueOnce({ data: slice, error: null })
     }
     setsMock.mockResolvedValueOnce({ data: [{ code: 'parl', name: 'Mountain Showcase' }], error: null })
-    // Observation chunks (120 ids per chunk per unrelated chunking):
-    // 345 priced finishes → ceil(345/120) = 3 obs chunks. Keep them
-    // empty — the test only cares that chunking + concatenation
-    // works for the printing/current-price stages.
-    observations30Mock
-      .mockResolvedValueOnce({ data: [], error: null })
-      .mockResolvedValueOnce({ data: [], error: null })
-      .mockResolvedValueOnce({ data: [], error: null })
+    // Observation chunks: CN-06.02 reduced IN_CHUNK from 120 → 40
+    // (see card-market.ts) so that basic-land pages like Plains
+    // (1,000+ finishes) stay under Postgres's statement_timeout on
+    // ISR regeneration. 345 priced finishes → ceil(345/40) = 9 obs
+    // chunks under the new policy. Keep them empty — the test only
+    // cares that chunking + concatenation works for the
+    // printing/current-price stages.
+    const expectedObsChunks = Math.ceil(PRINTING_COUNT / 40)  // 345/40 = 9
+    for (let i = 0; i < expectedObsChunks; i++) {
+      observations30Mock.mockResolvedValueOnce({ data: [], error: null })
+    }
     observations90Mock.mockResolvedValueOnce({ data: [], error: null })
 
     const getCardMarketSummaryStrict = await loadStrict()
@@ -287,5 +290,91 @@ describe('getCardMarketSummaryStrict', () => {
     const result = await getCardMarketSummaryStrict('o1', 'p1')
     expect(result).not.toBeNull()
     expect(printingsMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('CN-06.02 basic-land regression: 1000+ finishes chunk into IN_CHUNK=40 observation calls under bounded concurrency', async () => {
+    // Plains in BLB/WOE etc. has 1000+ priced finishes network-wide.
+    // Production error logs (Vercel 2026-11-04) showed:
+    //   "stage=observations-30d-chunk-6/9: failed after 3 attempts:
+    //    canceling statement due to statement timeout"
+    // with 9 chunks of 120. Reducing IN_CHUNK to 40 produces 25 chunks
+    // for 1000 finishes, each small enough to fit in Postgres's
+    // statement_timeout. MAX_IN_FLIGHT=4 caps concurrent queries so we
+    // never fan out 25 simultaneous read-heavy queries on
+    // mtg_price_observations.
+    const PRINTING_COUNT = 1000
+    const printingsData = Array.from({ length: PRINTING_COUNT }, (_, i) => ({
+      id: `p${i}`, oracle_card_id: 'o-plains', set_code: 'blb',
+      collector_number: String(262 + i), name: 'Plains',
+      released_at: null, image_uri_small: null, digital: false, lang: 'en', rarity: 'common',
+    }))
+    const finishesData = printingsData.map((p, i) => ({
+      id: `f${i}`, printing_id: p.id, finish: 'nonfoil',
+    }))
+    const currentPricesData = finishesData.map((f, i) => ({
+      printing_finish_id: f.id, price: 100 + i, observed_on: '2026-10-01',
+    }))
+
+    printingsMock.mockResolvedValueOnce({ data: printingsData, error: null })
+    // Finishes chunks: FINISHES_IN_CHUNK=100 (unchanged by this PR).
+    const FINISHES_IN_CHUNK = 100
+    for (let i = 0; i < Math.ceil(PRINTING_COUNT / FINISHES_IN_CHUNK); i++) {
+      finishesMock.mockResolvedValueOnce({
+        data: finishesData.slice(i * FINISHES_IN_CHUNK, (i + 1) * FINISHES_IN_CHUNK),
+        error: null,
+      })
+    }
+    // Current-prices chunks: CURRENT_PRICES_IN_CHUNK=100 (unchanged).
+    const CURRENT_PRICES_IN_CHUNK = 100
+    for (let i = 0; i < Math.ceil(PRINTING_COUNT / CURRENT_PRICES_IN_CHUNK); i++) {
+      currentPricesMock.mockResolvedValueOnce({
+        data: currentPricesData.slice(i * CURRENT_PRICES_IN_CHUNK, (i + 1) * CURRENT_PRICES_IN_CHUNK),
+        error: null,
+      })
+    }
+    setsMock.mockResolvedValueOnce({ data: [{ code: 'blb', name: 'Bloomburrow' }], error: null })
+
+    // Observations: NEW IN_CHUNK=40 → ceil(1000/40) = 25 observation
+    // chunks. Bounded concurrency MAX_IN_FLIGHT=4 means at any moment
+    // at most 4 observations-chunk queries should be in flight.
+    //
+    // To verify bounded concurrency we wrap the observations mock in a
+    // concurrency tracker: increment inFlight on call, decrement after
+    // the (deferred) resolve. The assertion checks that maxConcurrent
+    // never exceeded 4 across all 25 chunk calls.
+    const OBS_IN_CHUNK = 40
+    const expectedObsChunks = Math.ceil(PRINTING_COUNT / OBS_IN_CHUNK)
+    expect(expectedObsChunks).toBe(25)
+
+    let inFlight = 0
+    let maxConcurrent = 0
+    observations30Mock.mockImplementation(() => {
+      inFlight++
+      if (inFlight > maxConcurrent) maxConcurrent = inFlight
+      // Resolve on the microtask queue so concurrent calls can stack
+      // observably before the first resolves.
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          inFlight--
+          resolve({ data: [], error: null })
+        }, 1)
+      })
+    })
+    observations90Mock.mockResolvedValueOnce({ data: [], error: null })
+
+    const getCardMarketSummaryStrict = await loadStrict()
+    const result = await getCardMarketSummaryStrict('o-plains', 'p0')
+
+    // Structural assertions:
+    expect(result).not.toBeNull()
+    expect(result!.pricedPrintings).toHaveLength(PRINTING_COUNT)
+    // The observation stage fired once per chunk, no chunk skipped.
+    expect(observations30Mock).toHaveBeenCalledTimes(expectedObsChunks)
+    // Bounded concurrency: at no point were more than MAX_IN_FLIGHT=4
+    // observations-chunk queries running simultaneously. This is the
+    // key regression — previous Promise.all(obsChunks) would have
+    // produced maxConcurrent=25 here.
+    expect(maxConcurrent).toBeLessThanOrEqual(4)
+    expect(maxConcurrent).toBeGreaterThan(1)  // at least some parallelism
   })
 })

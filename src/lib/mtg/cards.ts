@@ -489,14 +489,50 @@ export async function getCardBySlugStrict(setCode: string, cardSlug: string): Pr
     runStrictQueryWithRetry<any[]>(
       label('other-printings'),
       async () => {
-        const { data, error } = await supabase
+        // CN-06.02 (2026-11-05): two-stage query to keep this path
+        // under Postgres's statement_timeout on basic-land oracles
+        // (Swamp/Plains/Island/Mountain/Forest have 800+ English
+        // printings each). The single wide ORDER-BY-LIMIT below was
+        // materialising all 800+ matching rows with MTG_PRINTING_SELECT
+        // columns before sorting and limiting — surfaced in prod as
+        // "stage=other-printings: canceling statement due to statement
+        // timeout" on /set/j14/card/3★-swamp after PR #4 unblocked
+        // the prior observations-chunk timeout. No printings removed —
+        // same 40-row user-visible output.
+        //
+        // Stage A: narrow scan → 40 most-recent printing IDs (fast;
+        // minimal columns mean no TOAST fetches during the sort).
+        // Secondary sort on `id` ASC breaks ties deterministically
+        // when multiple printings share the same released_at date —
+        // important for same-day product reveals (e.g. multiple
+        // promo basic lands released on the same date). The original
+        // single-query path was unstable on ties; this fix tightens
+        // that invariant.
+        const { data: ids, error: idsErr } = await supabase
           .from('mtg_printings')
-          .select(MTG_PRINTING_SELECT)
+          .select('id, released_at')
           .eq('oracle_card_id', printing.oracle_card_id)
           .eq('lang', 'en')
           .neq('id', printing.id)
           .order('released_at', { ascending: false })
+          .order('id', { ascending: true })
           .limit(40)
+        if (idsErr) return { ok: false, error: idsErr }
+        const idRows = (ids ?? []) as Array<{ id: string; released_at: string | null }>
+        if (idRows.length === 0) return { ok: true, value: [] }
+        const idList = idRows.map((r) => r.id)
+
+        // Stage B: hydrate full rows by PK. PK-indexed .in() lookup,
+        // bounded at 40 rows — cheap and deterministic. Same
+        // (released_at DESC, id ASC) ordering as Stage A so the
+        // caller receives printings in identical order to the pre-fix
+        // single-query path.
+        const { data, error } = await supabase
+          .from('mtg_printings')
+          .select(MTG_PRINTING_SELECT)
+          .in('id', idList)
+          .order('released_at', { ascending: false })
+          .order('id', { ascending: true })
         if (error) return { ok: false, error }
         return { ok: true, value: (data ?? []) as any[] }
       },
