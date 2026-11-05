@@ -558,29 +558,58 @@ export async function getCardMarketSummaryStrict(
   const finishById = new Map(finishes.map((f) => [f.id, f]))
 
   // 5) Chunked 30d observations — strict per chunk.
+  //
+  // CN-06.02 (2026-11-04): reduced IN_CHUNK from 120 → 40 and
+  // changed Promise.all to a bounded-concurrency loop after Vercel
+  // runtime logs confirmed basic-land pages (Plains, Island, Swamp,
+  // Mountain, Forest in BLB/WOE etc.) consistently hit
+  // "canceling statement due to statement timeout" on
+  // `observations-30d-chunk-N/9` after 3 retries, serving HTTP 500
+  // on ISR regeneration. The combination of large printing families
+  // (basic lands have 1,000+ finishes) and highly concurrent
+  // in-flight queries on `mtg_price_observations` overwhelmed
+  // Postgres's per-statement timeout.
+  //
+  // The fix:
+  //   - IN_CHUNK=40 keeps each chunk's row budget bounded (40
+  //     finishes × 30 days = 1,200 rows max, well under PostgREST
+  //     limits).
+  //   - MAX_IN_FLIGHT=4 caps concurrent queries so we don't
+  //     overwhelm the DB when a card has 1,000+ finishes.
+  //   - Preserves all prices: no row is filtered, no printing
+  //     omitted, no truncation of the observations series.
+  //   - Preserves retry semantics (runStrictQueryWithRetry still
+  //     wraps each chunk).
   const pricedFinishIds = Array.from(new Set(currents.map((c) => c.printing_finish_id)))
   const since30 = new Date(); since30.setUTCDate(since30.getUTCDate() - 30)
   const since30Iso = since30.toISOString().slice(0, 10)
-  const IN_CHUNK = 120
+  const IN_CHUNK = 40
+  const MAX_IN_FLIGHT = 4
   const obsChunks: string[][] = []
   for (let i = 0; i < pricedFinishIds.length; i += IN_CHUNK) obsChunks.push(pricedFinishIds.slice(i, i + IN_CHUNK))
-  const obsResults = await Promise.all(obsChunks.map((chunk, idx) =>
-    runStrictQueryWithRetry<Array<{ printing_finish_id: string; observed_on: string; price: number }>>(
-      stage(`observations-30d-chunk-${idx + 1}/${obsChunks.length}`),
-      async () => {
-        const { data, error } = await supabase
-          .from('mtg_price_observations')
-          .select('printing_finish_id, observed_on, price')
-          .eq('provider', basis.provider).eq('currency', basis.currency)
-          .eq('market', basis.market).eq('price_type', basis.priceType)
-          .or('is_anomalous.is.null,is_anomalous.eq.false')
-          .gte('observed_on', since30Iso)
-          .in('printing_finish_id', chunk)
-        if (error) return { ok: false, error }
-        return { ok: true, value: (data ?? []) as any }
-      },
-    ),
-  ))
+  const obsResults: Array<Array<{ printing_finish_id: string; observed_on: string; price: number }>> = []
+  for (let i = 0; i < obsChunks.length; i += MAX_IN_FLIGHT) {
+    const batch = obsChunks.slice(i, i + MAX_IN_FLIGHT)
+    const batchResults = await Promise.all(batch.map((chunk, j) => {
+      const chunkIdx = i + j
+      return runStrictQueryWithRetry<Array<{ printing_finish_id: string; observed_on: string; price: number }>>(
+        stage(`observations-30d-chunk-${chunkIdx + 1}/${obsChunks.length}`),
+        async () => {
+          const { data, error } = await supabase
+            .from('mtg_price_observations')
+            .select('printing_finish_id, observed_on, price')
+            .eq('provider', basis.provider).eq('currency', basis.currency)
+            .eq('market', basis.market).eq('price_type', basis.priceType)
+            .or('is_anomalous.is.null,is_anomalous.eq.false')
+            .gte('observed_on', since30Iso)
+            .in('printing_finish_id', chunk)
+          if (error) return { ok: false, error }
+          return { ok: true, value: (data ?? []) as any }
+        },
+      )
+    }))
+    for (const r of batchResults) obsResults.push(r)
+  }
 
   type Agg = { earliest: { d: string; p: number }; latest: { d: string; p: number }; d7: { d: string; p: number } | null }
   const aggByFinish = new Map<string, Agg>()
