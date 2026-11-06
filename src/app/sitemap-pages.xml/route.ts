@@ -24,6 +24,7 @@ const STATIC_HUB_PAGES: { path: string; priority: string; changefreq: string }[]
   { path: '/formats',     priority: '0.85', changefreq: 'weekly'  },
   { path: '/card-finder', priority: '0.85', changefreq: 'weekly'  },
   { path: '/insights',    priority: '0.85', changefreq: 'weekly'  },
+  { path: '/releases',    priority: '0.75', changefreq: 'weekly'  },
   { path: '/ai',          priority: '0.8',  changefreq: 'weekly'  },
   { path: '/contact',     priority: '0.3',  changefreq: 'monthly' },
   { path: '/privacy',     priority: '0.3',  changefreq: 'yearly'  },
