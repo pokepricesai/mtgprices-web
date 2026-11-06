@@ -7,8 +7,10 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getCurrentUser, getSupabaseServerClient } from '@/lib/supabase/server'
+import { getUserDiscordLink, getUserMembership } from '@/lib/entitlements'
 import { getOrCreateMyProfile, oauthImageUrl } from '@/lib/mtg/profile'
 import Avatar from '@/components/mtg/Avatar'
+import IdentityPanel from '@/components/account/IdentityPanel'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,18 +24,25 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export default async function AccountPage() {
+interface Props {
+  searchParams?: Promise<{ discord?: string }>
+}
+
+export default async function AccountPage({ searchParams }: Props) {
   const user = await getCurrentUser()
   if (!user) redirect('/login?next=/account')
 
   const supabase = await getSupabaseServerClient()
-  const [profile, itemsRes, decksRes] = await Promise.all([
+  const [profile, itemsRes, decksRes, membership, discordLink] = await Promise.all([
     getOrCreateMyProfile(),
     supabase.from('mtg_collection_items').select('*', { count: 'exact', head: true }),
     supabase.from('mtg_decks').select('*', { count: 'exact', head: true }),
+    getUserMembership(supabase, user.id),
+    getUserDiscordLink(supabase, user.id),
   ])
   const items = itemsRes.count ?? 0
   const decks = decksRes.count ?? 0
+  const sp = (await searchParams) ?? {}
   const googleImage = oauthImageUrl(user)
   const joined = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long' })
@@ -88,6 +97,12 @@ export default async function AccountPage() {
           cta="Open decks"
         />
       </div>
+
+      <IdentityPanel
+        membership={membership}
+        discordLink={discordLink}
+        discordFlag={sp.discord ?? null}
+      />
 
       <section style={{
         marginTop: 18, padding: 20,
