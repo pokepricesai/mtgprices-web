@@ -23,6 +23,7 @@ export const ROUTE_POLICY: { pattern: RegExp; policy: IndexPolicy; note?: string
   { pattern: /^\/ai$/,                           policy: 'INDEX', note: 'Ask AI landing' },
   { pattern: /^\/insights$/,                     policy: 'INDEX', note: 'Insights index' },
   { pattern: /^\/insights\/[a-z0-9-]+$/,         policy: 'INDEX', note: 'Insight article' },
+  { pattern: /^\/releases$/,                     policy: 'INDEX', note: 'Release calendar (page emits noindex when empty)' },
   { pattern: /^\/set\/[a-z0-9]+$/,               policy: 'INDEX', note: 'Set detail' },
   { pattern: /^\/set\/[a-z0-9]+\/card\/[^\/]+$/, policy: 'INDEX', note: 'Card printing detail' },
   { pattern: /^\/contact$/,                      policy: 'INDEX', note: 'Contact' },
