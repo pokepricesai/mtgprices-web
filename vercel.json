@@ -30,6 +30,30 @@
       "schedule": "30 7 * * *"
     },
     {
+      "path": "/api/cron/tcggraph-refresh?game=magic&maxPages=150",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/tcggraph-refresh?game=magic&maxPages=150&continue=1",
+      "schedule": "15 8 * * *"
+    },
+    {
+      "path": "/api/cron/tcggraph-refresh?game=magic&maxPages=150&continue=1",
+      "schedule": "30 8 * * *"
+    },
+    {
+      "path": "/api/cron/tcggraph-refresh?game=magic&maxPages=150&continue=1",
+      "schedule": "45 8 * * *"
+    },
+    {
+      "path": "/api/cron/tcggraph-refresh?game=magic&maxPages=150&continue=1",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/tcggraph-refresh?game=magic&maxPages=150&continue=1",
+      "schedule": "15 9 * * *"
+    },
+    {
       "path": "/api/cron/health-check",
       "schedule": "17 * * * *"
     }
